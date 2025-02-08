@@ -1,7 +1,7 @@
 import { Conflict, InternalServer, NotFound, sendResponse, Unauthorized } from '../lib/http.js'
 import { createToken } from '../lib/jwt.js'
-import { users } from '../db/schemas/users.js';
-import { db } from '../config/db.js'; // Asegúrate de que la ruta es correcta
+//import { users } from '../db/schemas/users.js';
+import { db } from '../config/db.js'; 
 import { pbkdf2Sync, randomBytes } from 'crypto'
 import { eq } from 'drizzle-orm'
 
@@ -27,7 +27,8 @@ export async function signUp(req, res, next) {
   const hash = pbkdf2Sync(password, salt, HASH_CONFIG.iterations, HASH_CONFIG.keyLength, HASH_CONFIG.digest).toString('hex');
 
   try {
-    const result = await db.insert(users).values({ email, salt, password: hash }).returning({ id: users.id });
+    // Descomentar linea anterior cuando se haya definido el modelo de la BD
+    //const result = await db.insert(users).values({ email, salt, password: hash }).returning({ id: users.id });
 
     return sendResponse(req, res, { status: { httpCode: 201 }});
   } catch (err) {
