@@ -17,15 +17,16 @@ Adrenalux es un juego de cartas coleccionables basado en la liga española, dond
 ├── 📁 src
 │   ├── 📁 config      # Configuración de la base de datos
 │   ├── 📁 controllers # Controladores de las rutas
-│   ├── 📁 models      # Modelos de la base de datos con Drizzle
+│   ├── 📁 db/schemas  # Modelos de la base de datos con Drizzle
 │   ├── 📁 routes      # Definición de las rutas
 │   ├── 📁 middleware  # Middlewares de autenticación y validación
 │   ├── 📁 services    # Lógica de negocio
-│   ├── server.js      # Punto de entrada de la aplicación
+│   ├── app.js      # Punto de entrada de la aplicación
 │
 ├── 📄 .env            # Variables de entorno
 ├── 📄 package.json    # Dependencias y scripts
 ├── 📄 README.md       # Documentación
+├── server.js # Documentación
 ```
 
 ## ⚙️ Instalación y configuración
