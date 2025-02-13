@@ -1,4 +1,4 @@
-⚽️ ADRENALUX ⚽️- Backend 
+# ⚽️ ADRENALUX ⚽️ - Backend 
 
 
 Adrenalux es un juego de cartas coleccionables basado en la liga española, donde los jugadores pueden coleccionar, intercambiar y competir con cartas de futbolistas. Este repositorio contiene el backend de la aplicación, desarrollado con **Node.js**, **Express**, **PostgreSQL** y el ORM **Drizzle**.
