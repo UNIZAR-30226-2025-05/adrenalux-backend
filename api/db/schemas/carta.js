@@ -7,6 +7,7 @@ export const carta = pgTable('cartas', {
   nombre: varchar('nombre', { length: 100 }).notNull(),
   equipo: varchar('equipo', { length: 100 }).notNull(),
   pais: varchar('pais', { length: 100 }).notNull(),
+  photo : text('photo').notNull(),
   defensa: integer('defensa').notNull(),
   control: integer('control').notNull(),
   ataque: integer('ataque').notNull(),

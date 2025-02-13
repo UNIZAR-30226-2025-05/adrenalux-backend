@@ -10,7 +10,8 @@ export const users = pgTable('users', {
   friend_code: varchar('friend_code', { length: 10 }).notNull().unique(), 
   adrenacoins: integer('adrenacoins').notNull().default(0),
   experience: integer('experience').notNull().default(0), 
-  level: integer('level').notNull().default(1), 
+  level: integer('level').notNull().default(1),
+  puntosClasificacion: integer('puntosClasificacion').notNull().default(0),
   avatar: text('avatar'), 
   created_at: text('created_at').notNull().default(new Date().toISOString()), 
 });
