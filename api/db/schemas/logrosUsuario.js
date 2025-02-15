@@ -1,22 +1,29 @@
 import { pgTable, varchar, integer, boolean, text, primaryKey } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { user } from './user';
+import { logro } from './logro';
 
-export const logrosUsuario = pgTable('logrosUsuario', {
-  user_id: varchar('user_id', { length: 50 }).notNull(),
-  logro_id: varchar('logro_id', { length: 50 }).notNull(),
-  created_at: text('created_at').notNull().default(new Date().toISOString()),
-  achieved: boolean('achieved').notNull().default(false),
+export const logrosUsuario = pgTable(
+  {
+    user_id: varchar('user_id', { length: 50 }).notNull().references(() => user.id),
+    logro_id: varchar('logro_id', { length: 50 }).notNull.references(() => logro.id),
+    created_at: text('created_at').notNull().default(new Date().toISOString()),
+    achieved: boolean('achieved').notNull().default(false),
 
-  user1: foreignKey('user1_id').references(users.username),
-  logro_id: foreignKey('logro_id').references(logro.user_id),
-
-  primaryKey: pgTable.primaryKey('user1_id', 'logro_id')
-});
+  }
+    ,(table) => ({
+      compuesta: primaryKey({
+        columns: [table.user_id, table.logro_id]
+      })
+    })
+);
+    
 
 // Schemas para validaciones
 export const logrosUsuarioSelectSchema = createSelectSchema(logrosUsuario).partial();
 export const logrosUsuarioInsertSchema = createInsertSchema(logrosUsuario).partial();
 
 export const schema = {
-  logrosUsuario,
+  user,
+  logro,
 };

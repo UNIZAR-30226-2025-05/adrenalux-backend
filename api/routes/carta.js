@@ -4,13 +4,13 @@ const cartas = require('../controllers/cartas');
 const router = express.Router();
 
 
-router.get('/api/v1/cartas', cartas.getCartas);
-router.get('/api/v1/cartas/:id', cartas.getCartaById);
-router.get('/api/v1/cartas/mi-colección', cartas.getMiColeccion);
-router.get('/api/v1/cartas/filtrar', cartas.filtrarCartas);
+router.get('/getAllCartas', cartas.getCartas);
+router.get('/getCartasID', cartas.getCartaById);
+router.get('/getColeccion', cartas.obtenerColeccion);
+router.get('/filtrarCartas', cartas.filtrarCartas);
 
-router.get('/api/v1/cartas/sobres', cartas.abrirSobrePorTipo);
-router.get('/api/v1/cartas/sobre_random', cartas.abrirSobreGratis);
+router.get('/abrirSobre', cartas.abrirSobre);
+router.get('/abrirSobreRandom', cartas.abrirSobreRandom);
 
 
 

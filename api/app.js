@@ -29,5 +29,6 @@ app.use('/api/v1/', timestamp)
 app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/health', healthRouter)
 app.use('/api/v1/carta', cartaRouter)
+app.use('/api/v1/profile', profileRouter)
 
 app.use(errorHandler)

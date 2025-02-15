@@ -27,9 +27,18 @@ export async function signUp(req, res, next) {
   const hash = pbkdf2Sync(password, salt, HASH_CONFIG.iterations, HASH_CONFIG.keyLength, HASH_CONFIG.digest).toString('hex');
 
   try {
-    // Descomentar linea anterior cuando se haya definido el modelo de la BD
-    //const result = await db.insert(users).values({ email, salt, password: hash }).returning({ id: users.id });
-
+    /*
+    const result = await db.insert(users).values({ 
+      email, 
+      username, 
+      name, 
+      lastname, 
+      friend_code: generateFriendCode(),
+      salt, 
+      password: hash 
+    }).returning({ id: users.id });
+    
+*/
     return sendResponse(req, res, { status: { httpCode: 201 }});
   } catch (err) {
     return next(new InternalServer());
@@ -55,10 +64,31 @@ export async function signIn (req, res, next) {
   const token = await createToken({ id: user.id, email: user.email })
 
   res.cookie('session-token', token, COOKIE_OPTIONS)
+  //decolver los temas de sesion y el nombre de usuario
+  // foto de perfil 
   return sendResponse(req, res, { data: { token } })
 }
 
 export async function signOut (req, res) {
   res.clearCookie('session-token')
   return sendResponse(req, res)
+}
+
+
+async function generateUniqueFriendCode() {
+  let friendCode;
+  let exists = true;
+
+  while (exists) {
+    friendCode = Math.random().toString(36).substr(2, 9).toUpperCase();
+
+    // Verificar si ya existe en la base de datos
+    const [user] = await db.select().from(users).where(eq(users.friend_code, friendCode));
+
+    if (!user) {
+      exists = false;
+    }
+  }
+
+  return friendCode;
 }

@@ -2,8 +2,11 @@ import { pgTable, integer, varchar, text, primaryKey, boolean } from 'drizzle-or
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 export const torneo = pgTable('torneo', {
-  id: integer('id').primaryKey().autoIncrement(),
-  nombre: varchar('nombre', { length: 100 }).notNull(), 
+  id: integer('id')
+    .primaryKey()
+    .autoIncrement(),
+  nombre: varchar('nombre', { length: 100 })
+    .notNull(), 
   contrasena: varchar('contrasena', { length: 100 }), 
   ganador_id: varchar('ganador_id', { length: 50 }), 
   premio: integer('premio').notNull(), 

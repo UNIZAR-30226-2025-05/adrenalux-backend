@@ -10,6 +10,7 @@ const TIPOS_SOBRES = {
 
 const JUGADORES_POR_SOBRE = 6;
 
+
 const PROBABILIDADES_SOBRES_GRATUITOS = {
   [TIPOS_SOBRES.ENERGIA_LUX]: 90,
   [TIPOS_SOBRES.ELITE_LUX]: 8,
@@ -47,6 +48,8 @@ export async function abrirSobre(req, res, next) {
     return next(new Unauthorized({ message: 'Monedas insuficientes' }));
   }
   const cartas = generarSobre(tipo);
+  //añadir las cartas a la bd
+  //restar monedas al usuario
   return sendResponse(req, res, { data: { cartas } });
 }
 
@@ -64,6 +67,7 @@ export async function abrirSobreRandom(req, res, next) {
   }
   restarSobre(usuarioId);
   const cartas = generarSobre(tipo);
+  //añadir las cartas a la bd 
   return sendResponse(req, res, { data: { tipo, cartas } });
 }
 
@@ -104,28 +108,35 @@ function generarTipo() {
     }
   }
 
-    function generarTipoCarta(sobreConfig) {
-        const random = Math.random() * 100;
-        if (random < sobreConfig.probabilidades.ENERGIA_LUX) {
-            return 'Energy Lux';
-        } else if (random < sobreConfig.probabilidades.ELITE_LUX) {
-            return 'Elite Lux';
-        } else{
-            return 'Master Lux';
-        }
-    }
-
-  function tipoSobreDefinido(tipo) {
-    return Object.values(TIPOS_SOBRES).includes(tipo);
-  }
-
-   function obtenerDatosSobre(tipo) {
-    return {
-        cantidadCartas: JUGADORES_POR_SOBRE,
-        probabilidades: PROBABILIDADES_CARTAS[tipo],
-        PRECIOS_SOBRES: PRECIOS_SOBRES[tipo],
-    };
+function generarTipoCarta(sobreConfig) {
+    const random = Math.random() * 100;
+    if (random < sobreConfig.probabilidades.ENERGIA_LUX) {
+        return 'Energy Lux';
+    } else if (random < sobreConfig.probabilidades.ELITE_LUX) {
+        return 'Elite Lux';
+    } else{
+         return 'Master Lux';
+      }
 }
+
+function tipoSobreDefinido(tipo) {
+   return Object.values(TIPOS_SOBRES).includes(tipo);
+}
+
+function obtenerDatosSobre(tipo) {
+  return {
+      cantidadCartas: JUGADORES_POR_SOBRE,
+      probabilidades: PROBABILIDADES_CARTAS[tipo],
+      PRECIOS_SOBRES: PRECIOS_SOBRES[tipo],
+  };
+}
+
+ function monedasInsuficientes(tipo,usuarioId){
+    const monedas = obtenerMonedas(usuarioId);
+    const precio = PRECIOS_SOBRES[tipo].precio;
+
+    return monedas < precio;
+ }
 
 
 // funciones de coleccion y eso 
@@ -182,6 +193,31 @@ function generarResultadoColeccion(coleccion, cartasUsuario){
     return resultado;
 }
 
+
+function getAllCartas(){
+  //devolver todas las cartas
+}
+
+function devolverColeccionUsuario(usuarioId){
+  //devolver la coleccion del usuario con el id especificado
+}
+
+function generarCartaAleatoria(tipocarta){
+ // depende del tipo de carta que se quiera generar
+ // 1. cartas normales 0-500 
+ //2 cartas luxury 501-575
+ //3 cartas megaluxury 576-600
+//4 cartas luxuryxi 600-611
+// depende del tipo coger los limites y generar un numero aleatorio entre ellos
+// devolver la carta con el id especificado
+
+
+
+}
+
+function devolverCarta(idCarta){
+  //devolver la carta con el id especificado
+}
 
 
 
