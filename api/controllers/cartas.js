@@ -143,7 +143,7 @@ function obtenerDatosSobre(tipo) {
 
 // Función para obtener la colección de un usuario
 export async function obtenerColeccion(req, res, next) {  
-      const { usuarioId } = req.params;
+    const { usuarioId } = req.params;
 
     if (!usuarioIdValido(usuarioId)) {
         return next(new BadRequest({ message: 'Usuario no válido' }));

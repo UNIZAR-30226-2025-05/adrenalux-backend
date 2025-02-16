@@ -10,6 +10,8 @@ import cors from 'cors'
 import express from 'express'
 import helmet from 'helmet'
 import pinoHttp from 'pino-http'
+import swaggerUi from 'swagger-ui-express';
+import swaggerDocs from './config/swagger.js'; 
 
 const logger = pinoHttp(loggerHttp)
 
@@ -29,6 +31,7 @@ app.use('/api/v1/', timestamp)
 app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/health', healthRouter)
 app.use('/api/v1/carta', cartaRouter)
-app.use('/api/v1/profile', profileRouter)
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+//app.use('/api/v1/profile', profileRouter)
 
 app.use(errorHandler)
