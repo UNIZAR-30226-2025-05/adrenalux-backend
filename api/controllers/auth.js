@@ -28,7 +28,7 @@ export async function signUp(req, res, next) {
 
   try {
     /*
-    const result = await db.insert(users).values({ 
+    const result = await db.insert(user).values({ 
       email, 
       username, 
       name, 
@@ -36,7 +36,7 @@ export async function signUp(req, res, next) {
       friend_code: generateFriendCode(),
       salt, 
       password: hash 
-    }).returning({ id: users.id });
+    }).returning({ id: user.id });
     
 */
     return sendResponse(req, res, { status: { httpCode: 201 }});
@@ -51,9 +51,9 @@ export async function signIn (req, res, next) {
   console.log('signin data:', email, password)
 
   const [user] = await db
-    .select({ id: users.id, salt: users.salt, password: users.password })
-    .from(users)
-    .where(eq(users.email, email))
+    .select({ id: user.id, salt: user.salt, password: user.password })
+    .from(user)
+    .where(eq(user.email, email))
 
   if (!user) return next(new NotFound())
 
@@ -83,7 +83,7 @@ async function generateUniqueFriendCode() {
     friendCode = Math.random().toString(36).substr(2, 9).toUpperCase();
 
     // Verificar si ya existe en la base de datos
-    const [user] = await db.select().from(users).where(eq(users.friend_code, friendCode));
+    const [user] = await db.select().from(user).where(eq(user.friend_code, friendCode));
 
     if (!user) {
       exists = false;
@@ -91,4 +91,43 @@ async function generateUniqueFriendCode() {
   }
 
   return friendCode;
+}
+
+
+export async function validateToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  
+  // Verificar existencia del header
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next(new Unauthorized('Formato de token inválido'));
+  }
+
+  const token = authHeader.split(' ')[1];
+  
+  try {
+    // Verificar firma JWT
+    const decoded = await verifyToken(token);
+    
+    // Verificar usuario en base de datos
+    const [user] = await db
+      .select({ id: user.id })
+      .from(user)
+      .where(eq(user.id, decoded.id));
+
+    if (!user) return next(new NotFound('Usuario no existe'));
+
+    // Respuesta exitosa
+    return sendResponse(req, res, { 
+      status: { httpCode: 200 },
+      data: { isValid: true }
+    });
+
+  } catch (err) {
+    // Manejar diferentes tipos de errores
+    const message = err.name === 'TokenExpiredError' 
+      ? 'Token expirado' 
+      : 'Token inválido';
+      
+    return next(new Unauthorized(message));
+  }
 }

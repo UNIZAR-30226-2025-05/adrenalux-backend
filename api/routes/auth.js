@@ -94,4 +94,53 @@ router.post('/sign-in', validateRequest(authSchema), authCtrl.signIn);
  */
 router.post('/sign-out', authenticate, authCtrl.signOut);
 
+/**
+ * @swagger
+ * /auth/validate-token:
+ *   get:
+ *     summary: Valida la autenticidad del token JWT
+ *     tags: [Auth]
+ *     description: Verifica si el token de autenticación es válido y está activo
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *         description: Token JWT obtenido al iniciar sesión
+ *     responses:
+ *       200:
+ *         description: Token válido y activo
+ *         content:
+ *           application/json:
+ *             example:
+ *               isValid: true
+ *       401:
+ *         description: |
+ *           Error de autenticación. Posibles causas:
+ *           - Token expirado
+ *           - Formato de token inválido
+ *           - Token no proporcionado
+ *         content:
+ *           application/json:
+ *             examples:
+ *               expired:
+ *                 value: { error: "Token expirado" }
+ *               invalid:
+ *                 value: { error: "Token inválido" }
+ *       404:
+ *         description: Usuario asociado al token no encontrado
+ *         content:
+ *           application/json:
+ *             example:
+ *               error: "Usuario no existe"
+ *       500:
+ *         description: Error interno del servidor
+ * 
+ */
+router.get('/validate-token', authCtrl.validateToken);
+
 export default router;

@@ -17,6 +17,10 @@ export async function createToken (payload) {
     .sign(SECRET_KEY)
 }
 
+export function verifyToken(token) {
+  return jwt.verify(token, process.env.JWT_SECRET);
+}
+
 /**
  * Extracts JWT token from signed cookies.
  * @param {import('express').Request} req - Express request object.
