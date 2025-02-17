@@ -4,9 +4,7 @@ import { user } from './user.js';
 
 // Tabla de plantillas
 export const plantilla = pgTable('plantilla', {
-  id: integer('id')
-    .primaryKey()
-    .autoincrement(), // Clave primaria
+  id: serial('id').primaryKey(), // Clave primaria
   user_id: varchar('username', { length: 50 }).notNull().references(() => user.id),
   nombre: varchar('nombre', { length: 100 }).notNull(), // Nombre de la plantilla
 });

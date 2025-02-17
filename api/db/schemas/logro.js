@@ -3,9 +3,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 export const logro = pgTable(
   {
-    id: serial('id')
-      .primaryKey()
-      .autoincrement(), 
+    id: serial('id').primaryKey(), 
     description: text('description')
       .notNull(), 
     reward_type: varchar('reward_type', { length: 10 })

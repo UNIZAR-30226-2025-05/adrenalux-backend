@@ -3,9 +3,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { user } from './user';
 
 export const partida = pgTable('partida', {
-  id: integer('id')
-    .primaryKey()
-    .autoIncrement(), 
+  id: serial('id').primaryKey(), 
   turno: integer('turno')
     .notNull(),
   estado: varchar('estado', { length: 20 })
