@@ -1,7 +1,7 @@
 import { pgTable, serial, varchar, integer, text } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
-export const logro = pgTable(
+export const logro = pgTable('logro',
   {
     id: serial('id').primaryKey(), 
     description: text('description')

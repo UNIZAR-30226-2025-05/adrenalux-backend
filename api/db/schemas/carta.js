@@ -3,9 +3,9 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 // Tabla de cartas
 export const carta = pgTable( 
-  'carta', // Nombre de la tabla
+  'carta', 
   {
-    id: serial('id').primaryKey(), // Clave primaria auto-incrementable
+    id: serial('id').primaryKey(), 
     nombre: varchar('nombre', { length: 25 }).notNull(),
     equipo: varchar('equipo', { length: 25 }).notNull(),
     pais: varchar('pais', { length: 25 }).notNull(),

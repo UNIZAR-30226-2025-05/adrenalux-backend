@@ -1,6 +1,7 @@
-import { pgTable, integer, varchar, text, boolean, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, integer, varchar, text, serial } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { user } from './user';
+import { torneo } from './torneo';
 
 export const partida = pgTable('partida', {
   id: serial('id').primaryKey(), 
@@ -9,19 +10,18 @@ export const partida = pgTable('partida', {
   estado: varchar('estado', { length: 20 })
     .notNull()
     .default('parada'), 
-  ganador_id: varchar('ganador_id', { length: 50 }), 
+  ganador_id: integer('ganador_id', { length: 50 }), 
   fecha: text('fecha').notNull()
     .default(new Date()
     .toISOString()), 
-  id_user1: varchar('usuario1', { length: 50 })
+  id_user1: integer('usuario1', { length: 50 })
     .notNull()
     .references(() => user.id), // Usuario local
-  id_user2: varchar('usuario2', { length: 50 })
+  id_user2: integer('usuario2', { length: 50 })
     .notNull()
     .references(() => user.id), // Usuario visitante
   torneo_id: integer('torneo_id')
-    .references(() => torneos.id), // Clave ajena del torneo (opcional si la partida es parte de un torneo)
-
+    .references(() => torneo.id), 
 });
 
 export const partidaSelectSchema = createSelectSchema(partida).partial();

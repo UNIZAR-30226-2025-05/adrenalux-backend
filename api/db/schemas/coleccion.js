@@ -1,15 +1,15 @@
-import { pgTable, integer, foreignKey } from 'drizzle-orm/pg-core';
+import { pgTable, integer, serial, varchar } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { user } from './user.js';
 import { carta } from './carta.js';
 
-export const coleccion = pgTable(
+export const coleccion = pgTable('coleccion',
   {
   id: serial('id').primaryKey(), 
   carta_id: integer('carta_id')
     .references(() => carta.id) 
     .notNull(),
-  id_usuario: varchar('id_user', { length: 50 })
+  id_usuario: integer('id_user', { length: 50 })
     .references(() => user.id) 
     .notNull(),
   cantidad: integer('cantidad').notNull().default(0),

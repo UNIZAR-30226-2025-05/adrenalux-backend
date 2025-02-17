@@ -2,7 +2,7 @@ import { pgTable, varchar, text, integer } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 export const user = pgTable('user', {
-  id: varchar('id', { length: 50 })
+  id: integer('id')
     .primaryKey(),
   username: varchar('username', { length: 50 })
     .notNull()

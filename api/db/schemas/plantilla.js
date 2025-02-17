@@ -1,12 +1,11 @@
-import { pgTable, varchar, integer, text } from 'drizzle-orm/pg-core';
+import { pgTable, integer, varchar, serial } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { user } from './user.js';
 
-// Tabla de plantillas
 export const plantilla = pgTable('plantilla', {
-  id: serial('id').primaryKey(), // Clave primaria
-  user_id: varchar('username', { length: 50 }).notNull().references(() => user.id),
-  nombre: varchar('nombre', { length: 100 }).notNull(), // Nombre de la plantilla
+  id: serial('id').primaryKey(), 
+  user_id: integer('username').notNull().references(() => user.id),
+  nombre: varchar('nombre', { length: 100 }).notNull(), 
 });
 
 // Esquemas para insertar y seleccionar
