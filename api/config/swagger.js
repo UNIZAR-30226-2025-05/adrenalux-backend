@@ -2,16 +2,20 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 
 const options = {
-  definition: {
-    openapi: '3.0.0',
+  swaggerDefinition: {
     info: {
-      title: 'Adrenalux API',
-      version: '1.0.0',
-      description: 'API documentation for Adrenalux project',
+      title: "API",
+      version: "1.0.0",
+      description: "Documentación de la API"
     },
+    schemes: ["http"], 
+    servers: [
+      {
+        url: "http://54.37.50.18:3000"
+      }
+    ]
   },
-
-  apis: ['./api/routes/*.js'], 
+  apis: ["./routes/*.js"] 
 };
 
 const swaggerDocs = swaggerJsdoc(options);
