@@ -1,7 +1,7 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 
-const swaggerOptions = {
+const options = {
   swaggerDefinition: {
     info: {
       title: "API",
