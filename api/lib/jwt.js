@@ -3,6 +3,10 @@ import passport from 'passport'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 import { jwtVerify } from 'jose';
 
+import * as dotenv from "dotenv";
+
+dotenv.config();
+
 const SECRET_KEY = new TextEncoder().encode(process.env.SECRET_KEY)
 
 /**

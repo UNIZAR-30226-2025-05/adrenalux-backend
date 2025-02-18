@@ -104,7 +104,18 @@ export async function getDecodedToken(req, res, next) {
 }
 
 export async function validateToken(req, res, next) {
-    const decoded = await getDecodedToken(req, res, next);
+
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next(new Unauthorized('Formato de token inválido'));
+  }
+
+  const token = authHeader.split(' ')[1];
+  
+  try {
+    // Verificar firma JWT
+    const decoded = await verifyToken(token);
 
     const [usuario] = await db
       .select({ id: user.id })
@@ -117,4 +128,7 @@ export async function validateToken(req, res, next) {
       status: { httpCode: 200 },
       data: { isValid: true }
     });
+  }catch (err) { 
+    return next(new Unauthorized('Token inválido'));
+  }
 }

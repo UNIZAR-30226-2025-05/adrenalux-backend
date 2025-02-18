@@ -1,22 +1,21 @@
 import { db } from '../config/db.js';
 import { eq } from 'drizzle-orm';
 import { sendResponse, NotFound, BadRequest } from '../lib/http.js';
-import { users } from '../db/schemas/user.js';
-import { TIPOS_DE_LOGROS} from '../lib/logros.js';
+import { user } from '../db/schemas/user.js';
 
 
 export async function getProfile(req, res, next) {
   try {
     const userId = req.user.id;
 
-    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    const [usuario] = await db.select().from(user).where(eq(user.id, userId));
 
     //coger de la base de datos id,name,email,friendCode,photo,adrenacoins,xp,levelxp,puntos,logros,partidas
     //devolver formato json 
 
-    if (!user) return next(new NotFound('Usuario no encontrado'));
+    if (!usuario) return next(new NotFound('Usuario no encontrado'));
 
-    return sendResponse(req, res, { data: user });
+    return sendResponse(req, res, { data: usuario });
   } catch (err) {
     next(err);
   }
