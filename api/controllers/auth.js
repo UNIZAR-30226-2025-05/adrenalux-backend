@@ -86,7 +86,7 @@ function generateFriendCode() {
     .join('-');                 
 }
 
-export async function validateToken(req, res, next) {
+export async function getDecodedToken(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -97,7 +97,14 @@ export async function validateToken(req, res, next) {
   
   try {
     // Verificar firma JWT
-    const decoded = await verifyToken(token);
+    return decoded = await verifyToken(token);
+  } catch (err) { 
+    return next(new Unauthorized('Token inválido'));
+  }
+}
+
+export async function validateToken(req, res, next) {
+    const decoded = await getDecodedToken(req, res, next);
 
     const [usuario] = await db
       .select({ id: user.id })
@@ -110,13 +117,4 @@ export async function validateToken(req, res, next) {
       status: { httpCode: 200 },
       data: { isValid: true }
     });
-
-  } catch (err) {
-    // Manejar diferentes tipos de errores
-    const message = err.name === 'TokenExpiredError' 
-      ? 'Token expirado' 
-      : 'Token inválido';
-      
-    return next(new Unauthorized(message));
-  }
 }

@@ -1,7 +1,9 @@
 import { db } from '../config/db.js';
-import { user } from '../db/schemas/user.js';
 import { eq } from 'drizzle-orm';
 import { sendResponse, NotFound, BadRequest } from '../lib/http.js';
+import { users } from '../db/schemas/user.js';
+import { TIPOS_DE_LOGROS} from '../lib/logros.js';
+
 
 export async function getProfile(req, res, next) {
   try {
@@ -177,3 +179,40 @@ export async function updateUserSettings(req, res, next) {
   }
 }
 
+export async function comprobarLogros(userId) {
+  const logrosObtenidos = new Map();
+
+  // Obtener los logros que el usuario aún no ha conseguido
+  logrosNoConseguidos = {}
+  // Obtener datos del usuario
+  datos_usuario = {}
+
+  for (const logro of logrosNoConseguidos) {
+    if (cumpleRequisitosLogro(logro, datos_usuario)) {
+      logrosObtenidos.set(logro.id, logro.tipo);
+    }
+  }
+
+  if (logrosObtenidos.size === 0) {
+    return null;
+  }
+
+  await insertarLogros(userId, logrosObtenidos);
+  return logrosObtenidos;
+}
+
+function cumpleRequisitosLogro(logro, usuario) {
+  const requisitos = {
+    'Partidas jugadas': usuario.partidas_jugadas,
+    'Partidas ganadas': usuario.partidas_ganadas,
+    'Sobres abiertos': usuario.sobres_abiertos,
+    'Cartas conseguidas': usuario.cartas_conseguidas,
+    'Nivel alcanzado': usuario.nivel,
+  };
+
+  return requisitos[logro.tipo] >= logro.requisito;
+}
+
+async function insertarLogros(userId, logrosObtenidos) {
+  // insertar logros obtenidos en la base de datos
+}
