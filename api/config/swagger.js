@@ -11,7 +11,7 @@ const options = {
     schemes: ["http"], 
     servers: [
       {
-        url: "http://localhost:3000"  
+        url: "http://54.37.50.18:3000"
       }
     ]
   },
