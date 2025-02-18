@@ -14,10 +14,10 @@ export const partida = pgTable('partida', {
   fecha: text('fecha').notNull()
     .default(new Date()
     .toISOString()), 
-  id_user1: integer('usuario1', { length: 50 })
+  user1_id: integer('usuario1')
     .notNull()
     .references(() => user.id), // Usuario local
-  id_user2: integer('usuario2', { length: 50 })
+  user2_id: integer('usuario2')
     .notNull()
     .references(() => user.id), // Usuario visitante
   torneo_id: integer('torneo_id')

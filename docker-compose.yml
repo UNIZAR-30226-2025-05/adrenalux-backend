@@ -13,6 +13,8 @@ services:
       - "5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
+    networks:
+      - adrenalux-network
 
   app:
     build: .
@@ -20,10 +22,20 @@ services:
     depends_on:
       - db
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DB_USER: ${DB_USER}
+      DB_HOST: ${DB_HOST}  
+      DB_NAME: ${DB_NAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PORT: 5432
     ports:
       - "3000:3000"
-    command: ["sh", "-c", "npx drizzle-kit push && node server.js"]
+    networks:
+      - adrenalux-network
+    command: ["sh", "-c", "npx drizzle-kit migrate && node server.js"]
+
+networks:
+  adrenalux-network:
+    driver: bridge
 
 volumes:
   pg_data:

@@ -141,6 +141,6 @@ router.post('/sign-out', authenticate, authCtrl.signOut);
  *         description: Error interno del servidor
  * 
  */
-router.get('/validate-token', authCtrl.validateToken);
+router.post('/validate-token', authCtrl.validateToken);
 
 export default router;

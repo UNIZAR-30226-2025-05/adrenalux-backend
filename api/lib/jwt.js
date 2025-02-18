@@ -1,6 +1,7 @@
 import { SignJWT } from 'jose'
 import passport from 'passport'
 import { ExtractJwt, Strategy } from 'passport-jwt'
+import { jwtVerify } from 'jose';
 
 const SECRET_KEY = new TextEncoder().encode(process.env.SECRET_KEY)
 
@@ -17,8 +18,14 @@ export async function createToken (payload) {
     .sign(SECRET_KEY)
 }
 
-export function verifyToken(token) {
-  return jwt.verify(token, process.env.JWT_SECRET);
+export async function verifyToken(token) {
+  try {
+    const { payload } = await jwtVerify(token, SECRET_KEY);
+    return payload; // Retorna el payload si la verificación es exitosa
+  } catch (error) {
+    console.error('Error al verificar el token:', error);
+    throw new Error('Token inválido o expirado');
+  }
 }
 
 /**

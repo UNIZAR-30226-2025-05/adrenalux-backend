@@ -4,8 +4,8 @@ import { user } from './user';
 import { logro } from './logro';
 
 export const logrosUsuario = pgTable('logrosUsuario', {
-  user_id: integer('user_id', { length: 50 }).notNull().references(() => user.id),
-  logro_id: integer('logro_id', { length: 50 }).notNull().references(() => logro.id),
+  user_id: integer('user_id').notNull().references(() => user.id),
+  logro_id: integer('logro_id').notNull().references(() => logro.id),
   created_at: timestamp('created_at').notNull().defaultNow(),
   achieved: boolean('achieved').notNull().default(false),
 }, (table) => [

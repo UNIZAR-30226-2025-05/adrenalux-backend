@@ -1,8 +1,8 @@
-import { pgTable, varchar, text, integer } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, serial, text, integer } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 export const user = pgTable('user', {
-  id: integer('id')
+  id: serial('id')
     .primaryKey(),
   username: varchar('username', { length: 50 })
     .notNull()
@@ -15,6 +15,8 @@ export const user = pgTable('user', {
   lastname: varchar('lastname', { length: 100 })
     .notNull(),
   password: text('password')
+    .notNull(),
+  salt: text('salt')  
     .notNull(),
   friend_code: varchar('friend_code', { length: 10 })
     .notNull()

@@ -1,7 +1,8 @@
-// api/lib/websocket.js
 import { Server } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid'; // Lo utilizaremos para generar IDs de sala unicos
 import {socketAuth} from '../middlewares/socket_auth.js';
+
+const connectedUsers = new Map();
 
 export function configureWebSocket(server) {
   const io = new Server(server, {
@@ -14,13 +15,32 @@ export function configureWebSocket(server) {
   io.use(socketAuth);
 
   io.on('connection', (socket) => {
-    console.log('Un usuario se ha conectado');
-
+    console.log(`Usuario conectado: ${socket.data.userID}`);
+  
+    // Guardar conexión
+    connectedUsers.set(socket.data.userID, socket);
+    
     socket.on('disconnect', () => {
-      console.log('Un usuario se ha desconectado');
-
+      connectedUsers.delete(socket.data.userID);
+      console.log(`Usuario desconectado: ${socket.data.userID}`);
     });
+
+    
   });
 
   return io;
+}
+
+export function sendNotification(toUserId, type, username) {
+  const targetSocket = connectedUsers.get(toUserId);
+  if (targetSocket) {
+    targetSocket.emit('notification', {
+      type: 'exchange',
+      message: `Nueva invitación de ${username}`,
+      data: {
+          type: type,
+          timestamp: new Date().toISOString()
+      }
+  });
+  } 
 }

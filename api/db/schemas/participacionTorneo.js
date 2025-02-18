@@ -4,10 +4,10 @@ import { torneo } from './torneo';
 import { user } from './user';
 
 export const participacionTorneo = pgTable('participacionTorneo', {
-  user_id: integer('user_id', { length: 50 })
+  user_id: integer('user_id')
     .notNull()
     .references(() => user.id),
-  torneo_id: integer('torneo_id', { length: 50 })
+  torneo_id: integer('torneo_id')
     .notNull()
     .references(() => torneo.id),
 }, (table) => [

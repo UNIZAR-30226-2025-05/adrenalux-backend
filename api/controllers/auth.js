@@ -1,9 +1,10 @@
 import { Conflict, InternalServer, NotFound, sendResponse, Unauthorized } from '../lib/http.js'
 import { createToken } from '../lib/jwt.js'
-//import { users } from '../db/schemas/users.js';
+import { user } from '../db/schemas/user.js';
 import { db } from '../config/db.js'; 
-import { pbkdf2Sync, randomBytes } from 'crypto'
+import { pbkdf2Sync, randomBytes, randomUUID  } from 'crypto'
 import { eq } from 'drizzle-orm'
+import { verifyToken } from '../lib/jwt.js';
 
 const HASH_CONFIG = {
   iterations: 100000,
@@ -20,26 +21,27 @@ const COOKIE_OPTIONS = {
 }
 
 export async function signUp(req, res, next) {
-  const { email, password } = req.body;
-  console.log('Email =', email, 'Password =', password);
+  const { email, password, username, name, lastname} = req.body;
 
   const salt = randomBytes(16).toString('hex');
   const hash = pbkdf2Sync(password, salt, HASH_CONFIG.iterations, HASH_CONFIG.keyLength, HASH_CONFIG.digest).toString('hex');
+  const generatedFriendCode = "HOLAHOLA";
 
   try {
-    /*
-    const result = await db.insert(user).values({ 
-      email, 
-      username, 
-      name, 
-      lastname, 
-      friend_code: generateFriendCode(),
-      salt, 
-      password: hash 
-    }).returning({ id: user.id });
-    
-*/
-    return sendResponse(req, res, { status: { httpCode: 201 }});
+    const result = await db.insert(user).values({
+        email: email,
+        password: hash,
+        salt: salt,
+        
+        username: username,
+        friend_code: generatedFriendCode,
+        name: name,          
+        lastname: lastname,   
+    });
+
+    return sendResponse(req, res, { 
+      status: { httpCode: 201 },
+    });
   } catch (err) {
     return next(new InternalServer());
   }
@@ -50,22 +52,21 @@ export async function signIn (req, res, next) {
 
   console.log('signin data:', email, password)
 
-  const [user] = await db
+  const [usuario] = await db
     .select({ id: user.id, salt: user.salt, password: user.password })
     .from(user)
     .where(eq(user.email, email))
 
-  if (!user) return next(new NotFound())
+  if (!usuario) return next(new NotFound())
 
-  const hash = pbkdf2Sync(password, user.salt, HASH_CONFIG.iterations, HASH_CONFIG.keyLength, HASH_CONFIG.digest).toString('hex')
+  const hash = pbkdf2Sync(password, usuario.salt, HASH_CONFIG.iterations, HASH_CONFIG.keyLength, HASH_CONFIG.digest).toString('hex')
 
-  if (hash !== user.password) return next(new Unauthorized())
+  if (hash !== usuario.password) return next(new Unauthorized())
 
-  const token = await createToken({ id: user.id, email: user.email })
+  const token = await createToken({ id: usuario.id, email: usuario.email })
 
   res.cookie('session-token', token, COOKIE_OPTIONS)
-  //decolver los temas de sesion y el nombre de usuario
-  // foto de perfil 
+
   return sendResponse(req, res, { data: { token } })
 }
 
@@ -74,30 +75,20 @@ export async function signOut (req, res) {
   return sendResponse(req, res)
 }
 
-
-async function generateUniqueFriendCode() {
-  let friendCode;
-  let exists = true;
-
-  while (exists) {
-    friendCode = Math.random().toString(36).substr(2, 9).toUpperCase();
-
-    // Verificar si ya existe en la base de datos
-    const [user] = await db.select().from(user).where(eq(user.friend_code, friendCode));
-
-    if (!user) {
-      exists = false;
-    }
-  }
-
-  return friendCode;
+function generateFriendCode() {
+  const uuid = randomUUID(); 
+  
+  return uuid
+    .replace(/-/g, '')           
+    .substring(0, 9)           
+    .toUpperCase()              
+    .match(/.{1,4}/g)        
+    .join('-');                 
 }
-
 
 export async function validateToken(req, res, next) {
   const authHeader = req.headers.authorization;
-  
-  // Verificar existencia del header
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return next(new Unauthorized('Formato de token inválido'));
   }
@@ -107,16 +98,14 @@ export async function validateToken(req, res, next) {
   try {
     // Verificar firma JWT
     const decoded = await verifyToken(token);
-    
-    // Verificar usuario en base de datos
-    const [user] = await db
+
+    const [usuario] = await db
       .select({ id: user.id })
       .from(user)
       .where(eq(user.id, decoded.id));
 
-    if (!user) return next(new NotFound('Usuario no existe'));
+    if (!usuario) return next(new NotFound('Usuario no existe'));
 
-    // Respuesta exitosa
     return sendResponse(req, res, { 
       status: { httpCode: 200 },
       data: { isValid: true }
