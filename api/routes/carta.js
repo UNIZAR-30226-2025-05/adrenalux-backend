@@ -1,6 +1,6 @@
 import express from 'express';
 import * as cartas from '../controllers/cartas.js';
-
+import { authenticate } from '../middlewares/auth.js';
 
 const router = express.Router();
 
@@ -250,5 +250,7 @@ router.get('/abrirSobreRandom', cartas.abrirSobreRandom);
  * router.get('/ofertasIntercambio/:userId', cartas.obtenerOfertasIntercambio());
  * router.post('/aceptarIntercambio', cartas.aceptarIntercambio());
 */
+
+router.get('/sobres',authenticate, cartas.sobresDisponibles);
 
 export default router;

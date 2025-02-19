@@ -86,23 +86,6 @@ function generateFriendCode() {
     .join('-');                 
 }
 
-export async function getDecodedToken(req, res, next) {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return next(new Unauthorized('Formato de token inválido'));
-  }
-
-  const token = authHeader.split(' ')[1];
-  
-  try {
-    // Verificar firma JWT
-    return decoded = await verifyToken(token);
-  } catch (err) { 
-    return next(new Unauthorized('Token inválido'));
-  }
-}
-
 export async function validateToken(req, res, next) {
 
   const authHeader = req.headers.authorization;

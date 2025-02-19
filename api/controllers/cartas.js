@@ -1,6 +1,9 @@
 import { sendResponse } from '../lib/http.js';
 import { Unauthorized, BadRequest } from '../lib/http.js';
-import { getDecodedToken } from './auth.js';
+import { getDecodedToken } from '../lib/jwt.js';
+import fs from 'fs';
+import path from 'path';
+
 import {
   TIPOS_SOBRES,
   JUGADORES_POR_SOBRE,
@@ -142,6 +145,30 @@ export async function filtrarCartas(req, res, next) {
   return sendResponse(req, res, { data: resultado });
 }
 
+export async function sobresDisponibles(req, res, next) {
+  const sobresDir = path.join(process.cwd(), 'api/images/sobres');
+  console.log(`📂 Intentando leer la carpeta: ${sobresDir}`);
+  fs.readdir(sobresDir, (err, files) => {
+    if (err) {
+      return res.status(500).json({ error: "Error al leer la carpeta de sobres" });
+    }
+
+    const sobres = files
+      .filter(file => /\.(png|jpg|jpeg|gif)$/i.test(file)) // Filtrar solo imágenes
+      .map(file => {
+        const filePath = path.join(sobresDir, file);
+        const imageBuffer = fs.readFileSync(filePath);
+        const base64Image = imageBuffer.toString('base64');
+        return {
+          filename: file,
+          image: `data:image/png;base64,${base64Image}` // Ajusta el tipo según el formato de imagen
+        };
+      });
+
+    res.json(sobres);
+  });
+}
+
 function aplicarFiltros(parametros) {
   const filtros = {};
   const posiblesFiltros = Object.values(TIPOS_FILTROS);
@@ -174,3 +201,4 @@ function tieneSobreGratis(usuario) {
 function restarSobre(usuario) {
   // Lógica para restar un sobre gratuito al usuario
 }
+

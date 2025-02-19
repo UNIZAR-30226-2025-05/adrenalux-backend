@@ -45,6 +45,24 @@ function fromCookie (req) {
   return token
 };
 
+export async function getDecodedToken(req) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next(new Unauthorized('Formato de token inválido'));
+  }
+
+  const token = authHeader.split(' ')[1];
+  
+  try {
+    const decoded = await verifyToken(token);
+    return decoded;
+    
+  } catch (err) { 
+    return next(new Unauthorized('Token inválido'));
+  }
+}
+
 const options = {
   jwtFromRequest: ExtractJwt.fromExtractors([ExtractJwt.fromAuthHeaderAsBearerToken(), fromCookie]),
   secretOrKey: SECRET_KEY
