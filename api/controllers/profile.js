@@ -16,6 +16,7 @@ export async function getProfile(req, res, next) {
     console.log("Token decodificado:", token);
     console.log("ID de usuario:", userId);
 
+    // Consulta usuario
     const [usuario] = await db.select().from(user).where(eq(user.id, userId));
     if (!usuario) return next(new NotFound('Usuario no encontrado'));
 
@@ -24,8 +25,8 @@ export async function getProfile(req, res, next) {
       logros = await db
         .select()
         .from(logrosUsuario)
-        .where(eq(logrosUsuario.user_id, userId))
-        .join(logro, eq(logrosUsuario.logro_id, logro.id));
+        .leftJoin(logro, eq(logrosUsuario.logro_id, logro.id))
+        .where(eq(logrosUsuario.user_id, userId));
 
       if (logros.length === 0) {
         console.log('El usuario no tiene logros.');
@@ -40,7 +41,10 @@ export async function getProfile(req, res, next) {
       partidas = await db
         .select()
         .from(partida)
-        .where(eq(partida.user1_id, userId).or(eq(partida.user2_id, userId)));
+        .where(or(
+          eq(partida.user1_id, userId),
+          eq(partida.user2_id, userId)
+        ));
 
       if (partidas.length === 0) {
         console.log('El usuario no tiene partidas.');
@@ -59,13 +63,13 @@ export async function getProfile(req, res, next) {
       logros: logrosJson,
       partidas: partidasJson
     };
+    
     return sendResponse(req, res, { data: responseJson });
   } catch (err) {
     console.error("Error inesperado:", err);
     next(err);
   }
 }
-
 export async function updateProfile(req, res, next) {
   try {
     const userId = req.user.id;
