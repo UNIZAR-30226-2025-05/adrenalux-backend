@@ -1,27 +1,75 @@
 import { db } from '../config/db.js';
-import { eq } from 'drizzle-orm';
+import { eq,or } from 'drizzle-orm';
 import { sendResponse, NotFound, BadRequest } from '../lib/http.js';
-import { users } from '../db/schemas/user.js';
-import { TIPOS_DE_LOGROS} from '../lib/logros.js';
+import { user } from '../db/schemas/user.js';
+import { partida } from '../db/schemas/partida.js';
+import { logro } from '../db/schemas/logro.js';
+import { logrosUsuario } from '../db/schemas/logrosUsuario.js';
+import { getDecodedToken } from '../lib/jwt.js';
+import { objectToJson } from '../lib/toJson.js';
 
 
 export async function getProfile(req, res, next) {
   try {
-    const userId = req.user.id;
+    const token = await getDecodedToken(req);
+    const userId = token.id;
+    console.log("Token decodificado:", token);
+    console.log("ID de usuario:", userId);
 
-    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    // Consulta usuario
+    const [usuario] = await db.select().from(user).where(eq(user.id, userId));
+    if (!usuario) return next(new NotFound('Usuario no encontrado'));
 
-    //coger de la base de datos id,name,email,friendCode,photo,adrenacoins,xp,levelxp,puntos,logros,partidas
-    //devolver formato json 
+    let logros = [];
+    try {
+      logros = await db
+        .select()
+        .from(logrosUsuario)
+        .leftJoin(logro, eq(logrosUsuario.logro_id, logro.id))
+        .where(eq(logrosUsuario.user_id, userId));
 
-    if (!user) return next(new NotFound('Usuario no encontrado'));
+      if (logros.length === 0) {
+        console.log('El usuario no tiene logros.');
+      }
+    } catch (logrosError) {
+      console.error('Error al obtener logros:', logrosError);
+      return next(logrosError);
+    }
 
-    return sendResponse(req, res, { data: user });
+    let partidas = [];
+    try {
+      partidas = await db
+        .select()
+        .from(partida)
+        .where(or(
+          eq(partida.user1_id, userId),
+          eq(partida.user2_id, userId)
+        ));
+
+      if (partidas.length === 0) {
+        console.log('El usuario no tiene partidas.');
+      }
+    } catch (partidasError) {
+      console.error('Error al obtener partidas:', partidasError);
+      return next(partidasError);
+    }
+
+    const usuarioJson = objectToJson(usuario);
+    const logrosJson = logros.map(logro => objectToJson(logro));
+    const partidasJson = partidas.map(partida => objectToJson(partida));
+
+    const responseJson = {
+      ...usuarioJson,
+      logros: logrosJson,
+      partidas: partidasJson
+    };
+    
+    return sendResponse(req, res, { data: responseJson });
   } catch (err) {
+    console.error("Error inesperado:", err);
     next(err);
   }
 }
-
 export async function updateProfile(req, res, next) {
   try {
     const userId = req.user.id;

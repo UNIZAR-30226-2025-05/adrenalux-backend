@@ -1,0 +1,23 @@
+{
+    "usuario": {
+      "id": 1,
+      "name": "Test",
+      "lastname": "test",
+      "adrenacoins": 0,
+      "xp": 0,
+      "lvl": 1,
+      "puntosClasificacion": 0,
+      "username": "TestUser",
+      "email": "test@test.com",
+      "password": "hashed_password",
+      "salt": "random_salt",
+      "friend_code": "HOLAHOLA"
+    },
+    "logros_usuario": [
+      { "id": 1, "user_id": 1, "logro_id": 1 }
+    ],
+    "partida": [
+      { "id": 1, "user1_id": 1, "user2_id": 2 }
+    ]
+  }
+  

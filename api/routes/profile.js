@@ -77,7 +77,8 @@ const router = Router();
  *       404:
  *         description: Usuario no encontrado
  */
-router.get('/profile', authenticate, profile.getProfile);
+
+router.get('/', authenticate, profile.getProfile);
 
 /**
  * @swagger

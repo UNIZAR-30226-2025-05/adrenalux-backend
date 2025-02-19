@@ -1,7 +1,7 @@
 import { pgTable, boolean, timestamp,integer, primaryKey } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { user } from './user';
-import { logro } from './logro';
+import { user } from './user.js';
+import { logro } from './logro.js';
 
 export const logrosUsuario = pgTable('logrosUsuario', {
   user_id: integer('user_id').notNull().references(() => user.id),
