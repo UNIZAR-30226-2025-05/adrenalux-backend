@@ -9,16 +9,35 @@ import { objectToJson } from '../lib/toJson.js';
 export async function getProfile(req, res, next) {
   try {
     const token = await getDecodedToken(req);
-    const userId = token;
+    const userId = token.id;
     console.log("Token " + token);
 
+    // Obtener usuario
     const [usuario] = await db.select().from(user).where(eq(user.id, userId));
 
     if (!usuario) return next(new NotFound('Usuario no encontrado'));
+    
+    const logros = await db
+      .select()
+      .from(logrosUsuario)
+      .where(eq(logrosUsuario.user_id, userId))
+      .join(logro, eq(logrosUsuario.logro_id, logro.id));
+
+    const partidas = await db
+    .select()
+    .from(partida)
+    .where(eq(partida.user1_id, userId).or(eq(partida.user2_id, userId)));
 
     const usuarioJson = objectToJson(usuario);
+    const logrosJson = logros.map(logro => objectToJson(logro));
+    const partidasJson = partidas.map(partida => objectToJson(partida));
 
-    return sendResponse(req, res, {data: usuarioJson});
+    const responseJson = {
+      ...usuarioJson,
+      logros: logrosJson,
+      partidas: partidasJson
+    };
+    return sendResponse(req, res, { data: responseJson });
   } catch (err) {
     next(err);
   }
