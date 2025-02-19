@@ -2,6 +2,9 @@ import { db } from '../config/db.js';
 import { eq } from 'drizzle-orm';
 import { sendResponse, NotFound, BadRequest } from '../lib/http.js';
 import { user } from '../db/schemas/user.js';
+import { user } from '../db/schemas/partida.js';
+import { user } from '../db/schemas/logro.js';
+import { user } from '../db/schemas/logrosUsuario.js';
 import { getDecodedToken } from '../lib/jwt.js';
 import { objectToJson } from '../lib/toJson.js';
 
@@ -16,7 +19,7 @@ export async function getProfile(req, res, next) {
     const [usuario] = await db.select().from(user).where(eq(user.id, userId));
 
     if (!usuario) return next(new NotFound('Usuario no encontrado'));
-    
+
     const logros = await db
       .select()
       .from(logrosUsuario)
