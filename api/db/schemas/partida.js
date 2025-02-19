@@ -1,7 +1,7 @@
 import { pgTable, integer, varchar, text, serial } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { user } from './user';
-import { torneo } from './torneo';
+import { user } from './user.js';
+import { torneo } from './torneo.js';
 
 export const partida = pgTable('partida', {
   id: serial('id').primaryKey(), 
