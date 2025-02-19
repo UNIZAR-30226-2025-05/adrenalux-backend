@@ -9,6 +9,8 @@ export const amistad = pgTable('amistad', {
   user2_id: integer('user2_id')
     .notNull()
     .references(() => user.id),
+    estado: varchar('estado', { length: 10 })
+    .notNull(), // Valores posibles: 'pendiente', 'aceptada', 'rechazada'
   created_at: text('created_at')
     .notNull()
     .default(new Date().toISOString()),

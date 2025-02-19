@@ -10,7 +10,7 @@ export const logro = pgTable('logro',
       .notNull(),
     reward_amount: integer('reward_amount')
       .notNull(),
-    required_experience: integer('required_experience')
+    required_type: integer('required_type')
       .notNull(), 
  }
 );

@@ -13,13 +13,10 @@ import * as profile from '../controllers/profile.js';
 
 const profileSchema = z.object({
   username: z.string().min(3).max(50).optional(),
-  email: z.string().email().optional(),
   name: z.string().min(1).max(100).optional(),
   lastname: z.string().min(1).max(100).optional(),
   avatar: z.string().url().optional(),
-  clubfavorito: z.string().max(50).optional(),
   escudo: z.string().url().optional(),
-  fondo: z.string().url().optional(),
 });
 
 const router = Router();
@@ -32,13 +29,6 @@ const router = Router();
  *     tags: [Profile]
  *     security:
  *       - cookieAuth: []
- *     parameters:
- *       - in: query
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *         description: ID del usuario
  *     responses:
  *       200:
  *         description: Perfil obtenido exitosamente
@@ -77,8 +67,7 @@ const router = Router();
  *       404:
  *         description: Usuario no encontrado
  */
-
-router.get('/', authenticate, profile.getProfile);
+router.get('/profile', authenticate, profile.getProfile);
 
 /**
  * @swagger
@@ -119,20 +108,269 @@ router.get('/', authenticate, profile.getProfile);
  */
 router.put('/profile', authenticate, validateRequest(profileSchema), profile.updateProfile);
 
-/* Comentadas hasta que se implementen las funciones en el controller
-// Experiencia y logros
-router.get('/levelxp', authenticate, profile.getLevelxp);
-router.get('/experience', authenticate, profile.getExperience);
-router.get('/stats', authenticate, profile.getStats);
-router.get('/achievements', authenticate, profile.getAchievements);
+/**
+ * @swagger
+ * /profile/levelxp:
+ *   get:
+ *     summary: Obtener el nivel y la experiencia del usuario
+ *     tags: [Profile]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Nivel y experiencia obtenidos exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     level:
+ *                       type: integer
+ *                     experience:
+ *                       type: integer
+ *       404:
+ *         description: Usuario no encontrado
+ */
+router.get('/profile/levelxp', authenticate, profile.getLevelxp);
 
-// Amigos y solicitudes de amistad
-router.get('/friends', authenticate, profile.getFriends);
-router.get('/friend-requests', authenticate, profile.getFriendRequests);
-router.post('/friend-requests', authenticate, profile.sendFriendRequest);
+/**
+ * @swagger
+ * /profile/clasificacion:
+ *   get:
+ *     summary: Obtener los puntos de clasificación del usuario
+ *     tags: [Profile]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Puntos de clasificación obtenidos exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     puntosClasificacion:
+ *                       type: integer
+ *       404:
+ *         description: Usuario no encontrado
+ */
+router.get('/profile/clasificacion', authenticate, profile.getClasificacion);
 
-// Monedas y economía
-router.get('/adrenacoins', authenticate, profile.getAdrenacoins);
+/**
+ * @swagger
+ * /profile/adrenacoins:
+ *   get:
+ *     summary: Obtener los adrenacoins del usuario
+ *     tags: [Profile]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Adrenacoins obtenidos exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     adrenacoins:
+ *                       type: integer
+ *       404:
+ *         description: Usuario no encontrado
+ */
+router.get('/profile/adrenacoins', authenticate, profile.getAdrenacoins);
+
+/**
+ * @swagger
+ * /profile/friends:
+ *   get:
+ *     summary: Obtener la lista de amigos del usuario
+ *     tags: [Profile]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de amigos obtenida exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       username:
+ *                         type: string
+ *                       name:
+ *                         type: string
+ *                       lastname:
+ *                         type: string
+ *                       avatar:
+ *                         type: string
+ *       404:
+ *         description: Usuario no encontrado
+ */
+router.get('/profile/friends', authenticate, profile.getFriends);
+
+/**
+ * @swagger
+ * /profile/friend-requests:
+ *   get:
+ *     summary: Obtener las solicitudes de amistad pendientes
+ *     tags: [Profile]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Solicitudes de amistad obtenidas exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       username:
+ *                         type: string
+ *                       name:
+ *                         type: string
+ *                       lastname:
+ *                         type: string
+ *                       avatar:
+ *                         type: string
+ *       404:
+ *         description: Usuario no encontrado
+ */
+router.get('/profile/friend-requests', authenticate, profile.getFriendRequests);
+
+/**
+ * @swagger
+ * /profile/friend-requests:
+ *   post:
+ *     summary: Enviar una solicitud de amistad
+ *     tags: [Profile]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               friendId:
+ *                 type: integer
+ *                 description: ID del usuario al que se envía la solicitud
+ *     responses:
+ *       200:
+ *         description: Solicitud de amistad enviada correctamente
+ *       400:
+ *         description: Datos inválidos o el usuario ya es tu amigo
+ */
+router.post('/profile/friend-requests', authenticate, profile.sendFriendRequest);
+
+/**
+ * @swagger
+ * /profile/achievements:
+ *   get:
+ *     summary: Obtener los logros del usuario
+ *     tags: [Profile]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Logros obtenidos exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       nombre:
+ *                         type: string
+ *                       descripcion:
+ *                         type: string
+ *                       fechaObtencion:
+ *                         type: string
+ *       404:
+ *         description: Usuario no encontrado
+ */
+router.get('/profile/achievements', authenticate, profile.getAchievements);
+
+/**
+ * @swagger
+ * /profile/change-password:
+ *   put:
+ *     summary: Cambiar la contraseña del usuario
+ *     tags: [Profile]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               oldPassword:
+ *                 type: string
+ *                 description: Contraseña actual
+ *               newPassword:
+ *                 type: string
+ *                 description: Nueva contraseña
+ *     responses:
+ *       200:
+ *         description: Contraseña cambiada correctamente
+ *       400:
+ *         description: Contraseña actual incorrecta o datos inválidos
+ *       404:
+ *         description: Usuario no encontrado
+ */
+router.put('/profile/change-password', authenticate, profile.updatePassword);
+
+/**
+ * @swagger
+ * /profile:
+ *   delete:
+ *     summary: Eliminar la cuenta del usuario
+ *     tags: [Profile]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Cuenta eliminada correctamente
+ *       404:
+ *         description: Usuario no encontrado
+ */
+router.delete('/profile', authenticate, profile.deleteUser);
+
+// Comentadas hasta que se implementen las funciones en el controller
+/*
+router.get('/profile/stats', authenticate, profile.getStats);
+router.put('/profile/settings', authenticate, profile.updateUserSettings);
 */
 
 export default router;

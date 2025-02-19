@@ -7,6 +7,8 @@ import { logro } from '../db/schemas/logro.js';
 import { logrosUsuario } from '../db/schemas/logrosUsuario.js';
 import { getDecodedToken } from '../lib/jwt.js';
 import { objectToJson } from '../lib/toJson.js';
+import { amistad } from '../db/schemas/amistad.js';
+import { json } from 'stream/consumers';
 
 
 export async function getProfile(req, res, next) {
@@ -70,56 +72,112 @@ export async function getProfile(req, res, next) {
     next(err);
   }
 }
+
 export async function updateProfile(req, res, next) {
   try {
-    const userId = req.user.id;
+    const token = await getDecodedToken(req);
+    const userId = token.id;
+
+    console.log("Token decodificado:", token);
+    console.log("ID de usuario:", userId);
+
     const { username, name, lastname, avatar } = req.body;
 
-    if (!username && !name && !lastname && !avatar) {
-      return next(new BadRequest('No se enviaron cambios válidos'));
-    }
+    // Verificar si el usuario existe
+    const [usuario] = await db.select().from(user).where(eq(user.id, userId));
+    if (!usuario) return next(new NotFound('Usuario no encontrado'));
 
-    // Update user data in the database
-    // inserccion bd  
+    await db
+      .update(user)
+      .set({
+        username: username || usuario.username,
+        name: name || usuario.name,
+        lastname: lastname || usuario.lastname,
+        avatar: avatar || usuario.avatar,
+      })
+      .where(eq(user.id, userId));
 
-    return sendResponse(req, res, { message: 'Perfil actualizado correctamente' });
+    return sendResponse(req, res, { status: 204 });
   } catch (err) {
     next(err);
   }
 }
+
 
 export async function getLevelxp(req, res, next) {
   try {
-    const userId = req.user.id;
-    // Fetch level XP and experience from the database
-    // const levelxp = await db.select().from(users).where(eq(users.id, userId)).select(users.levelxp);
-    // const experience = await db.select().from(users).where(eq(users.id, userId)).select(users.xp);
-    // Return level XP in JSON format
-    return sendResponse(req, res, { data: levelxp });
+    const token = await getDecodedToken(req);
+    const userId = token.id;
+
+    const [usuario] = await db
+      .select({ level: user.level, experience: user.experience })
+      .from(user)
+      .where(eq(user.id, userId));
+
+    if (!usuario) return next(new NotFound('Usuario no encontrado'));
+
+    const responseJson = {
+      level: usuario.level,
+      experience: usuario.experience,
+    };
+
+    return sendResponse(req, res, { data: responseJson });
   } catch (err) {
     next(err);
   }
 }
 
-export async function getStats(req, res, next) {
+export async function getClasificacion(req, res, next) {
   try {
-    const userId = req.user.id;
-    // Fetch stats from the database
-    // const stats = await db.select().from(users).where(eq(users.id, userId)).select(users.stats);
-    // Return stats in JSON format
-    return sendResponse(req, res, { data: stats });
+    const token = await getDecodedToken(req);
+    const userId = token.id;
+
+    const [usuario] = await db
+      .select({ puntosClasificacion: user.puntosClasificacion })
+      .from(user)
+      .where(eq(user.id, userId));
+
+    if (!usuario) return next(new NotFound('Usuario no encontrado'));
+
+    const responseJson = {
+      puntosClasificacion: usuario.puntosClasificacion,
+    };
+
+    return sendResponse(req, res, { data: responseJson });
   } catch (err) {
     next(err);
   }
 }
+
 
 export async function getAchievements(req, res, next) {
   try {
-    const userId = req.user.id;
-    // Fetch achievements from the database
-    // const achievements = await db.select().from(users).where(eq(users.id, userId)).select(users.achievements);
-    // Return achievements in JSON format
-    return sendResponse(req, res, { data: achievements });
+    const token = await getDecodedToken(req);
+    const userId = token.id;
+
+    const [usuario] = await db.select().from(user).where(eq(user.id, userId));
+    if (!usuario) return next(new NotFound('Usuario no encontrado'));
+
+    let logros = [];
+    try {
+      logros = await db
+        .select()
+        .from(logrosUsuario)
+        .leftJoin(logro, eq(logrosUsuario.logro_id, logro.id))
+        .where(eq(logrosUsuario.user_id, userId));
+
+      if (logros.length === 0) {
+        console.log('El usuario no tiene logros.');
+      }
+    } catch (logrosError) {
+      console.error('Error al obtener logros:', logrosError);
+      return next(logrosError);
+    }
+    const logrosJson = logros.map(logro => objectToJson(logro));
+
+
+
+    return sendResponse(req, res, { data: logrosJson });
   } catch (err) {
     next(err);
   }
@@ -127,11 +185,35 @@ export async function getAchievements(req, res, next) {
 
 export async function getFriends(req, res, next) {
   try {
-    const userId = req.user.id;
-    // Fetch friends from the database
-    // const friends = await db.select().from(users).where(eq(users.id, userId)).select(users.friends);
-    // Return friends in JSON format
-    return sendResponse(req, res, { data: friends });
+    const token = await getDecodedToken(req);
+    const userId = token.id;
+
+    const [usuario] = await db.select().from(user).where(eq(user.id, userId));
+    if (!usuario) return next(new NotFound('Usuario no encontrado'));
+
+    const friends = await db
+      .select({
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        lastname: user.lastname,
+        avatar: user.avatar,
+      })
+      .from(amistad)
+      .leftJoin(user, or(
+        eq(amistad.user1_id, user.id), 
+        eq(amistad.user2_id, user.id)  
+      ))
+      .where(
+        or(
+          eq(amistad.user1_id, userId),
+          eq(amistad.user2_id, userId)  
+        )
+      )
+      .where(not(eq(user.id, userId)));
+
+    const friendsJson = friends.map(friend => objectToJson(friend));
+    return sendResponse(req, res, { data: friendsJson });
   } catch (err) {
     next(err);
   }
@@ -139,11 +221,33 @@ export async function getFriends(req, res, next) {
 
 export async function getFriendRequests(req, res, next) {
   try {
-    const userId = req.user.id;
-    // Fetch friend requests from the database
-    // const friendRequests = await db.select().from(users).where(eq(users.id, userId)).select(users.friendRequests);
-    // Return friend requests in JSON format
-    return sendResponse(req, res, { data: friendRequests });
+    const token = await getDecodedToken(req);
+    const userId = token.id;
+
+    const friendRequests = await db
+      .select({
+        username: user.username,
+        name: user.name,
+        lastname: user.lastname,
+        avatar: user.avatar,
+      })
+      .from(amistad)
+      .leftJoin(user, or(
+        eq(amistad.user1_id, user.id),
+        eq(amistad.user2_id, user.id) 
+      )
+      .where(
+        or(
+          eq(amistad.user1_id, userId), 
+          eq(amistad.user2_id, userId)  
+        )
+      )
+      .where(eq(amistad.estado, 'pendiente'))
+      .where(not(eq(user.id, userId))));
+    
+      const friendsJson = friendRequests.map(friendRequests => objectToJson(friendRequests));
+
+    return sendResponse(req, res, { data: friendsJson });
   } catch (err) {
     next(err);
   }
@@ -151,11 +255,17 @@ export async function getFriendRequests(req, res, next) {
 
 export async function sendFriendRequest(req, res, next) {
   try {
-    const userId = req.user.id;
+    const token = await getDecodedToken(req);
+    const userId = token.id;
     const { friendId } = req.body;
-    // Insert friend request into the database
-    // await db.insert().into(friendRequests).values({ userId, friendId });
-    return sendResponse(req, res, { message: 'Solicitud de amistad enviada correctamente' });
+
+    await db.insert(amistad).values({
+      user1_id: userId,
+      user2_id: friendId,
+      estado: 'penddiente',
+    });
+
+    return sendResponse(req, res, { message: 204 });
   } catch (err) {
     next(err);
   }
@@ -163,16 +273,28 @@ export async function sendFriendRequest(req, res, next) {
 
 export async function getAdrenacoins(req, res, next) {
   try {
-    const userId = req.user.id;
-    // Fetch adrenacoins from the database
-    // const adrenacoins = await db.select().from(users).where(eq(users.id, userId)).select(users.adrenacoins);
-    // Return adrenacoins in JSON format
-    return sendResponse(req, res, { data: adrenacoins });
+    const token = await getDecodedToken(req);
+    const userId = token.id;
+
+    const [usuario] = await db
+      .select({ adrenacoins: user.adrenacoins })
+      .from(user)
+      .where(eq(user.id, userId));
+
+    if (!usuario) return next(new NotFound('Usuario no encontrado'));
+
+    const responseJson = {
+      adrenacoins: usuario.adrenacoins,
+    };
+
+    return sendResponse(req, res, { data: responseJson });
   } catch (err) {
     next(err);
   }
 }
 
+
+// no implementado
 export async function updatePassword(req, res, next) {
   try {
     const userId = req.user.id;
@@ -197,31 +319,13 @@ export async function updatePassword(req, res, next) {
 
 export async function deleteUser(req, res, next) {
   try {
-    const userId = req.user.id;
+    const token = await getDecodedToken(req);
+    const userId = token.id;
 
-    // Delete user from the database
-    // await db.delete().from(users).where(eq(users.id, userId));
-
+    // Delete user account from the database
+     await db.delete().from(users).where(eq(users.id, userId));
+   
     return sendResponse(req, res, { message: 'User account deleted successfully' });
-  } catch (err) {
-    next(err);
-  }
-}
-
-
-export async function updateUserSettings(req, res, next) {
-  try {
-    const userId = req.user.id;
-    const { settings } = req.body;
-
-    if (!settings) {
-      return next(new BadRequest('Settings data is required'));
-    }
-
-    // Update user settings in the database
-    // await db.update(users).set({ settings }).where(eq(users.id, userId));
-
-    return sendResponse(req, res, { message: 'Settings updated successfully' });
   } catch (err) {
     next(err);
   }
