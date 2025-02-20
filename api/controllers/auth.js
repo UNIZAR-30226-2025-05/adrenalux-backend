@@ -1,4 +1,4 @@
-import { Conflict, InternalServer, NotFound, sendResponse, Unauthorized } from '../lib/http.js'
+import { Conflict, InternalServer, NotFound, sendResponse, Unauthorized, BadRequest } from '../lib/http.js'
 import { createToken } from '../lib/jwt.js'
 import { user } from '../db/schemas/user.js';
 import { db } from '../config/db.js'; 
@@ -21,29 +21,35 @@ const COOKIE_OPTIONS = {
 }
 
 export async function signUp(req, res, next) {
-  const { email, password, username, name, lastname} = req.body;
+  const { email, password, username, name, lastname } = req.body;
 
-  const salt = randomBytes(16).toString('hex');
-  const hash = pbkdf2Sync(password, salt, HASH_CONFIG.iterations, HASH_CONFIG.keyLength, HASH_CONFIG.digest).toString('hex');
-  const generatedFriendCode = "HOLAHOLA";
+  if (!email || !password || !username || !name || !lastname) {
+    return next(new BadRequest("Todos los campos son obligatorios."));
+  }
 
   try {
-    const result = await db.insert(user).values({
-        email: email,
-        password: hash,
-        salt: salt,
-        
-        username: username,
-        friend_code: generatedFriendCode,
-        name: name,          
-        lastname: lastname,   
+    const salt = randomBytes(16).toString("hex");
+    const hash = pbkdf2Sync(password, salt, HASH_CONFIG.iterations, HASH_CONFIG.keyLength, HASH_CONFIG.digest).toString("hex");
+    const generatedFriendCode = await generateUniqueFriendCode();
+
+    await db.insert(user).values({
+      email,
+      password: hash,
+      salt,
+      username,
+      friend_code: generatedFriendCode,
+      name,
+      lastname,
     });
 
-    return sendResponse(req, res, { 
+    return sendResponse(req, res, {
       status: { httpCode: 201 },
+      message: "Usuario registrado exitosamente.",
     });
+
   } catch (err) {
-    return next(new InternalServer());
+    console.error("Error en el registro:", err);
+    return next(new InternalServer("Ocurrió un error al registrar el usuario."));
   }
 }
 
@@ -75,16 +81,18 @@ export async function signOut (req, res) {
   return sendResponse(req, res)
 }
 
-function generateFriendCode() {
-  const uuid = randomUUID(); 
-  
-  return uuid
-    .replace(/-/g, '')           
-    .substring(0, 9)           
-    .toUpperCase()              
-    .match(/.{1,4}/g)        
-    .join('-');                 
-}
+const generateUniqueFriendCode = async () => {
+  let friendCode;
+  let existingCode;
+
+  do {
+    friendCode = uuidv4().replace(/-/g, "").substring(0, 10).toUpperCase();
+    existingCode = await db.select().from(user).where({ friend_code: friendCode }).first(); 
+  } while (existingCode);
+
+  return friendCode;
+};
+
 
 export async function validateToken(req, res, next) {
 
