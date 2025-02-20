@@ -29,4 +29,9 @@ export const TIPOS_SOBRES = {
     [TIPOS_SOBRES.ELITE_LUX]: { NORMAL: 94, LUXURY: 4, MEGALUXURY: 1.5, LUXURYXI: 0.5 },
     [TIPOS_SOBRES.MASTER_LUX]: { NORMAL: 90, LUXURY: 6, MEGALUXURY: 3, LUXURYXI: 1 }
   };
-  
+  export const TIPOS_CARTAS = {
+    NORMAL: { nombre: 'Normal', MIN_ID: 1, MAX_ID: 550 },
+    LUXURY: { nombre: 'Luxury', MIN_ID: 551, MAX_ID: 600 },
+    MEGALUXURY: { nombre: 'Megaluxury', MIN_ID: 601, MAX_ID: 625 },
+    LUXURYXI: { nombre: 'Luxury XI', MIN_ID: 626, MAX_ID: 640 }
+  };

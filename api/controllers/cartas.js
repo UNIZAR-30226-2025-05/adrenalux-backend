@@ -8,10 +8,11 @@ import {
   TIPOS_SOBRES,
   JUGADORES_POR_SOBRE,
   PROBABILIDADES_SOBRES_GRATUITOS,
-  TIPOS_FILTROS,
   PRECIOS_SOBRES,
-  PROBABILIDADES_CARTAS
+  PROBABILIDADES_CARTAS,
+  TIPOS_CARTAS
 } from '../config/cartas.config.js'; 
+import { get } from 'https';
 
 // Funciones de generación de aperturas de sobres
 
@@ -66,13 +67,26 @@ function generarCartas(sobreConfig) {
   
   while (cartasGeneradas.length < sobreConfig.cantidadCartas) {
     const tipoCarta = generarTipoCarta(sobreConfig);
-    // const carta = seleccionarCarta(tipoCarta); función no definida
+     const carta = generarCarta(tipoCarta);
     // Necesitamos definir cómo seleccionar las cartas aquí
     if (cartaValida(carta)) {
       cartasGeneradas.push(carta);
     }
   }
   return cartasGeneradas;
+}
+
+function generarCarta(tipo) {
+  MIN = tipo.MIN_ID 
+  MAX = tipo.MAX_ID
+  idcarta =  Math.floor(Math.random() * (MAX - MIN + 1)) + MIN;
+  return getCarta(idcarta);
+
+}
+
+async function getCarta(id) {
+  const [carta] = await db.select().from(carta).where(eq(carta.id, id));
+  return carta;
 }
 
 function generarTipo() {
@@ -89,11 +103,11 @@ function generarTipo() {
 function generarTipoCarta(sobreConfig) {
   const random = Math.random() * 100;
   if (random < sobreConfig.probabilidades.ENERGIA_LUX) {
-    return TIPOS_SOBRES.ENERGIA_LUX;
+    return TIPOS_CARTAS.NORMAL;
   } else if (random < sobreConfig.probabilidades.ELITE_LUX) {
-    return TIPOS_SOBRES.ELITE_LUX;
+    return TIPOS_CARTAS.LUXURY;
   } else {
-    return TIPOS_SOBRES.MASTER_LUX;
+    return TIPOS_CARTAS.MEGALUXURY;
   }
 }
 
@@ -109,11 +123,9 @@ function obtenerDatosSobre(tipo) {
   };
 }
 
-function monedasInsuficientes(tipo, usuarioId) {
-  const monedas = obtenerMonedas(usuarioId);
-  const precio = PRECIOS_SOBRES[tipo].precio;
-
-  return monedas < precio;
+async function monedasInsuficientes(tipo, usuarioId) {
+  const [user] = await db.select().from(usuario).where(eq(usuario.id, usuarioId));
+  return user.monedas < PRECIOS_SOBRES[tipo].precio;
 }
 
 

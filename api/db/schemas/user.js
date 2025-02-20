@@ -1,6 +1,7 @@
 import { pgTable, varchar, serial, text, integer } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
+ // export const DEFAULT_AVATAR_URL = '../imagenes/profile/avatarDefault.png';
 export const user = pgTable('user', {
   id: serial('id')
     .primaryKey(),
@@ -33,7 +34,7 @@ export const user = pgTable('user', {
   puntosClasificacion: integer('puntosClasificacion')
     .notNull()
     .default(0),
-  avatar: text('avatar'),
+  avatar: text('avatar').default('../imagenes/profile/avatarDefault.png'),
   created_at: text('created_at')
     .notNull()
     .default(new Date().toISOString()),

@@ -28,7 +28,15 @@ const router = Router();
  *     summary: Obtener el perfil del usuario
  *     tags: [Profile]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *         description: Token JWT obtenido al iniciar sesión
  *     responses:
  *       200:
  *         description: Perfil obtenido exitosamente
@@ -76,7 +84,15 @@ router.get('/profile', authenticate, profile.getProfile);
  *     summary: Actualizar el perfil del usuario
  *     tags: [Profile]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *         description: Token JWT obtenido al iniciar sesión
  *     requestBody:
  *       required: true
  *       content:
@@ -115,7 +131,15 @@ router.put('/profile', authenticate, validateRequest(profileSchema), profile.upd
  *     summary: Obtener el nivel y la experiencia del usuario
  *     tags: [Profile]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *         description: Token JWT obtenido al iniciar sesión
  *     responses:
  *       200:
  *         description: Nivel y experiencia obtenidos exitosamente
@@ -143,7 +167,15 @@ router.get('/profile/levelxp', authenticate, profile.getLevelxp);
  *     summary: Obtener los puntos de clasificación del usuario
  *     tags: [Profile]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *         description: Token JWT obtenido al iniciar sesión
  *     responses:
  *       200:
  *         description: Puntos de clasificación obtenidos exitosamente
@@ -169,7 +201,15 @@ router.get('/profile/clasificacion', authenticate, profile.getClasificacion);
  *     summary: Obtener los adrenacoins del usuario
  *     tags: [Profile]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *         description: Token JWT obtenido al iniciar sesión
  *     responses:
  *       200:
  *         description: Adrenacoins obtenidos exitosamente
@@ -195,7 +235,15 @@ router.get('/profile/adrenacoins', authenticate, profile.getAdrenacoins);
  *     summary: Obtener la lista de amigos del usuario
  *     tags: [Profile]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *         description: Token JWT obtenido al iniciar sesión
  *     responses:
  *       200:
  *         description: Lista de amigos obtenida exitosamente
@@ -231,7 +279,15 @@ router.get('/profile/friends', authenticate, profile.getFriends);
  *     summary: Obtener las solicitudes de amistad pendientes
  *     tags: [Profile]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *         description: Token JWT obtenido al iniciar sesión
  *     responses:
  *       200:
  *         description: Solicitudes de amistad obtenidas exitosamente
@@ -267,7 +323,15 @@ router.get('/profile/friend-requests', authenticate, profile.getFriendRequests);
  *     summary: Enviar una solicitud de amistad
  *     tags: [Profile]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *         description: Token JWT obtenido al iniciar sesión
  *     requestBody:
  *       required: true
  *       content:
@@ -293,7 +357,15 @@ router.post('/profile/friend-requests', authenticate, profile.sendFriendRequest)
  *     summary: Obtener los logros del usuario
  *     tags: [Profile]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *         description: Token JWT obtenido al iniciar sesión
  *     responses:
  *       200:
  *         description: Logros obtenidos exitosamente
@@ -327,7 +399,15 @@ router.get('/profile/achievements', authenticate, profile.getAchievements);
  *     summary: Cambiar la contraseña del usuario
  *     tags: [Profile]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *         description: Token JWT obtenido al iniciar sesión
  *     requestBody:
  *       required: true
  *       content:
@@ -358,7 +438,15 @@ router.put('/profile/change-password', authenticate, profile.updatePassword);
  *     summary: Eliminar la cuenta del usuario
  *     tags: [Profile]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *         description: Token JWT obtenido al iniciar sesión
  *     responses:
  *       200:
  *         description: Cuenta eliminada correctamente

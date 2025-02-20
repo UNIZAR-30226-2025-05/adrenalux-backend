@@ -7,7 +7,10 @@ import { z } from 'zod';
 const authSchema = {
   body: z.object({
     email: z.string().email({ message: 'with invalid format' }),
-    password: z.string().min(6, { message: 'must be at least 6 characters long' })
+    password: z.string().min(6, { message: 'must be at least 6 characters long' }),
+    username: z.string().min(3, { message: 'must be at least 3 characters long' }),
+    name: z.string().min(1, { message: 'must be at least 1 character long' }),
+    lastname: z.string().min(1, { message: 'must be at least 1 character long' })
   })
 };
 
@@ -41,6 +44,16 @@ const router = Router();
  *                 type: string
  *                 minLength: 6
  *                 example: "123456"
+ *               username:
+ *                 type: string
+ *                 minLength: 3
+ *                 example: "usuario123"
+ *               name:
+ *                 type: string
+ *                 example: "Juan"
+ *               lastname:
+ *                 type: string
+ *                 example: "Pérez"
  *     responses:
  *       201:
  *         description: Usuario registrado exitosamente
@@ -139,8 +152,7 @@ router.post('/sign-out', authenticate, authCtrl.signOut);
  *               error: "Usuario no existe"
  *       500:
  *         description: Error interno del servidor
- * 
  */
-router.post('/validate-token', authCtrl.validateToken);
+router.get('/validate-token', authenticate, authCtrl.validateToken);
 
 export default router;
