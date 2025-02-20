@@ -2,7 +2,8 @@ import { Conflict, InternalServer, NotFound, sendResponse, Unauthorized, BadRequ
 import { createToken } from '../lib/jwt.js'
 import { user } from '../db/schemas/user.js';
 import { db } from '../config/db.js'; 
-import { pbkdf2Sync, randomBytes, randomUUID  } from 'crypto'
+import { pbkdf2Sync, randomBytes } from 'crypto'
+import { v4 as uuidv4} from 'uuid'
 import { eq } from 'drizzle-orm'
 import { verifyToken } from '../lib/jwt.js';
 
@@ -23,11 +24,38 @@ const COOKIE_OPTIONS = {
 export async function signUp(req, res, next) {
   const { email, password, username, name, lastname } = req.body;
 
+  // Validar campos requeridos
   if (!email || !password || !username || !name || !lastname) {
     return next(new BadRequest("Todos los campos son obligatorios."));
   }
 
   try {
+    const existingUser = await db
+    .select()
+    .from(user)
+    .where(eq(user.email, email))  
+    .limit(1)
+    .then(rows => rows[0]);  
+  
+    if (existingUser) {
+      return sendResponse(req, res, {
+        status: { httpCode: 400, errorMessage: "Este correo ya está en uso." },
+      });
+    }
+    
+    const existingUsername = await db
+      .select()
+      .from(user)
+      .where(eq(user.username, username))
+      .limit(1)
+      .then(rows => rows[0]);
+    
+    if (existingUsername) {
+      return sendResponse(req, res, {
+        status: { httpCode: 400, errorMessage: "Este nombre de usuario ya está en uso." },
+      });
+    }
+
     const salt = randomBytes(16).toString("hex");
     const hash = pbkdf2Sync(password, salt, HASH_CONFIG.iterations, HASH_CONFIG.keyLength, HASH_CONFIG.digest).toString("hex");
     const generatedFriendCode = await generateUniqueFriendCode();
@@ -87,7 +115,12 @@ const generateUniqueFriendCode = async () => {
 
   do {
     friendCode = uuidv4().replace(/-/g, "").substring(0, 10).toUpperCase();
-    existingCode = await db.select().from(user).where({ friend_code: friendCode }).first(); 
+    const existingCode = await db
+    .select()
+    .from(user)
+    .where(eq(user.friend_code, friendCode))
+    .limit(1)
+    .then(rows => rows[0]);
   } while (existingCode);
 
   return friendCode;
