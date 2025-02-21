@@ -14,6 +14,7 @@ import cartasRoutes from './routes/carta.js';
 import amigosRoutes from './routes/amigos.js';
 import profileRouter from './routes/profile.js'
 import partidasRouter from './routes/partidas.js'
+import jugadores from './routes/jugadores.js'
 import * as dotenv from "dotenv";
 
 const logger = pinoHttp(loggerHttp)
@@ -45,5 +46,6 @@ app.use('/api/v1/amigos', amigosRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use('/api/v1/profile', profileRouter)
 app.use('/api/v1/partidas', partidasRouter)
+//app.use('api/v1/jugadores', jugadores)
 
 app.use(errorHandler)

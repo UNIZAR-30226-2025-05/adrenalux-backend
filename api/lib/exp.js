@@ -1,5 +1,5 @@
 import { db } from '../config/db.js';
-import { users } from '../db/schemas/user.js';
+import { user } from '../db/schemas/user.js';
 import { eq } from 'drizzle-orm';
 
 const XP_INCREMENTO_NIVEL = 1.2; // Aumento del requisito de XP por nivel
@@ -31,22 +31,18 @@ async function comprobarSubidaNivel(usuario, nuevaXp) {
 
   // Actualizar la base de datos con los nuevos valores
   await db
-    .update(users)
+    .update(user)
     .set({ xp: nuevaXp, nivel: nivelNuevo, levelxp: nuevaXpMax })
-    .where(eq(users.id, userId));
+    .where(eq(user.id, userId));
 
   return {
-    userId,
-    xpAnterior,
     xpNuevo: nuevaXp,
-    nivelAnterior,
-    nivelNuevo,
-    nivelesSubidos
+    nivel: nivelNuevo,
   };
 }
 
 
 async function obtenerUsuario(userId) {
-  const [usuario] = await db.select().from(users).where(eq(users.id, userId));
-  return usuario || null;
+  const [user] = await db.select().from(user).where(eq(user.id, userId));
+  return user || null;
 }

@@ -3,7 +3,14 @@ import { Unauthorized, BadRequest } from '../lib/http.js';
 import { getDecodedToken } from '../lib/jwt.js';
 import fs from 'fs';
 import path from 'path';
-
+import {user} from '../db/schemas/user.js';
+import {coleccion} from '../db/schemas/coleccion.js';
+import {carta} from '../db/schemas/carta.js';
+import{restarMonedas} from '../lib/monedas.js';
+import { agregarMonedas } from '../lib/monedas.js';
+import{agregarExp} from '../lib/exp.js';
+import { get } from 'https';
+import { RECOMPENSAS } from '../config/recompensas.config.js';
 import {
   TIPOS_SOBRES,
   JUGADORES_POR_SOBRE,
@@ -12,7 +19,6 @@ import {
   PROBABILIDADES_CARTAS,
   TIPOS_CARTAS
 } from '../config/cartas.config.js'; 
-import { get } from 'https';
 
 // Funciones de generación de aperturas de sobres
 
@@ -28,10 +34,20 @@ export async function abrirSobre(req, res, next) {
   if (monedasInsuficientes(tipo, userId)) {
     return next(new Unauthorized({ message: 'Monedas insuficientes' }));
   }
+  restarMonedas(tipo, userId);
   const cartas = generarSobre(tipo);
-  // Añadir las cartas a la base de datos
-  // Restar monedas al usuario
-  return sendResponse(req, res, { data: { cartas } });
+  insertarCartaEnColeccion(cartaId, userId);
+  nuevaXP,nivel = agregarExp(userId,RECOMPENSAS.ABRIR_SOBRE_EXP);
+
+  const cartasJson = cartas.map(carta => objectToJson(carta));
+
+  responeJson = {
+    tipo: tipo,
+    cartas: cartasJson,
+    XP: nuevaXP,
+    nivel: nivel
+  }
+  return sendResponse(req, res, { data: {responeJson} });
 }
 
 export async function abrirSobreRandom(req, res, next) {
@@ -48,9 +64,30 @@ export async function abrirSobreRandom(req, res, next) {
   }
   restarSobre(userId);
   const cartas = generarSobre(tipo);
-  // Añadir las cartas a la base de datos 
-  return sendResponse(req, res, { data: { tipo, cartas } });
+  insertarCartaEnColeccion(cartaId, userId);
+  nuevaXP,nivel = agregarExp(userId,RECOMPENSAS.ABRIR_SOBRE_EXP);
+
+  const cartasJson = cartas.map(carta => objectToJson(carta));
+
+  responeJson = {
+    tipo: tipo,
+    cartas: cartasJson,
+    XP: nuevaXP,
+    nivel: nivel
+  }
+  return sendResponse(req, res, { data: {responeJson} });
 }
+
+async function insertarCartaEnColeccion(cartaId, userId) {
+  const [existingEntry] = await db.select().from(coleccion).where(and(eq(coleccion.carta_id, cartaId), eq(coleccion.user_id, userId)));
+
+  if (existingEntry) {
+    await db.update(coleccion).set({ cantidad: existingEntry.cantidad + 1 }).where(eq(coleccion.id, existingEntry.id));
+  } else {
+    await db.insert(coleccion).values({ carta_id: cartaId, user_id: userId, cantidad: 1 });
+  }
+}
+
 
 function generarSobre(tipo) {
   if (!tipoSobreDefinido(tipo)) {
@@ -69,7 +106,7 @@ function generarCartas(sobreConfig) {
     const tipoCarta = generarTipoCarta(sobreConfig);
      const carta = generarCarta(tipoCarta);
     // Necesitamos definir cómo seleccionar las cartas aquí
-    if (cartaValida(carta)) {
+    if (cartaValida(carta,tipoCarta)) {
       cartasGeneradas.push(carta);
     }
   }
@@ -87,6 +124,19 @@ function generarCarta(tipo) {
 async function getCarta(id) {
   const [carta] = await db.select().from(carta).where(eq(carta.id, id));
   return carta;
+}
+
+async function cartaValida(carta, tipoCarta) {
+  try {
+    const [existe] = await db
+      .select()
+      .from(coleccion)
+      .where(and((coleccion.carta_id, carta.id), eq(coleccion.tipo, tipoCarta)));
+    return !!existe;
+  } catch (error) {
+    console.error('Error al validar la carta:', error);
+    return false; // En caso de error, devuelve false
+  }
 }
 
 function generarTipo() {
@@ -124,8 +174,8 @@ function obtenerDatosSobre(tipo) {
 }
 
 async function monedasInsuficientes(tipo, usuarioId) {
-  const [user] = await db.select().from(usuario).where(eq(usuario.id, usuarioId));
-  return user.monedas < PRECIOS_SOBRES[tipo].precio;
+  const [user] = await db.select().from(user).where(eq(user.id, usuarioId));
+  return user.adrenacoins < PRECIOS_SOBRES[tipo].precio;
 }
 
 

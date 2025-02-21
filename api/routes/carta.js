@@ -118,14 +118,6 @@ router.get('/abrirSobre/:tipo', cartas.abrirSobre);
  */
 router.get('/abrirSobreRandom', cartas.abrirSobreRandom);
 
-/* Comentadas hasta que se implementen las funciones en el controller
- * router.post('/comprarSobre', cartas.comprarSobre());
- * router.get('/sobresDisponibles/:userId', cartas.sobresDisponibles());
- * router.get('/historialSobres/:userId', cartas.historialSobres());
- * router.post('/intercambiarCartas', cartas.intercambiarCartas());
- * router.get('/ofertasIntercambio/:userId', cartas.obtenerOfertasIntercambio());
- * router.post('/aceptarIntercambio', cartas.aceptarIntercambio());
-*/
 
 router.get('/sobres',authenticate, cartas.sobresDisponibles);
 

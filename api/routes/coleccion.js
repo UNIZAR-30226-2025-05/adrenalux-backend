@@ -131,9 +131,4 @@ router.get('/filtrarCartas', coleccion.filtrarCartas);
 
 
 
-/* Comentadas hasta que se implementen las funciones en el controller
-
-*/
-
-
 export default router;
