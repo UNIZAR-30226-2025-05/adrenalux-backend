@@ -1,5 +1,5 @@
 export const TIPOS_SOBRES = {
-    ENERGIA_LUX: 'Sobre Energía Lux',
+    ENERGIA_LUX: 'Sobre Energia Lux',
     ELITE_LUX: 'Sobre Elite Lux',
     MASTER_LUX: 'Sobre Master Lux'
   };

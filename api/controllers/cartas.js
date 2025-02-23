@@ -180,27 +180,22 @@ async function monedasInsuficientes(tipo, usuarioId) {
 
 
 export async function sobresDisponibles(req, res, next) {
-  const sobresDir = path.join(process.cwd(), 'api/images/sobres');
-  console.log(`📂 Intentando leer la carpeta: ${sobresDir}`);
-  fs.readdir(sobresDir, (err, files) => {
-    if (err) {
-      return res.status(500).json({ error: "Error al leer la carpeta de sobres" });
+    try {
+        const basePath = '/public/images/sobres/';
+        
+        const sobres = Object.keys(TIPOS_SOBRES).map(key => {
+            const tipo = TIPOS_SOBRES[key];
+            return {
+                tipo,
+                imagen: `${basePath}${tipo.toLowerCase().replace(/\s+/g, '_')}.png`,
+                precio: PRECIOS_SOBRES[tipo]?.precio || 0
+            };
+        });
+        
+        res.json(sobres);
+    } catch (error) {
+        next(error);
     }
-
-    const sobres = files
-      .filter(file => /\.(png|jpg|jpeg|gif)$/i.test(file)) // Filtrar solo imágenes
-      .map(file => {
-        const filePath = path.join(sobresDir, file);
-        const imageBuffer = fs.readFileSync(filePath);
-        const base64Image = imageBuffer.toString('base64');
-        return {
-          filename: file,
-          image: `data:image/png;base64,${base64Image}` // Ajusta el tipo según el formato de imagen
-        };
-      });
-
-    res.json(sobres);
-  });
 }
 
 

@@ -16,6 +16,11 @@ import profileRouter from './routes/profile.js'
 import partidasRouter from './routes/partidas.js'
 import jugadores from './routes/jugadores.js'
 import * as dotenv from "dotenv";
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const logger = pinoHttp(loggerHttp)
 dotenv.config();
@@ -46,6 +51,7 @@ app.use('/api/v1/amigos', amigosRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use('/api/v1/profile', profileRouter)
 app.use('/api/v1/partidas', partidasRouter)
+app.use('/public/images', express.static(path.join(__dirname, 'public', 'images')));
 //app.use('api/v1/jugadores', jugadores)
 
 app.use(errorHandler)
