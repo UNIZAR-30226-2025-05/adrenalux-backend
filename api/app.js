@@ -52,6 +52,6 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use('/api/v1/profile', profileRouter)
 app.use('/api/v1/partidas', partidasRouter)
 app.use('/public/images', express.static(path.join(__dirname, 'public', 'images')));
-//app.use('api/v1/jugadores', jugadores)
+app.use('api/v1/jugadores', jugadores)
 
 app.use(errorHandler)

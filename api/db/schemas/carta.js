@@ -7,7 +7,11 @@ export const carta = pgTable(
   {
     id: serial('id').primaryKey(), 
     nombre: varchar('nombre', { length: 25 }).notNull(),
+    alias: varchar('alias', { length: 25 }).notNull(),
+    posicion: varchar('posicion', { length: 25 }).notNull(),
     equipo: varchar('equipo', { length: 25 }).notNull(),
+    tipo_carta : varchar('tipo_carta', { length: 25 }).notNull(),
+    escudo: text('escudo').notNull(),
     pais: varchar('pais', { length: 25 }).notNull(),
     photo: text('photo').notNull(),
     defensa: integer('defensa').notNull(),
