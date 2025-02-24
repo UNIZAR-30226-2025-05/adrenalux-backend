@@ -4,13 +4,20 @@ import { authenticate } from '../middlewares/auth.js';
 import { Router } from 'express';
 import { z } from 'zod';
 
-const authSchema = {
+const signUpSchema = {
   body: z.object({
     email: z.string().email({ message: 'with invalid format' }),
     password: z.string().min(6, { message: 'must be at least 6 characters long' }),
     username: z.string().min(3, { message: 'must be at least 3 characters long' }),
     name: z.string().min(1, { message: 'must be at least 1 character long' }),
     lastname: z.string().min(1, { message: 'must be at least 1 character long' })
+  })
+};
+
+const signInSchema = {
+  body: z.object({
+    email: z.string().email({ message: 'with invalid format' }),
+    password: z.string().min(6, { message: 'must be at least 6 characters long' }),
   })
 };
 
@@ -60,7 +67,7 @@ const router = Router();
  *       400:
  *         description: Error en la validación de datos
  */
-router.post('/sign-up', validateRequest(authSchema), authCtrl.signUp);
+router.post('/sign-up', validateRequest(signUpSchema), authCtrl.signUp);
 
 /**
  * @swagger
@@ -89,7 +96,7 @@ router.post('/sign-up', validateRequest(authSchema), authCtrl.signUp);
  *       401:
  *         description: Credenciales inválidas
  */
-router.post('/sign-in', validateRequest(authSchema), authCtrl.signIn);
+router.post('/sign-in', validateRequest(signInSchema), authCtrl.signIn);
 
 /**
  * @swagger
@@ -153,6 +160,6 @@ router.post('/sign-out', authenticate, authCtrl.signOut);
  *       500:
  *         description: Error interno del servidor
  */
-router.get('/validate-token', authenticate, authCtrl.validateToken);
+router.post('/validate-token', authCtrl.validateToken);
 
 export default router;

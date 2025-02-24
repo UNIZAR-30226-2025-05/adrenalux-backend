@@ -119,6 +119,6 @@ router.get('/abrirSobre/:tipo', cartas.abrirSobre);
 router.get('/abrirSobreRandom', cartas.abrirSobreRandom);
 
 
-router.get('/sobres', cartas.sobresDisponibles);
+router.get('/sobres', authenticate, cartas.sobresDisponibles);
 
 export default router;

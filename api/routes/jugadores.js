@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate } from '../middlewares/auth.js';
+import { apiKeyAuth, authenticate } from '../middlewares/auth.js';
 import * as jugadores from '../controllers/jugadores.js';
 
 const router = express.Router();
@@ -59,7 +59,7 @@ const router = express.Router();
  *       401:
  *         description: No autorizado
  */
-router.post('/insertar', authenticate, jugadores.insertarCartas);
+router.post('/insertar', apiKeyAuth, jugadores.insertarCartas);
 
 
 
