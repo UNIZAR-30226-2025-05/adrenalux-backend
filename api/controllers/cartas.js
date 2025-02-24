@@ -1,15 +1,12 @@
 import { sendResponse } from '../lib/http.js';
 import { Unauthorized, BadRequest } from '../lib/http.js';
 import { getDecodedToken } from '../lib/jwt.js';
-import fs from 'fs';
-import path from 'path';
 import {user} from '../db/schemas/user.js';
 import {coleccion} from '../db/schemas/coleccion.js';
-import {carta} from '../db/schemas/carta.js';
 import{restarMonedas} from '../lib/monedas.js';
-import { agregarMonedas } from '../lib/monedas.js';
 import{agregarExp} from '../lib/exp.js';
-import { get } from 'https';
+import { db } from '../config/db.js'; 
+import { eq } from 'drizzle-orm'
 import { RECOMPENSAS } from '../config/recompensas.config.js';
 import {
   TIPOS_SOBRES,
@@ -23,7 +20,7 @@ import {
 // Funciones de generación de aperturas de sobres
 
 export async function abrirSobre(req, res, next) {
-  const { tipo } = req.body;
+  const { tipo } = req.params;
   const decodedToken = await getDecodedToken(req);
   const userId = decodedToken.id;
 
@@ -174,8 +171,8 @@ function obtenerDatosSobre(tipo) {
 }
 
 async function monedasInsuficientes(tipo, usuarioId) {
-  const [user] = await db.select().from(user).where(eq(user.id, usuarioId));
-  return user.adrenacoins < PRECIOS_SOBRES[tipo].precio;
+  const [usuario] = await db.select().from(user).where(eq(user.id, usuarioId));
+  return usuario.adrenacoins < PRECIOS_SOBRES[tipo].precio;
 }
 
 

@@ -60,7 +60,7 @@ const router = express.Router();
  *       400:
  *         description: Usuario no válido
  */
-router.get('/getColeccion/:userId', coleccion.obtenerColeccion);
+router.get('/', coleccion.obtenerColeccion);
 
 /**
  * @swagger

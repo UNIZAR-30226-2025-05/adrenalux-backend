@@ -11,10 +11,11 @@ import pinoHttp from 'pino-http'
 import swaggerUi from 'swagger-ui-express';
 import swaggerDocs from './config/swagger.js'; 
 import cartasRoutes from './routes/carta.js';
+import coleccionRoutes from './routes/coleccion.js';
 import amigosRoutes from './routes/amigos.js';
 import profileRouter from './routes/profile.js'
 import partidasRouter from './routes/partidas.js'
-import jugadores from './routes/jugadores.js'
+import jugadoresRouter from './routes/jugadores.js'
 import * as dotenv from "dotenv";
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -41,17 +42,18 @@ app.use(cors())
 app.use(logger)
 app.use(cookieParser(process.env.SECRET_KEY))
 app.use(express.urlencoded({ extended: true }))
-app.use(express.json())
+app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/v1/', timestamp)
 app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/health', healthRouter)
 app.use('/api/v1/cartas', cartasRoutes);
+app.use('/api/v1/coleccion', coleccionRoutes);
 app.use('/api/v1/amigos', amigosRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use('/api/v1/profile', profileRouter)
 app.use('/api/v1/partidas', partidasRouter)
 app.use('/public/images', express.static(path.join(__dirname, 'public', 'images')));
-app.use('api/v1/jugadores', jugadores)
+app.use('/api/v1/jugadores', jugadoresRouter)
 
 app.use(errorHandler)

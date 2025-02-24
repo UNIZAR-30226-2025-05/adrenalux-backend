@@ -59,7 +59,7 @@ const router = express.Router();
  *       401:
  *         description: No autorizado
  */
-router.post('/insertar', apiKeyAuth, jugadores.insertarCartas);
+router.post('/insertar', jugadores.insertarCartas);
 
 
 
