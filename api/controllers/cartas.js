@@ -2,11 +2,12 @@ import { sendResponse } from '../lib/http.js';
 import { Unauthorized, BadRequest } from '../lib/http.js';
 import { getDecodedToken } from '../lib/jwt.js';
 import {user} from '../db/schemas/user.js';
+import {carta} from '../db/schemas/carta.js';
 import {coleccion} from '../db/schemas/coleccion.js';
 import{restarMonedas} from '../lib/monedas.js';
 import{agregarExp} from '../lib/exp.js';
 import { db } from '../config/db.js'; 
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { RECOMPENSAS } from '../config/recompensas.config.js';
 import {
   TIPOS_SOBRES,
@@ -28,12 +29,15 @@ export async function abrirSobre(req, res, next) {
     return next(new BadRequest({ message: 'Tipo de sobre no definido' }));
   }
 
-  if (monedasInsuficientes(tipo, userId)) {
+  if (await monedasInsuficientes(tipo, userId)) {
     return next(new Unauthorized({ message: 'Monedas insuficientes' }));
   }
   restarMonedas(tipo, userId);
-  const cartas = generarSobre(tipo);
-  insertarCartaEnColeccion(cartaId, userId);
+  const cartas = generarSobre(tipo);  
+
+  cartas.forEach((carta) => {
+    insertarCartaEnColeccion(carta.id, userId);
+  });
   nuevaXP,nivel = agregarExp(userId,RECOMPENSAS.ABRIR_SOBRE_EXP);
 
   const cartasJson = cartas.map(carta => objectToJson(carta));
@@ -60,8 +64,11 @@ export async function abrirSobreRandom(req, res, next) {
     return next(new Unauthorized({ message: 'No tienes sobres gratis disponibles' }));
   }
   restarSobre(userId);
-  const cartas = generarSobre(tipo);
-  insertarCartaEnColeccion(cartaId, userId);
+  const cartas = generarSobre(tipo);  
+
+  cartas.forEach((carta) => {
+    insertarCartaEnColeccion(carta.id, userId);
+  });
   nuevaXP,nivel = agregarExp(userId,RECOMPENSAS.ABRIR_SOBRE_EXP);
 
   const cartasJson = cartas.map(carta => objectToJson(carta));
@@ -111,16 +118,15 @@ function generarCartas(sobreConfig) {
 }
 
 function generarCarta(tipo) {
-  MIN = tipo.MIN_ID 
-  MAX = tipo.MAX_ID
-  idcarta =  Math.floor(Math.random() * (MAX - MIN + 1)) + MIN;
+  let MIN = tipo.MIN_ID;
+  let MAX = tipo.MAX_ID;
+  let idcarta = Math.floor(Math.random() * (MAX - MIN + 1)) + MIN;
   return getCarta(idcarta);
-
 }
 
 async function getCarta(id) {
-  const [carta] = await db.select().from(carta).where(eq(carta.id, id));
-  return carta;
+  const [card] = await db.select().from(carta).where(eq(carta.id, id));
+  return card;
 }
 
 async function cartaValida(carta, tipoCarta) {
