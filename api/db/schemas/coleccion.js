@@ -9,7 +9,7 @@ export const coleccion = pgTable('coleccion',
   carta_id: integer('carta_id')
     .references(() => carta.id) 
     .notNull(),
-  id_user: integer('user_id', { length: 50 })
+  user_id: integer('user_id')
     .references(() => user.id) 
     .notNull(),
   cantidad: integer('cantidad').notNull().default(0),

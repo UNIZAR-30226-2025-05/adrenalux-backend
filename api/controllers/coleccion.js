@@ -81,6 +81,6 @@ async function generarResultadoColeccion(coleccion, cartasUsuario, userId) {
 }
 
 async function usuarioIdValido(userId) {
-  const [user] = await db.select().from(user).where(eq(user.id, userId));
-  return !!user;
+  const [usuario] = await db.select().from(user).where(eq(user.id, userId));
+  return !!usuario;
 }

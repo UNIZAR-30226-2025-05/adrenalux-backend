@@ -15,11 +15,13 @@ export async function agregarExp(userId, cantidad) {
 
 
 async function comprobarSubidaNivel(usuario, nuevaXp) {
-  const { id: userId, nivel, levelxp } = usuario;
-  const xpAnterior = usuario.xp;
+  let userId = usuario.id;
+  let nivel = usuario.level;
+  let xp = usuario.experience;
+  const xpAnterior = usuario.experience;
   const nivelAnterior = nivel;
   let nivelNuevo = nivel;
-  let nuevaXpMax = levelxp;
+  let nuevaXpMax = xp;
   let nivelesSubidos = 0;
 
   while (nuevaXp >= nuevaXpMax) {
@@ -32,7 +34,7 @@ async function comprobarSubidaNivel(usuario, nuevaXp) {
   // Actualizar la base de datos con los nuevos valores
   await db
     .update(user)
-    .set({ xp: nuevaXp, nivel: nivelNuevo, levelxp: nuevaXpMax })
+    .set({ xp: nuevaXp, level: nivelNuevo})
     .where(eq(user.id, userId));
 
   return {
@@ -43,6 +45,6 @@ async function comprobarSubidaNivel(usuario, nuevaXp) {
 
 
 async function obtenerUsuario(userId) {
-  const [user] = await db.select().from(user).where(eq(user.id, userId));
-  return user || null;
+  const [usuario] = await db.select().from(user).where(eq(user.id, userId));
+  return usuario || null;
 }

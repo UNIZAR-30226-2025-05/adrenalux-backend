@@ -2,11 +2,13 @@ import { sendResponse } from '../lib/http.js';
 import { Unauthorized, BadRequest } from '../lib/http.js';
 import { getDecodedToken } from '../lib/jwt.js';
 import {user} from '../db/schemas/user.js';
+import {carta} from '../db/schemas/carta.js';
 import {coleccion} from '../db/schemas/coleccion.js';
 import{restarMonedas} from '../lib/monedas.js';
 import{agregarExp} from '../lib/exp.js';
 import { db } from '../config/db.js'; 
-import { eq } from 'drizzle-orm'
+import { objectToJson } from '../lib/toJson.js';
+import { eq, and } from 'drizzle-orm'
 import { RECOMPENSAS } from '../config/recompensas.config.js';
 import {
   TIPOS_SOBRES,
@@ -28,23 +30,30 @@ export async function abrirSobre(req, res, next) {
     return next(new BadRequest({ message: 'Tipo de sobre no definido' }));
   }
 
-  if (monedasInsuficientes(tipo, userId)) {
+  if (await monedasInsuficientes(tipo, userId)) {
     return next(new Unauthorized({ message: 'Monedas insuficientes' }));
   }
-  restarMonedas(tipo, userId);
-  const cartas = generarSobre(tipo);
-  insertarCartaEnColeccion(cartaId, userId);
-  nuevaXP,nivel = agregarExp(userId,RECOMPENSAS.ABRIR_SOBRE_EXP);
+  restarMonedas(userId, PRECIOS_SOBRES[tipo].precio);
+  const cartas = await generarSobre(tipo);  
 
+  cartas.forEach((carta) => {
+    console.log("Carta: ", carta);
+    if (carta && carta.id) {
+      insertarCartaEnColeccion(carta.id, userId);
+    } else {
+      console.error('Carta no válida:', carta);
+    }
+  });
+  const { xpNuevo: nuevaXP, nivel } = await agregarExp(userId, RECOMPENSAS.ABRIR_SOBRE_EXP);
+  
   const cartasJson = cartas.map(carta => objectToJson(carta));
-
-  responeJson = {
+  let responseJson = {
     tipo: tipo,
     cartas: cartasJson,
     XP: nuevaXP,
     nivel: nivel
   }
-  return sendResponse(req, res, { data: {responeJson} });
+  return sendResponse(req, res, { data: {responseJson} });
 }
 
 export async function abrirSobreRandom(req, res, next) {
@@ -60,8 +69,11 @@ export async function abrirSobreRandom(req, res, next) {
     return next(new Unauthorized({ message: 'No tienes sobres gratis disponibles' }));
   }
   restarSobre(userId);
-  const cartas = generarSobre(tipo);
-  insertarCartaEnColeccion(cartaId, userId);
+  const cartas = generarSobre(tipo);  
+
+  cartas.forEach((carta) => {
+    insertarCartaEnColeccion(carta.id, userId);
+  });
   nuevaXP,nivel = agregarExp(userId,RECOMPENSAS.ABRIR_SOBRE_EXP);
 
   const cartasJson = cartas.map(carta => objectToJson(carta));
@@ -76,65 +88,88 @@ export async function abrirSobreRandom(req, res, next) {
 }
 
 async function insertarCartaEnColeccion(cartaId, userId) {
-  const [existingEntry] = await db.select().from(coleccion).where(and(eq(coleccion.carta_id, cartaId), eq(coleccion.user_id, userId)));
+  const [existingEntry] = await db.select()
+  .from(coleccion)
+  .innerJoin(carta, eq(coleccion.carta_id, carta.id))
+  .where(and(eq(coleccion.carta_id, cartaId), eq(coleccion.user_id, userId)));
 
-  if (existingEntry) {
-    await db.update(coleccion).set({ cantidad: existingEntry.cantidad + 1 }).where(eq(coleccion.id, existingEntry.id));
+  if (existingEntry && existingEntry.coleccion) {
+    await db.update(coleccion)
+      .set({ cantidad: existingEntry.coleccion.cantidad + 1 })
+      .where(eq(coleccion.id, existingEntry.coleccion.id));
   } else {
     await db.insert(coleccion).values({ carta_id: cartaId, user_id: userId, cantidad: 1 });
   }
 }
 
 
-function generarSobre(tipo) {
+async function generarSobre(tipo) {
   if (!tipoSobreDefinido(tipo)) {
     throw new Error('Tipo de sobre no definido');
   }
   const sobreConfig = obtenerDatosSobre(tipo);
-  const cartasGeneradas = generarCartas(sobreConfig);
+  const cartasGeneradas = await generarCartas(sobreConfig);
 
   return cartasGeneradas;
 }
 
-function generarCartas(sobreConfig) {
+async function generarCartas(sobreConfig) {
   const cartasGeneradas = [];
   
   while (cartasGeneradas.length < sobreConfig.cantidadCartas) {
     const tipoCarta = generarTipoCarta(sobreConfig);
-     const carta = generarCarta(tipoCarta);
+     const carta = await generarCarta(tipoCarta);
     // Necesitamos definir cómo seleccionar las cartas aquí
-    if (cartaValida(carta,tipoCarta)) {
+    if (cartaValida(carta)) {
       cartasGeneradas.push(carta);
     }
   }
   return cartasGeneradas;
 }
 
-function generarCarta(tipo) {
-  MIN = tipo.MIN_ID 
-  MAX = tipo.MAX_ID
-  idcarta =  Math.floor(Math.random() * (MAX - MIN + 1)) + MIN;
-  return getCarta(idcarta);
+async function generarCarta(tipo) {
+  let MIN = tipo.MIN_ID;
+  let MAX = tipo.MAX_ID;
+  let carta;
 
-}
+  do {
+    let idcarta = Math.floor(Math.random() * (MAX - MIN + 1)) + MIN;
+    carta = await getCarta(idcarta);
+  } while (!carta); 
 
-async function getCarta(id) {
-  const [carta] = await db.select().from(carta).where(eq(carta.id, id));
   return carta;
 }
 
-async function cartaValida(carta, tipoCarta) {
+async function getCarta(id) {
+  const [card] = await db.select()
+  .from(carta)
+  .where(eq(carta.id, id))
+  .then(result => result.map(c => ({ ...c })));
+  if (!card) {
+    console.error('Carta no encontrada para id:', id);
+  }
+  return card;
+}
+
+async function cartaValida(card) {
   try {
+    if (!card || !card.id) {
+      console.error('Carta inválida:', card);
+      return false;
+    }
+
     const [existe] = await db
       .select()
-      .from(coleccion)
-      .where(and((coleccion.carta_id, carta.id), eq(coleccion.tipo, tipoCarta)));
+      .from(carta)
+      .where(eq(carta.id, card.id));
+
     return !!existe;
   } catch (error) {
     console.error('Error al validar la carta:', error);
-    return false; // En caso de error, devuelve false
+    return false; 
   }
 }
+
 
 function generarTipo() {
   const random = Math.random() * 100;
