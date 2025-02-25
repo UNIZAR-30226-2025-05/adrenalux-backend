@@ -1,58 +1,41 @@
 import { db } from '../config/db.js';
-import { sendResponse, BadRequest } from '../lib/http.js';
-import { carta } from '../db/schemas/carta.js'; 
-import { TIPOS_CARTAS, CARTA_CONSTANTS } from '../config/cartas.config.js';
 
+import { sendResponse } from '../lib/http.js';
+import { BadRequest } from '../lib/http.js';
+import { carta } from '../db/schemas/carta.js';
+import { TIPOS_CARTAS } from '../config/cartas.config.js';
+import { CARTA_CONSTANTS } from '../config/cartas.config.js';
+
+
+// Controlador para insertar múltiples cartas en la base de datos
 export async function insertarCartas(req, res, next) {
+  const { jugadores } = req.body;
+
+  if (!Array.isArray(jugadores)) {
+    return next(new BadRequest({ message: 'El cuerpo de la solicitud debe ser un array de jugadores' }));
+  }
+
   try {
-    console.log("Body recibido:", JSON.stringify(req.body, null, 2)); 
-    const playersData = req.body;
-
-    if (!Array.isArray(playersData)) {
-      console.error("Error: El body no es un array:", playersData);
-      return next(new BadRequest({ message: "Se requiere un array de jugadores" }));
+    for (const jugador of jugadores) {
+      await insertarCartaEnBD(jugador);
     }
-
-    const results = [];
-    for (const player of playersData) {
-      try {
-        await insertarCartaEnBD(player); 
-        results.push({ success: true });
-      } catch (error) {
-        console.error("Error al insertar jugador:", error);
-        results.push({ success: false, error: error.message });
-      }
-    }
-
-    const insertedCount = results.filter(r => r.success).length;
-    sendResponse(req, res, {
-      inserted: insertedCount,
-      failed: playersData.length - insertedCount
-    }, 201);
+    return sendResponse(req, res, { message: 'Cartas insertadas exitosamente' });
   } catch (error) {
-    console.error('Error en inserción:', error);
+    return next(new Error('Error al insertar las cartas: ' + error.message));
   }
 }
-
-
 export async function insertarCartaEnBD(jugador) {
-  if (!jugador.photo || !jugador.pais || !jugador.name || !jugador.team || !jugador.equipo) {
-    console.warn("Faltan campos del jugador, no se insertara");
-    return; 
-  }
   try {
     await db.insert(carta).values({
-      nombre: jugador.name,
+      name: jugador.name,
       alias: jugador.alias,
-      posicion: jugador.position,
-      equipo: jugador.team,
+      position: jugador.position,
+      team: jugador.team,
       tipo_carta: TIPOS_CARTAS.NORMAL,
-      escudo: jugador.team_shield,
-      pais: jugador.country,
+      team_shield: jugador.team_shield,
+      country: jugador.country,
       photo: jugador.photo,
-      defensa: jugador.ratings.defensa,
-      ataque: jugador.ratings.ataque,
-      control: jugador.ratings.medio,
+      ratings: JSON.stringify(jugador.ratings),
     });
   } catch (error) {
     throw new Error('Error al insertar la carta en la base de datos: ' + error.message);

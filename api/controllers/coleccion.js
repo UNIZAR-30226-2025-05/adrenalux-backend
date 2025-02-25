@@ -4,7 +4,6 @@ import { getDecodedToken } from '../lib/jwt.js';
 import fs from 'fs';
 import path from 'path';
 import { db } from '../config/db.js';
-import { objectToJson } from '../lib/toJson.js';
 import { coleccion } from '../db/schemas/coleccion.js';
 import { carta } from '../db/schemas/carta.js';
 import { user } from '../db/schemas/user.js';
@@ -46,7 +45,7 @@ async function obtenerTodasLasCartas(filtros) {
 }
 
 async function obtenerCartasDeUsuario(userId, filtros) {
- ;
+ 
 }
 
 async function obtenerCantidadCarta(userId, cartaId) {
@@ -72,15 +71,15 @@ async function generarResultadoColeccion(coleccion, cartasUsuario, userId) {
   coleccion.forEach(carta => {
     const cartaUsuario = cartasUsuario.find(cu => cu.carta_id === carta.id);
     if (cartaUsuario) {
-      resultado.push({ carta: objectToJson(cartaUsuario), cantidad: cartaUsuario.cantidad });
+      resultado[carta.id] = { disponible: true, cantidad: cartaUsuario.cantidad };
     } else {
-      resultado[carta.id] = { carta: objectToJson(cartaUsuario), cantidad: 0 };
+      resultado[carta.id] = { disponible: false, cantidad: 0 };
     }
   });
   return resultado;
 }
 
 async function usuarioIdValido(userId) {
-  const [usuario] = await db.select().from(user).where(eq(user.id, userId));
-  return !!usuario;
+  const [user] = await db.select().from(user).where(eq(user.id, userId));
+  return !!user;
 }
