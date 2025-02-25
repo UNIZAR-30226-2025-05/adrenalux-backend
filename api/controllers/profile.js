@@ -8,6 +8,7 @@ import { logrosUsuario } from '../db/schemas/logrosUsuario.js';
 import { getDecodedToken } from '../lib/jwt.js';
 import { objectToJson } from '../lib/toJson.js';
 import { amistad } from '../db/schemas/amistad.js';
+import{calcularXpNecesaria} from '../lib/exp.js';
 import { json } from 'stream/consumers';
 
 
@@ -59,11 +60,13 @@ export async function getProfile(req, res, next) {
     const usuarioJson = objectToJson(usuario);
     const logrosJson = logros.map(logro => objectToJson(logro));
     const partidasJson = partidas.map(partida => objectToJson(partida));
+    const xpMax = calcularXpNecesaria(usuario.level);
 
     const responseJson = {
       ...usuarioJson,
       logros: logrosJson,
-      partidas: partidasJson
+      partidas: partidasJson,
+      xpMax: xpMax,
     };
     
     return sendResponse(req, res, { data: responseJson });

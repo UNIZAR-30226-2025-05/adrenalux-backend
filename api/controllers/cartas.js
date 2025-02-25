@@ -5,7 +5,7 @@ import {user} from '../db/schemas/user.js';
 import {carta} from '../db/schemas/carta.js';
 import {coleccion} from '../db/schemas/coleccion.js';
 import{restarMonedas} from '../lib/monedas.js';
-import{agregarExp} from '../lib/exp.js';
+import{agregarExp, calcularXpNecesaria} from '../lib/exp.js';
 import { db } from '../config/db.js'; 
 import { objectToJson } from '../lib/toJson.js';
 import { eq, and } from 'drizzle-orm'
@@ -37,21 +37,26 @@ export async function abrirSobre(req, res, next) {
   const cartas = await generarSobre(tipo);  
 
   cartas.forEach((carta) => {
-    console.log("Carta: ", carta);
     if (carta && carta.id) {
       insertarCartaEnColeccion(carta.id, userId);
     } else {
       console.error('Carta no válida:', carta);
     }
   });
-  const { xpNuevo: nuevaXP, nivel } = await agregarExp(userId, RECOMPENSAS.ABRIR_SOBRE_EXP);
-  
+  const { nuevaXP, nivel } = await agregarExp(userId, RECOMPENSAS.EXPERIENCIA.ABRIR_SOBRE);
+
+  console.log("Xp: ", nuevaXP);
+  console.log("nivel: ", nivel);
+  const neededXP = calcularXpNecesaria(nivel);
+  console.log("Xp needed: ", neededXP);
+
   const cartasJson = cartas.map(carta => objectToJson(carta));
   let responseJson = {
     tipo: tipo,
     cartas: cartasJson,
     XP: nuevaXP,
-    nivel: nivel
+    nivel: nivel,
+    xpMax: neededXP,
   }
   return sendResponse(req, res, { data: {responseJson} });
 }
