@@ -8,7 +8,7 @@ import { coleccion } from '../db/schemas/coleccion.js';
 import { carta } from '../db/schemas/carta.js';
 import { user } from '../db/schemas/user.js';
 import { eq } from 'drizzle-orm';
-import { TIPOS_FILTROS } from '../config/cartas.config.js';
+
 
 
 import {
@@ -113,6 +113,6 @@ async function generarResultadoColeccion(coleccion, cartasUsuario, userId) {
 }
 
 async function usuarioIdValido(userId) {
-  const [user] = await db.select().from(user).where(eq(user.id, userId));
-  return !!user;
+  const [usuario] = await db.select().from(user).where(eq(user.id, userId));
+  return !!usuario;
 }
