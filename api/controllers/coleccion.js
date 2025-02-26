@@ -10,11 +10,6 @@ import { user } from '../db/schemas/user.js';
 import { eq } from 'drizzle-orm';
 import { TIPOS_FILTROS } from '../config/cartas.config.js';
 
-
-import {
-  TIPOS_FILTROS,
-} from '../config/cartas.config.js';
-
 export async function obtenerColeccion(req, res, next) {
   const decodedToken = await getDecodedToken(req);
   const userId = decodedToken.id;
