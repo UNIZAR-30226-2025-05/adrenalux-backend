@@ -79,6 +79,7 @@ Adrenalux es un juego de cartas coleccionables basado en la liga española, dond
 
 ### 📊 Conexión con API externa
 - Actualización de estadísticas de jugadores basada en su rendimiento real.
+- Repositorio de la Api: https://github.com/sdelquin/laliga-data
 
 ## 🛠️ Rutas principales
 
