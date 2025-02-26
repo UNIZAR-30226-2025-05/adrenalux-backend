@@ -1,4 +1,4 @@
-import { sendResponse } from '../lib/http.js';
+import { Conflict, sendResponse } from '../lib/http.js';
 import { Unauthorized, BadRequest } from '../lib/http.js';
 import { getDecodedToken } from '../lib/jwt.js';
 import fs from 'fs';
@@ -8,6 +8,8 @@ import { coleccion } from '../db/schemas/coleccion.js';
 import { carta } from '../db/schemas/carta.js';
 import { user } from '../db/schemas/user.js';
 import { eq } from 'drizzle-orm';
+import { TIPOS_FILTROS } from '../config/cartas.config.js';
+
 
 import {
   TIPOS_FILTROS,
@@ -40,15 +42,46 @@ export async function filtrarCartas(req, res, next) {
   return sendResponse(req, res, { data: resultado });
 }
 
-async function obtenerTodasLasCartas(filtros) {
-  
+export async function obtenerTodasLasCartas(filtros) {
+  let query = db.select().from(carta);
+
+  const condiciones = [];
+  if(filtros[TIPOS_FILTROS.POSICION]){
+    condiciones.push(eq(carta.posicion, filtros[TIPOS_FILTROS.POSICION]));
+  }
+  if(filtros[TIPOS_FILTROS.RAREZA]){
+    condiciones.push(eq(carta.tipo_carta, filtros[TIPOS_FILTROS.RAREZA]));
+  }
+  if(filtros[TIPOS_FILTROS.EQUIPO]){
+    condiciones.push(eq(carta.equipo, filtros[TIPOS_FILTROS.EQUIPO]));
+  }
+
+  const cartas = await query;
+  return cartas;
 }
 
-async function obtenerCartasDeUsuario(userId, filtros) {
- 
+export async function obtenerCartasDeUsuario(userId, filtros = {}) {
+  let query = db.select()
+    .from(coleccion)
+    .innerJoin(carta, eq(carta.id, coleccion.carta_id)) // Unir con la tabla de cartas
+    .where(eq(coleccion.user_id, userId));
+
+  const condiciones = [];
+  if(filtros[TIPOS_FILTROS.POSICION]){
+    condiciones.push(eq(carta.posicion, filtros[TIPOS_FILTROS.POSICION]));
+  }
+  if(filtros[TIPOS_FILTROS.RAREZA]){
+    condiciones.push(eq(carta.tipo_carta, filtros[TIPOS_FILTROS.RAREZA]));
+  }
+  if(filtros[TIPOS_FILTROS.EQUIPO]){
+    condiciones.push(eq(carta.equipo, filtros[TIPOS_FILTROS.EQUIPO]));
+  }
+
+  const cartas = await query;
+  return cartas;
 }
 
-async function obtenerCantidadCarta(userId, cartaId) {
+async function obtenerCantidadCarta(userId, cartaId) { //Obtiene la cantidad de una carta que tiene un usuario
   const [entry] = await db.select().from(coleccion).where(and(eq(coleccion.user_id, userId), eq(coleccion.carta_id, cartaId)));
   return entry ? entry.cantidad : 0;
 }
