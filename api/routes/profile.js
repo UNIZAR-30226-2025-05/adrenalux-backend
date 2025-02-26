@@ -272,49 +272,6 @@ router.get('/profile/adrenacoins', authenticate, profile.getAdrenacoins);
  */
 router.get('/profile/friends', authenticate, profile.getFriends);
 
-/**
- * @swagger
- * /profile/friend-requests:
- *   get:
- *     summary: Obtener las solicitudes de amistad pendientes
- *     tags: [Profile]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: header
- *         name: Authorization
- *         required: true
- *         schema:
- *           type: string
- *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *         description: Token JWT obtenido al iniciar sesión
- *     responses:
- *       200:
- *         description: Solicitudes de amistad obtenidas exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: integer
- *                       username:
- *                         type: string
- *                       name:
- *                         type: string
- *                       lastname:
- *                         type: string
- *                       avatar:
- *                         type: string
- *       404:
- *         description: Usuario no encontrado
- */
-router.get('/profile/friend-requests', authenticate, profile.getFriendRequests);
 
 /**
  * @swagger
