@@ -8,7 +8,6 @@ import { coleccion } from '../db/schemas/coleccion.js';
 import { carta } from '../db/schemas/carta.js';
 import { user } from '../db/schemas/user.js';
 import { eq } from 'drizzle-orm';
-import { TIPOS_FILTROS } from '../config/cartas.config.js';
 
 
 import {
