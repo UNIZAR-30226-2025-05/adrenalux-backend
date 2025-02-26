@@ -222,47 +222,6 @@ export async function getFriends(req, res, next) {
   }
 }
 
-export async function getFriends(req, res, next) {
-  try {
-    const token = await getDecodedToken(req);
-    const userId = token.id;
-    console.log("User ID:", userId);
-
-    const [usuario] = await db.select().from(user).where(eq(user.id, userId));
-    if (!usuario) return next(new NotFound('Usuario no encontrado'));
-
-    console.log("Usuario encontrado:", usuario);
-
-    const friends = await db
-      .select({
-        id: user.id,
-        username: user.username,
-        name: user.name,
-        lastname: user.lastname,
-        avatar: user.avatar,
-      })
-      .from(amistad)
-      .leftJoin(user, or(
-        eq(amistad.user1_id, user.id), 
-        eq(amistad.user2_id, user.id)
-      ))
-      .where(
-        or(
-          eq(amistad.user1_id, userId),
-          eq(amistad.user2_id, userId)
-        )
-      )
-      .where(not(eq(user.id, userId)));
-
-    console.log("Amigos encontrados:", friends);
-
-    const friendsJson = friends.map(friend => objectToJson(friend));
-    return sendResponse(req, res, { data: friendsJson });
-  } catch (err) {
-    console.error('Error al obtener amigos:', err);
-    next(err);
-  }
-}
 
 export async function sendFriendRequest(req, res, next) {
   try {
