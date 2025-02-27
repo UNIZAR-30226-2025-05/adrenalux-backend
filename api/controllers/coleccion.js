@@ -38,45 +38,24 @@ export async function filtrarCartas(req, res, next) {
   return sendResponse(req, res, { data: resultado });
 }
 
-export async function obtenerTodasLasCartas(filtros) {
+export async function obtenerTodasLasCartas(filtros = []) {
   let query = db.select().from(carta);
 
-  const condiciones = [];
-  if(filtros[TIPOS_FILTROS.POSICION]){
-    condiciones.push(eq(carta.posicion, filtros[TIPOS_FILTROS.POSICION]));
-  }
-  if(filtros[TIPOS_FILTROS.RAREZA]){
-    condiciones.push(eq(carta.tipo_carta, filtros[TIPOS_FILTROS.RAREZA]));
-  }
-  if(filtros[TIPOS_FILTROS.EQUIPO]){
-    condiciones.push(eq(carta.equipo, filtros[TIPOS_FILTROS.EQUIPO]));
+  if(filtros.length > 0){
+    query = query.where(...filtros);
   }
 
   const cartas = await query;
   return cartas;
 }
 
-export async function obtenerCartasDeUsuario(userId) {
-  return await db.select(coleccion.carta_id, coleccion.cantidad)
-    .from(coleccion)
-    .where(eq(coleccion.user_id, userId));
-}
-
-
-export async function filtrarCartasDeUsuario(userId, filtros = {}) {
-  let query = db.select(coleccion.carta_id, coleccion.cantidad)
+export async function obtenerCartasDeUsuario(userId, filtros = []) {
+  let query = db.select()
     .from(coleccion)
     .where(eq(coleccion.user_id, userId));
 
-  const condiciones = [];
-  if(filtros[TIPOS_FILTROS.POSICION]){
-    condiciones.push(eq(carta.posicion, filtros[TIPOS_FILTROS.POSICION]));
-  }
-  if(filtros[TIPOS_FILTROS.RAREZA]){
-    condiciones.push(eq(carta.tipo_carta, filtros[TIPOS_FILTROS.RAREZA]));
-  }
-  if(filtros[TIPOS_FILTROS.EQUIPO]){
-    condiciones.push(eq(carta.equipo, filtros[TIPOS_FILTROS.EQUIPO]));
+  if(filtros.length > 0){
+    query = query.where(...condiciones);
   }
 
   const cartas = await query;
@@ -85,16 +64,19 @@ export async function filtrarCartasDeUsuario(userId, filtros = {}) {
 
 
 function aplicarFiltros(parametros) {
-  const filtros = {};
-  const posiblesFiltros = Object.values(TIPOS_FILTROS);
+  const condiciones = [];
 
-  posiblesFiltros.forEach(filtro => {
-    if (parametros[filtro]) {
-      filtros[filtro] = parametros[filtro];
-    }
-  });
+  if (parametros[TIPOS_FILTROS.POSICION]) {
+    condiciones.push(eq(carta.posicion, parametros[TIPOS_FILTROS.POSICION]));
+  }
+  if (parametros[TIPOS_FILTROS.RAREZA]) {
+    condiciones.push(eq(carta.tipo_carta, parametros[TIPOS_FILTROS.RAREZA]));
+  }
+  if (parametros[TIPOS_FILTROS.EQUIPO]) {
+    condiciones.push(eq(carta.equipo, parametros[TIPOS_FILTROS.EQUIPO]));
+  }
 
-  return filtros;
+  return condiciones;
 }
 
 async function generarResultadoColeccion(coleccion, cartasUsuario) {

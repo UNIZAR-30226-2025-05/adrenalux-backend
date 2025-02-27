@@ -8,8 +8,14 @@ import path from 'path';
 dotenv.config();
 const API_KEY = process.env.CURRENT_API_KEY;
 
-const inputFile = 'api/scripts/playersData/S2425-laliga-players.json';
-const outputFile = `api/scripts/playersMetrics/${getOutputFileName(inputFile)}`;
+const currentDir = path.dirname(new URL(import.meta.url).pathname);
+
+const inputFile = path.join(currentDir, 'playersData', 'S2425-laliga-players.json');
+const outputFile = path.join(currentDir, 'playersMetrics', '${getOutputFileName(inputFile)}');
+// Asegurar que el archivo existe o crearlo vacío
+if (!fs.existsSync(outputFile)) {
+    fs.writeFileSync(outputFile, '[]');
+}
 
 // File system para leer el archivo json
 const fileStream = fs.createReadStream(inputFile);
@@ -31,8 +37,8 @@ const teamTiers = {
     "Real Betis": 1.2,
     "Athletic Club": 1.2,
     "Valencia CF": 1.1,
-    "Celta de Vigo": 1.1,
-    "RCD Espanyol": 1.0,
+    "RC Celta": 1.1,
+    "RCD Espanyol de Barcelona": 1.0,
     "Getafe CF": 1.0,
     "Rayo Vallecano": 1.0,
     "CA Osasuna": 1.0,
@@ -40,7 +46,7 @@ const teamTiers = {
     "Girona FC": 0.9,
     "UD Las Palmas": 0.9,
     "Deportivo Alavés": 0.8,
-    "Real Valladolid": 0.8,
+    "Real Valladolid CF": 0.8,
     "CD Leganés": 0.8
 };
 
@@ -74,7 +80,10 @@ const ratingRanges = {
 
 function getOutputFileName(inputFileName) {
     const fileBaseName = path.basename(inputFileName, '.json');
-    const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15);
+    const timestamp = Math.floor(Date.now() / 1000);
+    console.log(`fileBaseName: ${fileBaseName}`)
+    console.log(`timestamp: ${timestamp}`)
+    console.log(`${fileBaseName}-metrics-${timestamp}.json: ${`${fileBaseName}-metrics-${timestamp}.json`}`)
     return `${fileBaseName}-metrics-${timestamp}.json`;
 }
 
@@ -86,6 +95,7 @@ function normalize(value, min, max) {
 async function sendDataToAPI() {
     try {
         const playersData = JSON.parse(fs.readFileSync(outputFile, 'utf8'));
+
         const response = await axios.post('http://54.37.50.18:3000/api/v1/jugadores/insertar', playersData, {
             headers: { 
                 'Content-Type': 'application/json',
@@ -146,7 +156,25 @@ function calculateRating(player) {
 function evaluatePlayer(player) {
     const position = player.position && typeof player.position === 'string' ? player.position.toLowerCase() : null;
     if (!position || !ratingRanges[position]) {
-        console.error(`Posición no reconocida: ${player.position}`);
+        console.error(`Posición no reconocida para: ${player.name}`);
+        return null;
+    }
+
+    const team = player.team && typeof player.team === 'string' ? player.team : null;
+    if (!team || !teamTiers[team]) {
+        console.error(`Equipo no reconocido para: ${player.name} (${player.team})`);
+        return null;
+    }
+
+    const photo = player.photo && typeof player.photo === 'string' ? player.photo : null;
+    if (!photo) {
+        console.error(`Foto no reconocida para: ${player.name}`);
+        return null;
+    }
+
+    const country = player.country && typeof player.country === 'string' ? player.country : null;
+    if (!country) {
+        console.error(`País no reconocido para: ${player.name}`);
         return null;
     }
 
@@ -163,15 +191,15 @@ function evaluatePlayer(player) {
     return {
         name: player.name,
         alias: player.nickname,
-        number: player.shirt_number,
+        //number: player.shirt_number,
         position: player.position.toLowerCase(),
         team: player.team,
-        team_shortname: player["team.shortname"],
+        //team_shortname: player["team.shortname"],
         team_shield: player["team.shield"],
         country: player.country,
-        weight: player.weight,
-        height: player.height,
-        birthdate: birthdate,
+        //weight: player.weight,
+        //height: player.height,
+        //birthdate: birthdate,
         photo: player.photo,
         ratings: { ataque, medio, defensa }
     };
@@ -190,6 +218,7 @@ rl.on('line', (line) => {
 });
 
 rl.on('close', () => {
+    console.log(players.length)
     fs.writeFileSync(outputFile, JSON.stringify(players, null, 2));
     console.log('Lectura del archivo finalizada. Resultados guardados.');
 
