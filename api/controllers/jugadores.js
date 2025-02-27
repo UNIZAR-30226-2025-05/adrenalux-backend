@@ -9,7 +9,6 @@ import { CARTA_CONSTANTS } from '../config/cartas.config.js';
 
 export async function insertarCartas(req, res, next) {
   try {
-    console.log("Body recibido:", JSON.stringify(req.body, null, 2)); 
     const playersData = req.body;
 
     if (!Array.isArray(playersData)) {
@@ -40,7 +39,7 @@ export async function insertarCartas(req, res, next) {
 
 
 export async function insertarCartaEnBD(jugador) {
-  if (!jugador.photo || !jugador.pais || !jugador.name || !jugador.team || !jugador.equipo) {
+  if (!jugador.photo || !jugador.country || !jugador.name || !jugador.team) {
     console.warn("Faltan campos del jugador, no se insertara");
     return; 
   }
