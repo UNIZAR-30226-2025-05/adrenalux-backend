@@ -158,7 +158,7 @@ router.put('/profile', authenticate, validateRequest(profileSchema), profile.upd
  *       404:
  *         description: Usuario no encontrado
  */
-router.get('/profile/levelxp', authenticate, profile.getLevelxp);
+router.get('/levelxp', authenticate, profile.getLevelxp);
 
 /**
  * @swagger
@@ -192,7 +192,7 @@ router.get('/profile/levelxp', authenticate, profile.getLevelxp);
  *       404:
  *         description: Usuario no encontrado
  */
-router.get('/profile/clasificacion', authenticate, profile.getClasificacion);
+router.get('/clasificacion', authenticate, profile.getClasificacion);
 
 /**
  * @swagger
@@ -226,7 +226,7 @@ router.get('/profile/clasificacion', authenticate, profile.getClasificacion);
  *       404:
  *         description: Usuario no encontrado
  */
-router.get('/profile/adrenacoins', authenticate, profile.getAdrenacoins);
+router.get('/adrenacoins', authenticate, profile.getAdrenacoins);
 
 /**
  * @swagger
@@ -270,7 +270,7 @@ router.get('/profile/adrenacoins', authenticate, profile.getAdrenacoins);
  *       404:
  *         description: Usuario no encontrado
  */
-router.get('/profile/friends', authenticate, profile.getFriends);
+router.get('/friends', authenticate, profile.getFriends);
 
 
 /**
@@ -305,7 +305,7 @@ router.get('/profile/friends', authenticate, profile.getFriends);
  *       400:
  *         description: Datos inválidos o el usuario ya es tu amigo
  */
-router.post('/profile/friend-requests', authenticate, profile.sendFriendRequest);
+router.post('/friend-requests', authenticate, profile.sendFriendRequest);
 
 /**
  * @swagger
@@ -347,7 +347,7 @@ router.post('/profile/friend-requests', authenticate, profile.sendFriendRequest)
  *       404:
  *         description: Usuario no encontrado
  */
-router.get('/profile/achievements', authenticate, profile.getAchievements);
+router.get('/achievements', authenticate, profile.getAchievements);
 
 /**
  * @swagger
@@ -386,7 +386,7 @@ router.get('/profile/achievements', authenticate, profile.getAchievements);
  *       404:
  *         description: Usuario no encontrado
  */
-router.put('/profile/change-password', authenticate, profile.updatePassword);
+router.put('/change-password', authenticate, profile.updatePassword);
 
 /**
  * @swagger
