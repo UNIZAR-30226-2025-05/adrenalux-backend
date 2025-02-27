@@ -47,8 +47,6 @@ export async function abrirSobre(req, res, next) {
 
   console.log("Xp: ", nuevaXP);
   console.log("nivel: ", nivel);
-  const neededXP = calcularXpNecesaria(nivel);
-  console.log("Xp needed: ", neededXP);
 
   const cartasJson = cartas.map(carta => objectToJson(carta));
   let responseJson = {
@@ -56,7 +54,6 @@ export async function abrirSobre(req, res, next) {
     cartas: cartasJson,
     XP: nuevaXP,
     nivel: nivel,
-    xpMax: neededXP,
   }
   return sendResponse(req, res, { data: {responseJson} });
 }

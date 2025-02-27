@@ -14,14 +14,13 @@ export async function agregarExp(userId, cantidad) {
   
   return await comprobarSubidaNivel(usuario, nuevaXp);
 }
+
 async function comprobarSubidaNivel(usuario, nuevaXp) {
   let userId = usuario.id;
   let nivel = usuario.level;
-  let xp = usuario.experience;
   let nivelNuevo = nivel;
   let nivelesSubidos = 0;
 
-  // Obtener la XP máxima necesaria para el siguiente nivel
   let nuevaXpMax = calcularXpNecesaria(nivel);
 
   while (nuevaXp >= nuevaXpMax) {
@@ -31,10 +30,9 @@ async function comprobarSubidaNivel(usuario, nuevaXp) {
     nivelesSubidos += 1;
   }
 
-  // Actualizar la base de datos con los nuevos valores
   await db
     .update(user)
-    .set({ xp: nuevaXp, level: nivelNuevo })
+    .set({ experience: nuevaXp, level: nivelNuevo })
     .where(eq(user.id, userId));
 
   return {
@@ -46,8 +44,6 @@ async function comprobarSubidaNivel(usuario, nuevaXp) {
 export function calcularXpNecesaria(nivel) {
   return BASE_XP * Math.pow(XP_INCREMENTO_NIVEL, nivel);
 }
-
-
 
 async function obtenerUsuario(userId) {
   const [usuario] = await db.select().from(user).where(eq(user.id, userId));
