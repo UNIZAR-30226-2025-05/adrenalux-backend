@@ -10,7 +10,6 @@ import { user } from '../db/schemas/user.js';
 import { eq } from 'drizzle-orm';
 import {TIPOS_FILTROS,} from '../config/cartas.config.js';
 
-
 export async function obtenerColeccion(req, res, next) {
   const decodedToken = await getDecodedToken(req);
   const userId = decodedToken.id;
@@ -49,15 +48,8 @@ export async function obtenerTodasLasCartas(filtros = []) {
   return cartas;
 }
 
-export async function obtenerCartasDeUsuario(userId) {
-  return await db.select(coleccion.carta_id, coleccion.cantidad)
-    .from(coleccion)
-    .where(eq(coleccion.user_id, userId));
-}
-
-
-export async function filtrarCartasDeUsuario(userId, filtros = {}) {
-  let query = db.select(coleccion.carta_id, coleccion.cantidad)
+export async function obtenerCartasDeUsuario(userId, filtros = []) {
+  let query = db.select()
     .from(coleccion)
     .where(eq(coleccion.user_id, userId));
 
