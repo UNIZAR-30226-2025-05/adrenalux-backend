@@ -8,9 +8,10 @@ import path from 'path';
 dotenv.config();
 const API_KEY = process.env.CURRENT_API_KEY;
 
-const inputFile = 'api/scripts/playersData/S2425-laliga-players.json';
-const outputFile = `api/scripts/playersMetrics/${getOutputFileName(inputFile)}`;
+const currentDir = path.dirname(new URL(import.meta.url).pathname);
 
+const inputFile = path.join(currentDir, 'playersData', 'S2425-laliga-players.json');
+const outputFile = path.join(currentDir, 'playersMetrics', '${getOutputFileName(inputFile)}');
 // Asegurar que el archivo existe o crearlo vacío
 if (!fs.existsSync(outputFile)) {
     fs.writeFileSync(outputFile, '[]');
@@ -94,8 +95,7 @@ function normalize(value, min, max) {
 async function sendDataToAPI() {
     try {
         const playersData = JSON.parse(fs.readFileSync(outputFile, 'utf8'));
-        //console.log(playersData);
-        return;
+
         const response = await axios.post('http://54.37.50.18:3000/api/v1/jugadores/insertar', playersData, {
             headers: { 
                 'Content-Type': 'application/json',
