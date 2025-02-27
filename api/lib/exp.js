@@ -38,6 +38,7 @@ async function comprobarSubidaNivel(usuario, nuevaXp) {
   return {
     nuevaXP: nuevaXp,
     nivel: nivelNuevo,
+    nuevaXPMax: nuevaXpMax,
   };
 }
 

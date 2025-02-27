@@ -43,7 +43,7 @@ export async function abrirSobre(req, res, next) {
       console.error('Carta no válida:', carta);
     }
   });
-  const { nuevaXP, nivel } = await agregarExp(userId, RECOMPENSAS.EXPERIENCIA.ABRIR_SOBRE);
+  const { nuevaXP, nivel,nuevaXPMax } = await agregarExp(userId, RECOMPENSAS.EXPERIENCIA.ABRIR_SOBRE);
 
   console.log("Xp: ", nuevaXP);
   console.log("nivel: ", nivel);
@@ -54,6 +54,7 @@ export async function abrirSobre(req, res, next) {
     cartas: cartasJson,
     XP: nuevaXP,
     nivel: nivel,
+    xpMax: nuevaXPMax
   }
   return sendResponse(req, res, { data: {responseJson} });
 }
