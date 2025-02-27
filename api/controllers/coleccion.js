@@ -8,11 +8,8 @@ import { coleccion } from '../db/schemas/coleccion.js';
 import { carta } from '../db/schemas/carta.js';
 import { user } from '../db/schemas/user.js';
 import { eq } from 'drizzle-orm';
-
-
-import {
-  TIPOS_FILTROS,
-} from '../config/cartas.config.js';
+import {TIPOS_FILTROS,} from '../config/cartas.config.js';
+import { use } from 'passport';
 
 export async function obtenerColeccion(req, res, next) {
   const decodedToken = await getDecodedToken(req);
@@ -23,7 +20,7 @@ export async function obtenerColeccion(req, res, next) {
   }
   const coleccion = await obtenerTodasLasCartas();
   const cartasUsuario = await obtenerCartasDeUsuario(userId);
-  const resultado = await generarResultadoColeccion(coleccion, cartasUsuario, userId);
+  const resultado = await generarResultadoColeccion(coleccion, cartasUsuario);
 
   return sendResponse(req, res, { data: resultado });
 }
@@ -34,7 +31,7 @@ export async function filtrarCartas(req, res, next) {
   const parametros = req.query;
   const filtros = aplicarFiltros(parametros);
 
-  const cartasUsuario = await obtenerCartasDeUsuario(userId, filtros);
+  const cartasUsuario = await obtenerCartasDeUsuario(userId);
   const coleccionFiltrada = await obtenerTodasLasCartas(filtros);
   const resultado = await generarResultadoColeccion(coleccionFiltrada, cartasUsuario, userId);
 
@@ -59,10 +56,16 @@ export async function obtenerTodasLasCartas(filtros) {
   return cartas;
 }
 
-export async function obtenerCartasDeUsuario(userId, filtros = {}) {
-  let query = db.select()
+export async function obtenerCartasDeUsuario(userId) {
+  return await db.select(coleccion.carta_id, coleccion.cantidad)
     .from(coleccion)
-    .innerJoin(carta, eq(carta.id, coleccion.carta_id)) // Unir con la tabla de cartas
+    .where(eq(coleccion.user_id, userId));
+}
+
+
+export async function filtrarCartasDeUsuario(userId, filtros = {}) {
+  let query = db.select(coleccion.carta_id, coleccion.cantidad)
+    .from(coleccion)
     .where(eq(coleccion.user_id, userId));
 
   const condiciones = [];
@@ -80,10 +83,6 @@ export async function obtenerCartasDeUsuario(userId, filtros = {}) {
   return cartas;
 }
 
-async function obtenerCantidadCarta(userId, cartaId) { //Obtiene la cantidad de una carta que tiene un usuario
-  const [entry] = await db.select().from(coleccion).where(and(eq(coleccion.user_id, userId), eq(coleccion.carta_id, cartaId)));
-  return entry ? entry.cantidad : 0;
-}
 
 function aplicarFiltros(parametros) {
   const filtros = {};
@@ -98,18 +97,30 @@ function aplicarFiltros(parametros) {
   return filtros;
 }
 
-async function generarResultadoColeccion(coleccion, cartasUsuario, userId) {
-  const resultado = {};
+async function generarResultadoColeccion(coleccion, cartasUsuario) {
+  const resultado = [];
   coleccion.forEach(carta => {
+
     const cartaUsuario = cartasUsuario.find(cu => cu.carta_id === carta.id);
+
     if (cartaUsuario) {
-      resultado[carta.id] = { disponible: true, cantidad: cartaUsuario.cantidad };
+      resultado.push({
+        ...carta, 
+        disponible: true,
+        cantidad: cartaUsuario.cantidad,
+      });
     } else {
-      resultado[carta.id] = { disponible: false, cantidad: 0 };
+      resultado.push({
+        ...carta, 
+        disponible: false,
+        cantidad: 0,
+      });
     }
   });
+
   return resultado;
 }
+
 
 async function usuarioIdValido(userId) {
   const [usuario] = await db.select().from(user).where(eq(user.id, userId));

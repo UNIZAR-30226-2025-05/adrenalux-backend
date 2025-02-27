@@ -1,5 +1,4 @@
 import { db } from '../config/db.js';
-
 import { sendResponse } from '../lib/http.js';
 import { BadRequest } from '../lib/http.js';
 import { carta } from '../db/schemas/carta.js';
@@ -44,26 +43,26 @@ export async function insertarCartaEnBD(jugador) {
 
 async function seleccionarMejoresJugadores(limite, offset) {
   return await db.select().from(carta)
-    .orderByRaw('(ratings->>\'ataque\')::int + (ratings->>\'medio\')::int + (ratings->>\'defensa\')::int DESC')
+    .orderByRaw('(ataque + defensa + control) DESC')
     .limit(limite)
     .offset(offset);
 }
 
 function actualizarEstadisticas(carta, incremento, maximo)  {
-  max =  maximo = CARTA_CONSTANTS.INCREMENTOS.MAX;
-  const nuevasEstadisticas = { ...carta.ratings };
-  for (const key in nuevasEstadisticas) {
-    nuevasEstadisticas[key] = Math.min(nuevasEstadisticas[key] + incremento[key], maximo);
-  }
-  return nuevasEstadisticas;
+  carta.defensa = Math.min(carta.defensa + incremento, maximo);
+  carta.ataque = Math.min(carta.ataque + incremento, maximo);
+  carta.medio = Math.min(carta.medio + incremento, maximo);
+
+  return carta.save();
 }
 
+ 
 export async function generarCartasLuxuryXI(req, res, next) {
   try {
-    const mejoresJugadores = await seleccionarMejoresJugadores(CARTA_CONSTANTS.NUMERO_CARTAS.LUXURYXI);
+    const mejoresJugadores = await seleccionarMejoresJugadores(CARTA_CONSTANTS.NUMERO_CARTAS.LUXURYXI,0);
     for (const jugador of mejoresJugadores) {
-      // ACTUALIZAR STATS
-      //AÑADIR A LA BASE DE DATOS
+        jugador =  await  actualizarEstadisticas(jugador, CARTA_CONSTANTS.INCREMENTOS.LUXURYXI, CARTA_CONSTANTS.INCREMENTOS.MAX);
+        insertarCartaEnBD(jugador);
     }
     return sendResponse(req, res, { message: 'Cartas LuxuryXI generadas exitosamente' });
   } catch (error) {
@@ -73,10 +72,10 @@ export async function generarCartasLuxuryXI(req, res, next) {
 
 export async function generarCartasMegaLuxury(req, res, next) {
   try {
-    const mejoresJugadores = await seleccionarMejoresJugadores(CARTA_CONSTANTS.NUMERO_CARTAS.MEGALUXURY, CARTA_CONSTANTS.NUMERO_CARTAS.LUXURYXI);
+    const mejoresJugadores = await seleccionarMejoresJugadores(CARTA_CONSTANTS.NUMERO_CARTAS.MEGALUXURY, CARTA_CONSTANTS.NUMERO_CARTAS.LUXURYXI + 1);
     for (const jugador of mejoresJugadores) {
-    // ACTUALIZAR STATS
-    //AÑADIR A LA BASE DE DATOS
+      jugador =  await  actualizarEstadisticas(jugador, CARTA_CONSTANTS.INCREMENTOS.MEGALUXURY, CARTA_CONSTANTS.INCREMENTOS.MAX);
+      insertarCartaEnBD(jugador);
       
     }
     return sendResponse(req, res, { message: 'Cartas MegaLuxury generadas exitosamente' });
@@ -87,10 +86,10 @@ export async function generarCartasMegaLuxury(req, res, next) {
 
 export async function generarCartasLuxury(req, res, next) {
   try {
-    const mejoresJugadores = await seleccionarMejoresJugadores(CARTA_CONSTANTS.NUMERO_CARTAS.LUXURY, CARTA_CONSTANTS.NUMERO_CARTAS.LUXURYXI + CARTA_CONSTANTS.NUMERO_CARTAS.MEGALUXURY);
+    const mejoresJugadores = await seleccionarMejoresJugadores(CARTA_CONSTANTS.NUMERO_CARTAS.LUXURY, CARTA_CONSTANTS.NUMERO_CARTAS.MEGALUXURY + 1);
     for (const jugador of mejoresJugadores) {
-      // ACTUALIZAR STATS
-      //AÑADIR A LA BASE DE DATOS
+      jugador = await  actualizarEstadisticas(jugador, CARTA_CONSTANTS.INCREMENTOS.LUXURY, CARTA_CONSTANTS.INCREMENTOS.MAX);
+      insertarCartaEnBD(jugador);
     }
     return sendResponse(req, res, { message: 'Cartas Luxury generadas exitosamente' });
   } catch (error) {

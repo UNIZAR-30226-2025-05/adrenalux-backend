@@ -32,7 +32,7 @@ async function comprobarSubidaNivel(usuario, nuevaXp) {
 
   await db
     .update(user)
-    .set({ experience: nuevaXp, level: nivelNuevo })
+    .set({ experience: nuevaXp.toInt(), level: nivelNuevo })
     .where(eq(user.id, userId));
 
   return {
