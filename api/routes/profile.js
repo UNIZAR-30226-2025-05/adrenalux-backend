@@ -75,7 +75,7 @@ const router = Router();
  *       404:
  *         description: Usuario no encontrado
  */
-router.get('/profile', authenticate, profile.getProfile);
+router.get('/', authenticate, profile.getProfile);
 
 /**
  * @swagger
@@ -122,7 +122,7 @@ router.get('/profile', authenticate, profile.getProfile);
  *       400:
  *         description: No se enviaron cambios válidos
  */
-router.put('/profile', authenticate, validateRequest(profileSchema), profile.updateProfile);
+router.put('/', authenticate, validateRequest(profileSchema), profile.updateProfile);
 
 /**
  * @swagger
@@ -410,7 +410,7 @@ router.put('/change-password', authenticate, profile.updatePassword);
  *       404:
  *         description: Usuario no encontrado
  */
-router.delete('/profile', authenticate, profile.deleteUser);
+router.delete('/', authenticate, profile.deleteUser);
 
 // Comentadas hasta que se implementen las funciones en el controller
 /*

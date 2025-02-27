@@ -8,7 +8,6 @@ import { CARTA_CONSTANTS } from '../config/cartas.config.js';
 
 export async function insertarCartas(req, res, next) {
   try {
-    console.log("Body recibido:", JSON.stringify(req.body, null, 2)); 
     const playersData = req.body;
 
     if (!Array.isArray(playersData)) {
@@ -39,7 +38,7 @@ export async function insertarCartas(req, res, next) {
 
 
 export async function insertarCartaEnBD(jugador) {
-  if (!jugador.photo || !jugador.pais || !jugador.name || !jugador.team || !jugador.equipo) {
+  if (!jugador.photo || !jugador.country || !jugador.name || !jugador.team) {
     console.warn("Faltan campos del jugador, no se insertara");
     return; 
   }
@@ -49,7 +48,7 @@ export async function insertarCartaEnBD(jugador) {
       alias: jugador.alias,
       posicion: jugador.position,
       equipo: jugador.team,
-      tipo_carta: TIPOS_CARTAS.NORMAL,
+      tipo_carta: TIPOS_CARTAS.NORMAL.nombre,
       escudo: jugador.team_shield,
       pais: jugador.country,
       photo: jugador.photo,
@@ -69,21 +68,21 @@ async function seleccionarMejoresJugadores(limite, offset) {
     .offset(offset);
 }
 
-function actualizarEstadisticas(carta, incremento, maximo)  {
+function actualizarEstadisticas(carta,tipo_carta, incremento, maximo)  {
   carta.defensa = Math.min(carta.defensa + incremento, maximo);
   carta.ataque = Math.min(carta.ataque + incremento, maximo);
   carta.medio = Math.min(carta.medio + incremento, maximo);
+  carta.tipo_carta = tipo_carta;
 
   return carta.save();
 }
 
- 
 export async function generarCartasLuxuryXI(req, res, next) {
   try {
-    const mejoresJugadores = await seleccionarMejoresJugadores(CARTA_CONSTANTS.NUMERO_CARTAS.LUXURYXI,0);
-    for (const jugador of mejoresJugadores) {
-        jugador =  await  actualizarEstadisticas(jugador, CARTA_CONSTANTS.INCREMENTOS.LUXURYXI, CARTA_CONSTANTS.INCREMENTOS.MAX);
-        insertarCartaEnBD(jugador);
+    const mejoresJugadores = await seleccionarMejoresJugadores(CARTA_CONSTANTS.NUMERO_CARTAS.LUXURYXI, 0);
+    for (let jugador of mejoresJugadores) {
+      jugador = await actualizarEstadisticas(jugador, TIPOS_CARTAS.LUXURYXI.nombre,CARTA_CONSTANTS.INCREMENTOS.LUXURYXI, CARTA_CONSTANTS.INCREMENTOS.MAX);
+      await insertarCartaEnBD(jugador); 
     }
     return sendResponse(req, res, { message: 'Cartas LuxuryXI generadas exitosamente' });
   } catch (error) {
@@ -94,10 +93,9 @@ export async function generarCartasLuxuryXI(req, res, next) {
 export async function generarCartasMegaLuxury(req, res, next) {
   try {
     const mejoresJugadores = await seleccionarMejoresJugadores(CARTA_CONSTANTS.NUMERO_CARTAS.MEGALUXURY, CARTA_CONSTANTS.NUMERO_CARTAS.LUXURYXI + 1);
-    for (const jugador of mejoresJugadores) {
-      jugador =  await  actualizarEstadisticas(jugador, CARTA_CONSTANTS.INCREMENTOS.MEGALUXURY, CARTA_CONSTANTS.INCREMENTOS.MAX);
-      insertarCartaEnBD(jugador);
-      
+    for (let jugador of mejoresJugadores) {
+      jugador = await actualizarEstadisticas(jugador,TIPOS_CARTAS.MEGALUXURY.nombre, CARTA_CONSTANTS.INCREMENTOS.MEGALUXURY, CARTA_CONSTANTS.INCREMENTOS.MAX);
+      await insertarCartaEnBD(jugador);
     }
     return sendResponse(req, res, { message: 'Cartas MegaLuxury generadas exitosamente' });
   } catch (error) {
@@ -108,9 +106,9 @@ export async function generarCartasMegaLuxury(req, res, next) {
 export async function generarCartasLuxury(req, res, next) {
   try {
     const mejoresJugadores = await seleccionarMejoresJugadores(CARTA_CONSTANTS.NUMERO_CARTAS.LUXURY, CARTA_CONSTANTS.NUMERO_CARTAS.MEGALUXURY + 1);
-    for (const jugador of mejoresJugadores) {
-      jugador = await  actualizarEstadisticas(jugador, CARTA_CONSTANTS.INCREMENTOS.LUXURY, CARTA_CONSTANTS.INCREMENTOS.MAX);
-      insertarCartaEnBD(jugador);
+    for (let jugador of mejoresJugadores) {
+      jugador = await actualizarEstadisticas(jugador,TIPOS_CARTAS.LUXURY.nombre, CARTA_CONSTANTS.INCREMENTOS.LUXURY, CARTA_CONSTANTS.INCREMENTOS.MAX);
+      await insertarCartaEnBD(jugador);
     }
     return sendResponse(req, res, { message: 'Cartas Luxury generadas exitosamente' });
   } catch (error) {
