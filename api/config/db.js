@@ -1,9 +1,15 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pkg from 'pg';
 const { Pool } = pkg;
-import * as dotenv from "dotenv";
+import * as dotenv from 'dotenv';
 
-dotenv.config();
+// Cargar las variables de entorno desde .env.test si estamos en un entorno de pruebas
+if (process.env.NODE_ENV === 'test') {
+  dotenv.config({ path: '.env.test' });
+} else {
+  dotenv.config();  // Cargar el .env por defecto para producción
+}
+
 // Configura la conexión a PostgreSQL
 const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
