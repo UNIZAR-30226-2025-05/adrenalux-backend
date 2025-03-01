@@ -36,9 +36,9 @@ async function comprobarSubidaNivel(usuario, nuevaXp) {
     .where(eq(user.id, userId));
 
   return {
-    nuevaXP: nuevaXp,
+    nuevaXP: Math.round(nuevaXp),
     nivel: nivelNuevo,
-    nuevaXPMax: nuevaXpMax,
+    nuevaXPMax: Math.round(nuevaXpMax),
   };
 }
 

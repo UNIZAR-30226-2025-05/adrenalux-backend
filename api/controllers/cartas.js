@@ -117,62 +117,50 @@ async function generarSobre(tipo) {
 }
 
 async function generarCartas(sobreConfig) {
+  const todasLasCartas = await getAllCartas();
   const cartasGeneradas = [];
-  
-  while (cartasGeneradas.length < sobreConfig.cantidadCartas) {
-    const tipoCarta = generarTipoCarta(sobreConfig);
-     const carta = await generarCarta(tipoCarta);
-    // Necesitamos definir cómo seleccionar las cartas aquí
-    if (cartaValida(carta)) {
-      cartasGeneradas.push(carta);
+  const probabilidades = PROBABILIDADES_CARTAS[sobreConfig.tipoSobre];
+
+  for (let i = 0; i < sobreConfig.cantidadCartas; i++) {
+    const rarezaSeleccionada = seleccionarRareza(probabilidades);
+
+    let cartasPosibles = todasLasCartas.filter(carta => carta.rareza === rarezaSeleccionada);
+
+    if (cartasPosibles.length === 0) {
+      cartasPosibles = todasLasCartas;
     }
+
+    const cartaSeleccionada = cartasPosibles[Math.floor(Math.random() * cartasPosibles.length)];
+    cartasGeneradas.push(cartaSeleccionada);
   }
+
+  cartasGeneradas.sort((a, b) => {
+    return TIPOS_CARTAS[a.rareza].rareza - TIPOS_CARTAS[b.rareza].rareza;
+  });
+
   return cartasGeneradas;
 }
 
-async function generarCarta(tipo) {
-  let MIN = tipo.MIN_ID;
-  let MAX = tipo.MAX_ID;
-  let carta;
-
-  do {
-    let idcarta = Math.floor(Math.random() * (MAX - MIN + 1)) + MIN;
-    carta = await getCarta(idcarta);
-  } while (!carta); 
-
-  return carta;
+async function getAllCartas() {
+  const cartas = await db
+    .select()
+    .from(carta)
+    .then(result => result.map(c => ({ ...c })));
+  return cartas;
 }
 
-async function getCarta(id) {
-  const [card] = await db.select()
-  .from(carta)
-  .where(eq(carta.id, id))
-  .then(result => result.map(c => ({ ...c })));
-  if (!card) {
-    console.error('Carta no encontrada para id:', id);
-  }
-  return card;
-}
-
-async function cartaValida(card) {
-  try {
-    if (!card || !card.id) {
-      console.error('Carta inválida:', card);
-      return false;
+function seleccionarRareza(probabilidades) {
+  const total = Object.values(probabilidades).reduce((acc, val) => acc + val, 0);
+  const rand = Math.random() * total;
+  let acumulado = 0;
+  for (const key in probabilidades) {
+    acumulado += probabilidades[key];
+    if (rand < acumulado) {
+      return key;
     }
-
-    const [existe] = await db
-      .select()
-      .from(carta)
-      .where(eq(carta.id, card.id));
-
-    return !!existe;
-  } catch (error) {
-    console.error('Error al validar la carta:', error);
-    return false; 
   }
+  return "NORMAL"; 
 }
-
 
 function generarTipo() {
   const random = Math.random() * 100;
@@ -182,17 +170,6 @@ function generarTipo() {
     return TIPOS_SOBRES.ELITE_LUX;
   } else {
     return TIPOS_SOBRES.MASTER_LUX;
-  }
-}
-
-function generarTipoCarta(sobreConfig) {
-  const random = Math.random() * 100;
-  if (random < sobreConfig.probabilidades.ENERGIA_LUX) {
-    return TIPOS_CARTAS.NORMAL;
-  } else if (random < sobreConfig.probabilidades.ELITE_LUX) {
-    return TIPOS_CARTAS.LUXURY;
-  } else {
-    return TIPOS_CARTAS.MEGALUXURY;
   }
 }
 

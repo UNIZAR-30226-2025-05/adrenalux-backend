@@ -31,10 +31,10 @@ export const PROBABILIDADES_CARTAS = {
 };
 
 export const TIPOS_CARTAS = {
-  NORMAL: { nombre: 'Normal', MIN_ID: 1, MAX_ID: 550 },
-  LUXURY: { nombre: 'Luxury', MIN_ID: 551, MAX_ID: 600 },
-  MEGALUXURY: { nombre: 'Megaluxury', MIN_ID: 601, MAX_ID: 625 },
-  LUXURYXI: { nombre: 'Luxury XI', MIN_ID: 626, MAX_ID: 640 }
+  NORMAL: { nombre: 'Normal', rareza: 0 },
+  LUXURY: { nombre: 'Luxury', rareza: 1 },
+  MEGALUXURY: { nombre: 'Megaluxury', rareza: 2 },
+  LUXURYXI: { nombre: 'Luxury XI', rareza: 3 }
 };
 
 export const CARTA_CONSTANTS = {
