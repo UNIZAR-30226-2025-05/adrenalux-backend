@@ -22,6 +22,8 @@ Adrenalux es un juego de cartas coleccionables basado en la liga española, dond
 │   ├── 📁 routes      # Definición de las rutas
 │   ├── 📁 middleware  # Middlewares de autenticación y validación
 │   ├── 📁 services    # Lógica de negocio
+    ├── 📁 ssl         # Claves SSL
+    ├── 📁 test        # Test para el desarrollo
 │   ├── app.js      # Punto de entrada de la aplicación
 │
 ├── 📄 .env            # Variables de entorno

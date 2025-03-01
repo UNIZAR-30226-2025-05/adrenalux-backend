@@ -119,7 +119,7 @@ async function generarSobre(tipo) {
 async function generarCartas(sobreConfig) {
   const todasLasCartas = await getAllCartas();
   const cartasGeneradas = [];
-  const probabilidades = PROBABILIDADES_CARTAS[sobreConfig.tipoSobre];
+  const probabilidades = sobreConfig.probabilidades;
 
   for (let i = 0; i < sobreConfig.cantidadCartas; i++) {
     const rarezaSeleccionada = seleccionarRareza(probabilidades);
@@ -135,9 +135,16 @@ async function generarCartas(sobreConfig) {
   }
 
   cartasGeneradas.sort((a, b) => {
-    return TIPOS_CARTAS[a.rareza].rareza - TIPOS_CARTAS[b.rareza].rareza;
+    // Convertimos los valores a mayúsculas y usamos "NORMAL" si es undefined
+    const keyA = a.tipo_carta ? a.tipo_carta.toUpperCase() : "NORMAL";
+    const keyB = b.tipo_carta ? b.tipo_carta.toUpperCase() : "NORMAL";
+    
+    // Verificamos que las claves existen en TIPOS_CARTAS, de lo contrario, usamos "NORMAL"
+    const tipoA = TIPOS_CARTAS[keyA] ? TIPOS_CARTAS[keyA] : TIPOS_CARTAS["NORMAL"];
+    const tipoB = TIPOS_CARTAS[keyB] ? TIPOS_CARTAS[keyB] : TIPOS_CARTAS["NORMAL"];
+    
+    return tipoA.rareza - tipoB.rareza;
   });
-
   return cartasGeneradas;
 }
 

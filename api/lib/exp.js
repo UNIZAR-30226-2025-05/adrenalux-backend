@@ -29,14 +29,14 @@ async function comprobarSubidaNivel(usuario, nuevaXp) {
     nuevaXpMax = Math.floor(nuevaXpMax * XP_INCREMENTO_NIVEL);
     nivelesSubidos += 1;
   }
-
+  nuevaXp = Math.round(nuevaXp);
   await db
     .update(user)
     .set({ experience: nuevaXp, level: nivelNuevo })
     .where(eq(user.id, userId));
 
   return {
-    nuevaXP: Math.round(nuevaXp),
+    nuevaXP: nuevaXp,
     nivel: nivelNuevo,
     nuevaXPMax: Math.round(nuevaXpMax),
   };

@@ -79,7 +79,7 @@ router.post('/insertar', jugadores.insertarCartas);
  *       401:
  *         description: No autorizado
  */
-router.post('/jugadores/generar-luxuryxi', authenticate, jugadores.generarCartasLuxuryXI);
+router.post('/generar-luxuryxi', authenticate, jugadores.generarCartasLuxuryXI);
 
 /**
  * @swagger
@@ -97,7 +97,7 @@ router.post('/jugadores/generar-luxuryxi', authenticate, jugadores.generarCartas
  *       401:
  *         description: No autorizado
  */
-router.post('/jugadores/generar-megaluxury', authenticate, jugadores.generarCartasMegaLuxury);
+router.post('/generar-megaluxury', authenticate, jugadores.generarCartasMegaLuxury);
 
 /**
  * @swagger
