@@ -65,14 +65,14 @@ const ratingRanges = {
         weight: { ataque: 1.0, medio: 1.2, defensa: 0.8 } 
     },
     defender: { 
-        ataque: [50, 60],  
-        medio: [50, 70],   
+        ataque: [30, 60],  
+        medio: [40, 60],   
         defensa: [70, 90], 
         weight: { ataque: 0.7, medio: 0.8, defensa: 1.2 } 
     },
     goalkeeper: { 
-        ataque: [30, 40], 
-        medio: [30, 40],  
+        ataque: [30, 50], 
+        medio: [30, 50],  
         defensa: [70, 90], 
         weight: { ataque: 0.3, medio: 0.7, defensa: 1.5 } 
     }
@@ -87,7 +87,6 @@ function getOutputFileName(inputFileName) {
     return `${fileBaseName}-metrics-${timestamp}.json`;
 }
 
-// Funcion para normalizar un valor entre un valor minimo y maximo
 function normalize(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }

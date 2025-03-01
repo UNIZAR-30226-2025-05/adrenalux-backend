@@ -45,9 +45,6 @@ export async function abrirSobre(req, res, next) {
   });
   const { nuevaXP, nivel,nuevaXPMax } = await agregarExp(userId, RECOMPENSAS.EXPERIENCIA.ABRIR_SOBRE);
 
-  console.log("Xp: ", nuevaXP);
-  console.log("nivel: ", nivel);
-
   const cartasJson = cartas.map(carta => objectToJson(carta));
   let responseJson = {
     tipo: tipo,
@@ -72,22 +69,26 @@ export async function abrirSobreRandom(req, res, next) {
     return next(new Unauthorized({ message: 'No tienes sobres gratis disponibles' }));
   }
   restarSobre(userId);
-  const cartas = generarSobre(tipo);  
+  const cartas = await generarSobre(tipo);  
 
   cartas.forEach((carta) => {
-    insertarCartaEnColeccion(carta.id, userId);
+    if (carta && carta.id) {
+      insertarCartaEnColeccion(carta.id, userId);
+    } else {
+      console.error('Carta no válida:', carta);
+    }
   });
-  nuevaXP,nivel = agregarExp(userId,RECOMPENSAS.ABRIR_SOBRE_EXP);
+  const { nuevaXP, nivel,nuevaXPMax } = await agregarExp(userId, RECOMPENSAS.EXPERIENCIA.ABRIR_SOBRE);
 
   const cartasJson = cartas.map(carta => objectToJson(carta));
-
-  responeJson = {
+  let responseJson = {
     tipo: tipo,
     cartas: cartasJson,
     XP: nuevaXP,
-    nivel: nivel
+    nivel: nivel,
+    xpMax: nuevaXPMax
   }
-  return sendResponse(req, res, { data: {responeJson} });
+  return sendResponse(req, res, { data: {responseJson} });
 }
 
 async function insertarCartaEnColeccion(cartaId, userId) {
@@ -135,11 +136,9 @@ async function generarCartas(sobreConfig) {
   }
 
   cartasGeneradas.sort((a, b) => {
-    // Convertimos los valores a mayúsculas y usamos "NORMAL" si es undefined
     const keyA = a.tipo_carta ? a.tipo_carta.toUpperCase() : "NORMAL";
     const keyB = b.tipo_carta ? b.tipo_carta.toUpperCase() : "NORMAL";
     
-    // Verificamos que las claves existen en TIPOS_CARTAS, de lo contrario, usamos "NORMAL"
     const tipoA = TIPOS_CARTAS[keyA] ? TIPOS_CARTAS[keyA] : TIPOS_CARTAS["NORMAL"];
     const tipoB = TIPOS_CARTAS[keyB] ? TIPOS_CARTAS[keyB] : TIPOS_CARTAS["NORMAL"];
     
