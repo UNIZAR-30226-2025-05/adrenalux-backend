@@ -59,7 +59,7 @@ const router = express.Router();
  *       401:
  *         description: No autorizado
  */
-router.post('/insertar', jugadores.insertarCartas);
+router.post('/insertar', apiKeyAuth,jugadores.insertarCartas);
 
 
 
@@ -79,7 +79,7 @@ router.post('/insertar', jugadores.insertarCartas);
  *       401:
  *         description: No autorizado
  */
-router.post('/generar-luxuryxi', authenticate, jugadores.generarCartasLuxuryXI);
+router.post('/generar-luxuryxi', apiKeyAuth, jugadores.generarCartasLuxuryXI);
 
 /**
  * @swagger
@@ -97,7 +97,7 @@ router.post('/generar-luxuryxi', authenticate, jugadores.generarCartasLuxuryXI);
  *       401:
  *         description: No autorizado
  */
-router.post('/generar-megaluxury', authenticate, jugadores.generarCartasMegaLuxury);
+router.post('/generar-megaluxury', apiKeyAuth, jugadores.generarCartasMegaLuxury);
 
 /**
  * @swagger
@@ -115,7 +115,7 @@ router.post('/generar-megaluxury', authenticate, jugadores.generarCartasMegaLuxu
  *       401:
  *         description: No autorizado
  */
-router.post('/generar-luxury', authenticate, jugadores.generarCartasLuxury);
+router.post('/generar-luxury', apiKeyAuth, jugadores.generarCartasLuxury);
 
 
 export default router;

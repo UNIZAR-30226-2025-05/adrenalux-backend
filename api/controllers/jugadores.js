@@ -2,6 +2,7 @@ import { db } from '../config/db.js';
 import { sendResponse } from '../lib/http.js';
 import { BadRequest } from '../lib/http.js';
 import { carta } from '../db/schemas/carta.js';
+import { sql, eq } from 'drizzle-orm';
 import { TIPOS_CARTAS } from '../config/cartas.config.js';
 import { CARTA_CONSTANTS } from '../config/cartas.config.js';
 
@@ -63,29 +64,65 @@ export async function insertarCartaEnBD(jugador) {
 
 async function seleccionarMejoresJugadores(limite, offset) {
   return await db.select().from(carta)
-    .orderByRaw('(ataque + defensa + control) DESC')
+    .orderBy(sql`(${carta.ataque} + ${carta.defensa} + ${carta.control}) DESC`)
     .limit(limite)
     .offset(offset);
 }
 
-function actualizarEstadisticas(carta,tipo_carta, incremento, maximo)  {
-  carta.defensa = Math.min(carta.defensa + incremento, maximo);
-  carta.ataque = Math.min(carta.ataque + incremento, maximo);
-  carta.medio = Math.min(carta.medio + incremento, maximo);
-  carta.tipo_carta = tipo_carta;
+async function actualizarEstadisticas(cartaRow, tipo_carta, incremento, maximo) {
 
-  return carta.save();
+  const def = Number(cartaRow.defensa) || 0;
+  const atq = Number(cartaRow.ataque) || 0;
+  const ctrl = Number(cartaRow.control) || 0;
+
+  const inc = Number(incremento) || 0;
+  const max = Number(maximo) || 100;
+
+  const updatedStats = {
+    defensa: Math.min(def + inc, max),
+    ataque: Math.min(atq + inc, max),
+    control: Math.min(ctrl + inc, max),
+    tipo_carta: tipo_carta
+  };
+
+  await db.update(carta)
+    .set(updatedStats)
+    .where(eq(carta.id, cartaRow.id));
+
+  return { ...cartaRow, ...updatedStats };
 }
 
 export async function generarCartasLuxuryXI(req, res, next) {
   try {
-    const mejoresJugadores = await seleccionarMejoresJugadores(CARTA_CONSTANTS.NUMERO_CARTAS.LUXURYXI, 0);
+    console.log('Constantes:', {
+      incremento: CARTA_CONSTANTS.INCREMENTOS.LUXURYXI,
+      maximo: CARTA_CONSTANTS.INCREMENTOS.MAX
+    });
+
+    const mejoresJugadores = await seleccionarMejoresJugadores(
+      CARTA_CONSTANTS.NUMERO_CARTAS.LUXURYXI, 
+      0
+    );
+    console.log('Jugadores raw:', JSON.stringify(mejoresJugadores));
     for (let jugador of mejoresJugadores) {
-      jugador = await actualizarEstadisticas(jugador, TIPOS_CARTAS.LUXURYXI.nombre,CARTA_CONSTANTS.INCREMENTOS.LUXURYXI, CARTA_CONSTANTS.INCREMENTOS.MAX);
-      await insertarCartaEnBD(jugador); 
+      try {
+        jugador = await actualizarEstadisticas(
+          jugador,
+          TIPOS_CARTAS.LUXURYXI.nombre,
+          CARTA_CONSTANTS.INCREMENTOS.LUXURYXI,
+          CARTA_CONSTANTS.INCREMENTOS.MAX
+        );
+        await insertarCartaEnBD(jugador);
+      } catch (error) {
+        console.error(`Error procesando jugador ${jugador.id}:`, error);
+      }
     }
-    return sendResponse(req, res, { message: 'Cartas LuxuryXI generadas exitosamente' });
+    return sendResponse(req, res, { 
+      message: 'Cartas LuxuryXI generadas exitosamente',
+      count: mejoresJugadores.length
+    });
   } catch (error) {
+    console.error('Error crítico:', error);
     return next(new Error('Error al generar las cartas LuxuryXI: ' + error.message));
   }
 }

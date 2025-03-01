@@ -103,7 +103,31 @@ async function sendDataToAPI() {
         });
 
         console.log('Datos enviados con éxito:', response.status);
-        console.log('Respuesta del servidor:', response.data);
+        
+        const endpoints = [
+            '/api/v1/jugadores/generar-luxuryxi',
+            '/api/v1/jugadores/generar-megaluxury',
+            '/api/v1/jugadores/generar-luxury'
+        ];
+
+        for (let endpoint of endpoints) {
+            try {
+                const response = await axios.post(
+                    `http://54.37.50.18:3000${endpoint}`, 
+                    {}, 
+                    { 
+                        headers: {
+                            'x-api-key': API_KEY,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+                console.log(`${endpoint} exitoso:`, response.status);
+            } catch (error) {
+                console.error(`Error en ${endpoint}:`, error.message);
+            }
+        }
+
     } catch (error) {
         console.error('Error al enviar los datos:', error.message);
         if (error.response) {
