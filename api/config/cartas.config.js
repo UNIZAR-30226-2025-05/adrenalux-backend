@@ -6,6 +6,8 @@ export const TIPOS_SOBRES = {
 
 export const JUGADORES_POR_SOBRE = 6;
 
+export const INTERVALO_SOBRE_GRATIS = 8;  // Intervalo entre sobres gratis, en horas
+
 export const PROBABILIDADES_SOBRES_GRATUITOS = {
   [TIPOS_SOBRES.ENERGIA_LUX]: 90,
   [TIPOS_SOBRES.ELITE_LUX]: 8,

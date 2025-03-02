@@ -16,8 +16,10 @@ import {
   PROBABILIDADES_SOBRES_GRATUITOS,
   PRECIOS_SOBRES,
   PROBABILIDADES_CARTAS,
-  TIPOS_CARTAS
+  TIPOS_CARTAS,
+  INTERVALO_SOBRE_GRATIS
 } from '../config/cartas.config.js'; 
+import { boolean } from 'drizzle-orm/mysql-core';
 
 // Funciones de generación de aperturas de sobres
 
@@ -61,14 +63,16 @@ export async function abrirSobreRandom(req, res, next) {
   const userId = decodedToken.id;
   const tipo = generarTipo();
 
+  const [usuario] = await db.select().from(user).where(eq(user.id, userId));
+
   if (!tipoSobreDefinido(tipo)) {
     return next(new BadRequest({ message: 'Tipo de sobre no definido' }));
   }
 
-  if (!tieneSobreGratis(userId)) {
+  if (! await tieneSobreGratis(usuario)) {
     return next(new Unauthorized({ message: 'No tienes sobres gratis disponibles' }));
   }
-  restarSobre(userId);
+  await restarSobre(usuario);
   const cartas = await generarSobre(tipo);  
 
   cartas.forEach((carta) => {
@@ -217,11 +221,21 @@ export async function sobresDisponibles(req, res, next) {
 }
 
 
-function tieneSobreGratis(usuario) {
-  // Lógica para verificar si el usuario tiene sobres gratis disponibles
+async function tieneSobreGratis(usuario) {
+
+  if (!usuario) return false;
+  if (!usuario.ultimoSobre) return true;
+  
+  const ultimoSobreTime = new Date(usuario.ultimo_sobre_gratis).getTime();
+  const horas = INTERVALO_SOBRE_GRATIS * 60 * 60 * 1000; 
+  return Date.now() - ultimoSobreTime >= horas;
 }
 
-function restarSobre(usuario) {
-  // Lógica para restar un sobre gratuito al usuario
+async function restarSobre(usuario) {
+  await db.update(user)
+    .set({
+      ultimo_sobre_gratis: new Date(), 
+    })
+    .where(eq(user.id, usuario.id));
 }
 

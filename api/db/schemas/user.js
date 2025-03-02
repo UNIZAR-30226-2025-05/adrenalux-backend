@@ -1,4 +1,4 @@
-import { pgTable, varchar, serial, text, integer } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, serial, text, integer, timestamp  } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
  // export const DEFAULT_AVATAR_URL = '../imagenes/profile/avatarDefault.png';
@@ -38,6 +38,7 @@ export const user = pgTable('user', {
   created_at: text('created_at')
     .notNull()
     .default(new Date().toISOString()),
+  ultimo_sobre_gratis: timestamp('ultimo_sobre_gratis'),
 });
 
 export const userSelectSchema = createSelectSchema(user).partial();

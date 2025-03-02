@@ -62,6 +62,8 @@ export async function getProfile(req, res, next) {
     const partidasJson = partidas.map(partida => objectToJson(partida));
     const xpMax = calcularXpNecesaria(usuario.level);
 
+    console.log("Usuario: ", usuarioJson);
+
     const responseJson = {
       ...usuarioJson,
       logros: logrosJson,
