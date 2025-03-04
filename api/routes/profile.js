@@ -3,6 +3,7 @@ import { authenticate } from '../middlewares/auth.js';
 import { Router } from 'express';
 import { z } from 'zod';
 import * as profile from '../controllers/profile.js';
+import * as friendCtrl from '../controllers/amigos.js';
 
 /**
  * @swagger
@@ -230,85 +231,6 @@ router.get('/adrenacoins', authenticate, profile.getAdrenacoins);
 
 /**
  * @swagger
- * /profile/friends:
- *   get:
- *     summary: Obtener la lista de amigos del usuario
- *     tags: [Profile]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: header
- *         name: Authorization
- *         required: true
- *         schema:
- *           type: string
- *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *         description: Token JWT obtenido al iniciar sesión
- *     responses:
- *       200:
- *         description: Lista de amigos obtenida exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: integer
- *                       username:
- *                         type: string
- *                       name:
- *                         type: string
- *                       lastname:
- *                         type: string
- *                       avatar:
- *                         type: string
- *       404:
- *         description: Usuario no encontrado
- */
-router.get('/friends', authenticate, profile.getFriends);
-
-
-/**
- * @swagger
- * /profile/friend-requests:
- *   post:
- *     summary: Enviar una solicitud de amistad
- *     tags: [Profile]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: header
- *         name: Authorization
- *         required: true
- *         schema:
- *           type: string
- *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *         description: Token JWT obtenido al iniciar sesión
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               friendId:
- *                 type: integer
- *                 description: ID del usuario al que se envía la solicitud
- *     responses:
- *       200:
- *         description: Solicitud de amistad enviada correctamente
- *       400:
- *         description: Datos inválidos o el usuario ya es tu amigo
- */
-router.post('/friend-requests', authenticate, profile.sendFriendRequest);
-
-/**
- * @swagger
  * /profile/achievements:
  *   get:
  *     summary: Obtener los logros del usuario
@@ -417,5 +339,85 @@ router.delete('/', authenticate, profile.deleteUser);
 router.get('/profile/stats', authenticate, profile.getStats);
 router.put('/profile/settings', authenticate, profile.updateUserSettings);
 */
+
+/**
+ * @swagger
+ * /profile/friends:
+ *   get:
+ *     summary: Obtener la lista de amigos del usuario
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *         description: Token JWT obtenido al iniciar sesión
+ *     responses:
+ *       200:
+ *         description: Lista de amigos obtenida exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       username:
+ *                         type: string
+ *                       name:
+ *                         type: string
+ *                       lastname:
+ *                         type: string
+ *                       avatar:
+ *                         type: string
+ *       404:
+ *         description: Usuario no encontrado
+ */
+router.get('/friends', authenticate, friendCtrl.getFriends);
+
+router.get('/friends/requests', authenticate, friendCtrl.getFriendRequests);
+
+/**
+ * @swagger
+ * /profile/friends/requests:
+ *   post:
+ *     summary: Enviar una solicitud de amistad
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *         description: Token JWT obtenido al iniciar sesión
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               friendId:
+ *                 type: integer
+ *                 description: ID del usuario al que se envía la solicitud
+ *     responses:
+ *       200:
+ *         description: Solicitud de amistad enviada correctamente
+ *       400:
+ *         description: Datos inválidos o el usuario ya es tu amigo
+ */
+router.post('/friends/request', authenticate, friendCtrl.sendInvitation);
 
 export default router;

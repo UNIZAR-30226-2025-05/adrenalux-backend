@@ -16,8 +16,6 @@ export async function getProfile(req, res, next) {
   try {
     const token = await getDecodedToken(req);
     const userId = token.id;
-    console.log("Token decodificado:", token);
-    console.log("ID de usuario:", userId);
 
     // Consulta usuario
     const [usuario] = await db.select().from(user).where(eq(user.id, userId));
@@ -61,8 +59,6 @@ export async function getProfile(req, res, next) {
     const logrosJson = logros.map(logro => objectToJson(logro));
     const partidasJson = partidas.map(partida => objectToJson(partida));
     const xpMax = calcularXpNecesaria(usuario.level);
-
-    console.log("Usuario: ", usuarioJson);
 
     const responseJson = {
       ...usuarioJson,
@@ -187,43 +183,6 @@ export async function getAchievements(req, res, next) {
     next(err);
   }
 }
-
-export async function getFriends(req, res, next) {
-  try {
-    const token = await getDecodedToken(req);
-    const userId = token.id;
-
-    const [usuario] = await db.select().from(user).where(eq(user.id, userId));
-    if (!usuario) return next(new NotFound('Usuario no encontrado'));
-
-    const friends = await db
-      .select({
-        id: user.id,
-        username: user.username,
-        name: user.name,
-        lastname: user.lastname,
-        avatar: user.avatar,
-      })
-      .from(amistad)
-      .leftJoin(user, or(
-        eq(amistad.user1_id, user.id), 
-        eq(amistad.user2_id, user.id)  
-      ))
-      .where(
-        or(
-          eq(amistad.user1_id, userId),
-          eq(amistad.user2_id, userId)  
-        )
-      )
-      .where(not(eq(user.id, userId)));
-
-    const friendsJson = friends.map(friend => objectToJson(friend));
-    return sendResponse(req, res, { data: friendsJson });
-  } catch (err) {
-    next(err);
-  }
-}
-
 
 export async function sendFriendRequest(req, res, next) {
   try {

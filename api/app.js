@@ -12,7 +12,6 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerDocs from './config/swagger.js'; 
 import cartasRoutes from './routes/carta.js';
 import coleccionRoutes from './routes/coleccion.js';
-import amigosRoutes from './routes/amigos.js';
 import profileRouter from './routes/profile.js'
 import partidasRouter from './routes/partidas.js'
 import jugadoresRouter from './routes/jugadores.js'
@@ -49,7 +48,6 @@ app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/health', healthRouter)
 app.use('/api/v1/cartas', cartasRoutes);
 app.use('/api/v1/coleccion', coleccionRoutes);
-app.use('/api/v1/amigos', amigosRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use('/api/v1/profile', profileRouter)
 app.use('/api/v1/partidas', partidasRouter)
