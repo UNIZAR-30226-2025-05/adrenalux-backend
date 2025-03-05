@@ -44,3 +44,7 @@ export function sendNotification(toUserId, type, username) {
   });
   } 
 }
+
+export function isConnected(userId) {
+  return connectedUsers.has(userId);
+}

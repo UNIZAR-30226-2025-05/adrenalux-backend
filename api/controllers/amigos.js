@@ -6,6 +6,7 @@ import { amistad } from '../db/schemas/amistad.js';
 import { sendResponse } from '../lib/http.js';
 import { objectToJson } from '../lib/toJson.js';
 import { getDecodedToken } from '../lib/jwt.js';
+import { isConnected } from './socket.js';
 
 
 export async function getFriendRequests(req, res) {
@@ -187,7 +188,7 @@ export async function getFriends(req, res) {
     const userId = token.id;
 
     try {
-        const friends = await db
+        const rawFriends = await db
             .select({
                 id: user.id,
                 username: user.username,
@@ -214,6 +215,11 @@ export async function getFriends(req, res) {
                 )
             )
             .where(eq(amistad.estado, 'aceptada'));
+
+        const friends = rawFriends.map(friend => ({
+            ...friend,
+            isConnected: isConnected(friend.id)
+            }));
 
         sendResponse(req, res, { data: friends });
     } catch (error) {
