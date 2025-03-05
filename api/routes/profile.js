@@ -426,4 +426,6 @@ router.patch('/friends/requests/:requestId/decline',authenticate, friendCtrl.dec
 
 router.delete('/friends/:friendId',authenticate, friendCtrl.deleteFriend);
 
+router.get('/friends/:friendId', authenticate, friendCtrl.getFriendData);
+
 export default router;

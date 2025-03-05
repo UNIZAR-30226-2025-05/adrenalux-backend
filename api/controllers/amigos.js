@@ -6,6 +6,11 @@ import { amistad } from '../db/schemas/amistad.js';
 import { sendResponse } from '../lib/http.js';
 import { objectToJson } from '../lib/toJson.js';
 import { getDecodedToken } from '../lib/jwt.js';
+import { isConnected } from './socket.js';
+import { partida } from '../db/schemas/partida.js';
+import { logro } from '../db/schemas/logro.js';
+import { logrosUsuario } from '../db/schemas/logrosUsuario.js';
+import{calcularXpNecesaria} from '../lib/exp.js';
 
 
 export async function getFriendRequests(req, res) {
@@ -187,7 +192,7 @@ export async function getFriends(req, res) {
     const userId = token.id;
 
     try {
-        const friends = await db
+        const rawFriends = await db
             .select({
                 id: user.id,
                 username: user.username,
@@ -214,6 +219,11 @@ export async function getFriends(req, res) {
                 )
             )
             .where(eq(amistad.estado, 'aceptada'));
+
+        const friends = rawFriends.map(friend => ({
+            ...friend,
+            isConnected: isConnected(friend.id)
+            }));
 
         sendResponse(req, res, { data: friends });
     } catch (error) {
@@ -368,5 +378,65 @@ export async function deleteFriend(req, res) {
             message: 'Error al eliminar amigo',
             error: error.message
         });
+    }
+}
+
+export async function getFriendData(req, res, next) {
+    try {
+        const friendId = Number(req.params.friendId);
+
+        const [amigo] = await db.select().from(user).where(eq(user.id, friendId));
+        if (!amigo) return next(new NotFound('Amigo no encontrado'));
+
+        let logros = [];
+        try {
+            logros = await db
+                .select()
+                .from(logrosUsuario)
+                .leftJoin(logro, eq(logrosUsuario.logro_id, logro.id))
+                .where(eq(logrosUsuario.user_id, friendId));
+
+            if (logros.length === 0) {
+                console.log('El amigo no tiene logros.');
+            }
+        } catch (logrosError) {
+            console.error('Error al obtener logros:', logrosError);
+            return next(logrosError);
+        }
+
+        let partidas = [];
+        try {
+            partidas = await db
+                .select()
+                .from(partida)
+                .where(or(
+                    eq(partida.user1_id, friendId),
+                    eq(partida.user2_id, friendId)
+                ));
+
+            if (partidas.length === 0) {
+                console.log('El amigo no tiene partidas.');
+            }
+        } catch (partidasError) {
+            console.error('Error al obtener partidas:', partidasError);
+            return next(partidasError);
+        }
+
+        const amigoJson = objectToJson(amigo);
+        const logrosJson = logros.map(logro => objectToJson(logro));
+        const partidasJson = partidas.map(partida => objectToJson(partida));
+        const xpMax = calcularXpNecesaria(amigo.level);
+
+        const responseJson = {
+            ...amigoJson,
+            logros: logrosJson,
+            partidas: partidasJson,
+            xpMax: xpMax,
+        };
+
+        return sendResponse(req, res, { data: responseJson });
+    } catch (err) {
+        console.error("Error inesperado:", err);
+        next(err);
     }
 }
