@@ -420,4 +420,10 @@ router.get('/friends/requests', authenticate, friendCtrl.getFriendRequests);
  */
 router.post('/friends/request', authenticate, friendCtrl.sendInvitation);
 
+router.patch('/friends/requests/:requestId/accept',authenticate, friendCtrl.acceptRequest);
+
+router.patch('/friends/requests/:requestId/decline',authenticate, friendCtrl.declineRequest);
+
+router.delete('/friends/:friendId',authenticate, friendCtrl.deleteFriend);
+
 export default router;

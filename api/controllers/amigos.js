@@ -224,3 +224,149 @@ export async function getFriends(req, res) {
         });
     }
 }
+
+
+export async function acceptRequest(req, res) {
+    const token = await getDecodedToken(req);
+    const currentUserId = token.id;
+    const requestId = req.params.requestId;
+    
+    const [senderId, recipientId] = requestId.split('-').map(Number);
+
+    if (currentUserId !== recipientId) {
+        return res.status(403).json({
+            success: false,
+            message: 'No tienes permiso para aceptar esta solicitud'
+        });
+    }
+
+    try {
+        const [request] = await db.select()
+        .from(amistad)
+        .where(
+            and(
+                eq(amistad.user1_id, senderId),
+                eq(amistad.user2_id, recipientId),
+                eq(amistad.estado, 'pendiente')
+            )
+        );
+
+        if (!request) {
+            return res.status(404).json({
+                success: false,
+                message: 'Solicitud no encontrada o ya fue procesada'
+            });
+        }
+
+        await db.update(amistad)
+        .set({ estado: 'aceptada', created_at: new Date().toISOString() })
+        .where(
+            and(
+                eq(amistad.user1_id, senderId),
+                eq(amistad.user2_id, recipientId)
+            )
+        );
+
+        res.json({
+            success: true,
+            message: 'Solicitud aceptada correctamente',
+            data: {
+                friendship_id: `${recipientId}-${senderId}`
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error al aceptar solicitud',
+            error: error.message
+        });
+    }
+}
+
+export async function declineRequest(req, res) {
+    const token = await getDecodedToken(req);
+    const currentUserId = token.id;
+    const requestId = req.params.requestId;
+    const [senderId, recipientId] = requestId.split('-').map(Number);
+
+    if (currentUserId !== recipientId) {
+        return res.status(403).json({
+            success: false,
+            message: 'No tienes permiso para rechazar esta solicitud'
+        });
+    }
+    try {
+        const result = await db.delete(amistad)
+        .where(
+            and(
+                eq(amistad.user1_id, senderId),
+                eq(amistad.user2_id, recipientId),
+                eq(amistad.estado, 'pendiente')
+            )
+        ).returning();
+
+        if (result.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Solicitud no encontrada o ya fue procesada'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Solicitud rechazada y eliminada',
+            data: {
+                request_id: requestId
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error al rechazar solicitud',
+            error: error.message
+        });
+    }
+}
+
+export async function deleteFriend(req, res) {
+    const token = await getDecodedToken(req);
+    const currentUserId = token.id;
+    const friendId = Number(req.params.friendId);
+    try {
+        const result = await db.delete(amistad)
+        .where(
+            and(
+                eq(amistad.user1_id, currentUserId),
+                eq(amistad.user2_id, friendId),
+                eq(amistad.estado, 'aceptada')
+            )
+        ).returning();
+
+        await db.delete(amistad)
+        .where(
+            and(
+                eq(amistad.user1_id, friendId),
+                eq(amistad.user2_id, currentUserId),
+                eq(amistad.estado, 'aceptada')
+            )
+        ).returning();
+
+        if (result.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No se encontró la amistad o ya fue eliminada'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Amistad eliminada correctamente'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error al eliminar amigo',
+            error: error.message
+        });
+    }
+}
