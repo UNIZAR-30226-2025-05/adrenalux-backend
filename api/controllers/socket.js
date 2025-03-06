@@ -31,13 +31,13 @@ export function configureWebSocket(server) {
   return io;
 }
 
-export function sendNotification(toUserId, type, username) {
+export function sendNotification(toUserId, type, data) {
   const targetSocket = connectedUsers.get(toUserId);
   if (targetSocket) {
     targetSocket.emit('notification', {
-      type: 'exchange',
-      message: `Nueva invitación de ${username}`,
+      message: data['message'],
       data: {
+          requestId: data['id'],
           type: type,
           timestamp: new Date().toISOString()
       }

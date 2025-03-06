@@ -162,9 +162,8 @@ export async function sendInvitation(req, res) {
             recipientId,
             "friend_request",
             {
+                id: `${senderId}-${recipientId}`,
                 message: `${sender.username} te ha enviado una solicitud de amistad`,
-                avatar: sender.avatar,
-                friend_code: sender.friend_code
             }
         );
 
