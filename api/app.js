@@ -15,6 +15,7 @@ import coleccionRoutes from './routes/coleccion.js';
 import profileRouter from './routes/profile.js'
 import partidasRouter from './routes/partidas.js'
 import jugadoresRouter from './routes/jugadores.js'
+import mercadoRoutes from './routes/mercado.js';  
 import * as dotenv from "dotenv";
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -48,10 +49,11 @@ app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/health', healthRouter)
 app.use('/api/v1/cartas', cartasRoutes);
 app.use('/api/v1/coleccion', coleccionRoutes);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use('/api/v1/profile', profileRouter)
 app.use('/api/v1/partidas', partidasRouter)
-app.use('/public/images', express.static(path.join(__dirname, 'public', 'images')));
 app.use('/api/v1/jugadores', jugadoresRouter)
+app.use('/api/v1/mercado', mercadoRoutes);  
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+app.use('/public/images', express.static(path.join(__dirname, 'public', 'images')));
 
 app.use(errorHandler)
