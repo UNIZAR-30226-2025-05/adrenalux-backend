@@ -1,0 +1,12 @@
+selenium==3.14.1
+pandas==1.3.5
+numpy==1.21.4
+lxml==4.7.1
+html5lib==1.1
+bs4==0.0.1
+requests==2.26.0
+prettyconf==2.2.1
+logzero==1.7.0
+click==8.0.3
+typer==0.4.0
+user_agent==0.1.10
