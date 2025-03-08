@@ -10,7 +10,13 @@ const API_KEY = process.env.CURRENT_API_KEY;
 
 const currentDir = path.dirname(new URL(import.meta.url).pathname);
 
+<<<<<<< HEAD
+//const inputFile = path.join(currentDir, 'playersData', 'S2425-laliga-players.json');
+const inputFile = path.join(currentDir, 'scraper', 'datasets', 'S2425-laliga-players.json');
+
+=======
 const inputFile = path.join(currentDir, 'playersData', 'S2425-laliga-players.json');
+>>>>>>> 01222b51ead98918607e5fc61980fc6d5cce3c64
 const outputFile = path.join(currentDir, 'playersMetrics', '${getOutputFileName(inputFile)}');
 // Asegurar que el archivo existe o crearlo vacío
 if (!fs.existsSync(outputFile)) {
