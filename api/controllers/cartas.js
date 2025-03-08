@@ -10,6 +10,7 @@ import { db } from '../config/db.js';
 import { objectToJson } from '../lib/toJson.js';
 import { eq, and } from 'drizzle-orm'
 import { RECOMPENSAS } from '../config/recompensas.config.js';
+import { comprobarLogros } from '../lib/logros.js';
 import {
   TIPOS_SOBRES,
   JUGADORES_POR_SOBRE,
@@ -46,14 +47,16 @@ export async function abrirSobre(req, res, next) {
     }
   });
   const { nuevaXP, nivel,nuevaXPMax } = await agregarExp(userId, RECOMPENSAS.EXPERIENCIA.ABRIR_SOBRE);
-
   const cartasJson = cartas.map(carta => objectToJson(carta));
+  const logros = await comprobarLogros(userId);
+
   let responseJson = {
     tipo: tipo,
     cartas: cartasJson,
     XP: nuevaXP,
     nivel: nivel,
-    xpMax: nuevaXPMax
+    xpMax: nuevaXPMax,
+    logros: logros
   }
   return sendResponse(req, res, { data: {responseJson} });
 }
@@ -85,12 +88,15 @@ export async function abrirSobreRandom(req, res, next) {
   const { nuevaXP, nivel,nuevaXPMax } = await agregarExp(userId, RECOMPENSAS.EXPERIENCIA.ABRIR_SOBRE);
 
   const cartasJson = cartas.map(carta => objectToJson(carta));
+  const logros = await comprobarLogros(userId);
+
   let responseJson = {
     tipo: tipo,
     cartas: cartasJson,
     XP: nuevaXP,
     nivel: nivel,
-    xpMax: nuevaXPMax
+    xpMax: nuevaXPMax,
+    logros: logros
   }
   return sendResponse(req, res, { data: {responseJson} });
 }
