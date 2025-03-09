@@ -1,20 +1,27 @@
 import { db } from '../config/db.js';
 import { logro } from '../db/schemas/logro.js';
+import { eq, isNull, or } from 'drizzle-orm';
 import { logrosUsuario } from '../db/schemas/logrosUsuario.js';
+import { user } from '../db/schemas/user.js';
 import { partida } from '../db/schemas/partida.js';
 import { coleccion } from '../db/schemas/coleccion.js';
 
 async function obtenerDatosUsuario(userId) {
-  return await db.select()
-    .from(user)
-    .where(user.id.equals(userId));
+  const [usuario] = await db.select()
+  .from(user)
+  .where(eq(user.id, userId));
+  return usuario;
 }
 
 async function obtenerPartidasJugadas(userId) {
   const partidas = await db.select()
     .from(partida)
-    .where(partida.user1_id.equals(userId))
-    .orWhere(partida.user2_id.equals(userId));
+    .where(
+      or(
+        eq(partida.user1_id, userId),
+        eq(partida.user2_id, userId)
+      )
+    );
   
   return partidas.length;
 }
@@ -22,7 +29,7 @@ async function obtenerPartidasJugadas(userId) {
 async function obtenerPartidasGanadas(userId) {
   const partidasGanadas = await db.select()
     .from(partida)
-    .where(partida.ganador_id.equals(userId));
+    .where(eq(partida.ganador_id, userId));
 
   return partidasGanadas.length;
 }
@@ -30,7 +37,7 @@ async function obtenerPartidasGanadas(userId) {
 async function obtenerCartasConseguidas(userId) {
   const coleccionDeCartas = await db.select()
     .from(coleccion)
-    .where(coleccion.user_id.equals(userId));
+    .where(eq(coleccion.user_id, userId));
 
   return coleccionDeCartas.length;
 }
@@ -45,7 +52,7 @@ export async function obtenerEstadisticas(userId) {
     partidas_jugadas: partidasJugadas,
     partidas_ganadas: partidasGanadas,
     cartas_conseguidas: cartasConseguidas,
-    nivel: usuario.nivel,
+    nivel: usuario.level,
   };
 
   return estadisticas;
@@ -59,6 +66,7 @@ export async function comprobarLogros(userId) {
 
   for (const logro of logrosNoConseguidos) {
     if (cumpleRequisitosLogro(logro, estadisticas_user)) {
+      console.log("Logro obtenido:", logro);
       logrosObtenidos.set(logro, logro.tipo);
       await insertarLogro(userId, logro.id);
     }
@@ -72,14 +80,11 @@ export async function comprobarLogros(userId) {
 }
 
 async function obtenerLogrosNoConseguidos(userId) {
-  return await db.select()
+  return  await db.select()
     .from(logro)
-    .whereNotExists(
-      db.select()
-        .from(logrosUsuario)
-        .where(logrosUsuario.user_id.equals(userId))
-        .where(logrosUsuario.logro_id.equals(logro.id))
-    );
+    .leftJoin(logrosUsuario, eq(logrosUsuario.logro_id, logro.id))
+    .where(eq(logrosUsuario.user_id, userId))
+    .where(isNull(logrosUsuario.logro_id));
 }
 
 function cumpleRequisitosLogro(logro, estadisticas_user) {
