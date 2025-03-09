@@ -342,7 +342,7 @@ export async function deleteFriend(req, res) {
     const currentUserId = token.id;
     const friendId = Number(req.params.friendId);
     try {
-        const result = await db.delete(amistad)
+        const result1 = await db.delete(amistad)
         .where(
             and(
                 eq(amistad.user1_id, currentUserId),
@@ -351,25 +351,24 @@ export async function deleteFriend(req, res) {
             )
         ).returning();
 
-        await db.delete(amistad)
-        .where(
-            and(
-                eq(amistad.user1_id, friendId),
-                eq(amistad.user2_id, currentUserId),
-                eq(amistad.estado, 'aceptada')
-            )
-        ).returning();
+        const result2 = await db.delete(amistad)
+            .where(
+                and(
+                    eq(amistad.user1_id, friendId),
+                    eq(amistad.user2_id, currentUserId),
+                    eq(amistad.estado, 'aceptada')
+                )
+            ).returning();
 
-        if (result.length === 0) {
+        if ((result1.length + result2.length) === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'No se encontró la amistad o ya fue eliminada'
             });
         }
-
         res.json({
-            success: true,
-            message: 'Amistad eliminada correctamente'
+        success: true,
+        message: 'Amistad eliminada correctamente'
         });
     } catch (error) {
         res.status(500).json({
