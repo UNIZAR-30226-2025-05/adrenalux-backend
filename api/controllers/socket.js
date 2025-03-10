@@ -146,14 +146,14 @@ export function configureWebSocket(server) {
 
       if (bothConfirmed) {
         const [user1, user2] = exchange.participants;
-        const user1Cards = exchange.selectedCard[user1];
-        const user2Cards = exchange.selectedCard[user2];
+        const user1Card = exchange.selectedCard[user1];
+        const user2Card = exchange.selectedCard[user2];
 
         io.to(exchange.roomId).emit('exchange_completed', {
           exchangeId,
           message: 'Intercambio realizado con éxito',
-          user1Cards,
-          user2Cards
+          user1Card,
+          user2Card
         });
 
         activeExchanges.delete(exchangeId);
@@ -161,6 +161,22 @@ export function configureWebSocket(server) {
           connectedUsers.get(participantId)?.leave(exchange.roomId);
         });
       }
+    });
+
+    socket.on('cancel_confirmation', (exchangeId) => {
+      const userId = String(socket.data.userID);
+      const exchange = activeExchanges.get(exchangeId);
+    
+      if (!exchange || exchange.estado !== 'activo') {
+        return socket.emit('error', 'Intercambio no válido');
+      }
+    
+      exchange.confirmations[userId] = false;
+      
+      io.to(exchange.roomId).emit('confirmation_updated', {
+        exchangeId,
+        confirmations: exchange.confirmations
+      });
     });
 
     socket.on('cancel_exchange', (exchangeId) => {
