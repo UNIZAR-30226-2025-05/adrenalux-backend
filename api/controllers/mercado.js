@@ -335,13 +335,13 @@ export const retirarCarta = async (req, res) => {
     const { id } = req.params;
     const vendedorId = req.user.id;
 
-    const carta = await db.select().from(mercadoCartas).where(and(eq(mercadoCartas.id, id), eq(mercadoCartas.vendedorId, vendedorId)));
+    const carta = await db.select().from(mercadoCartas).where(and(eq(mercadoCartas.cartaId, id), eq(mercadoCartas.vendedorId, vendedorId)));
 
     if (!carta.length) {
       return res.status(403).json({ success: false, message: 'No tienes permiso para retirar esta carta' });
     }
 
-    await db.delete(mercadoCartas).where(eq(mercadoCartas.id, id));
+    await db.delete(mercadoCartas).where(and(eq(mercadoCartas.id, id), eq(mercadoCartas.estado, cartaState.EN_VENTA)));
     res.json({ success: true, message: 'Carta retirada del mercado' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al retirar la carta', error });
