@@ -1,10 +1,10 @@
 import { Server } from 'socket.io';
-import { v4 as uuidv4 } from 'uuid'; // Lo utilizaremos para generar IDs de sala unicos
 import {socketAuth} from '../middlewares/socket_auth.js';
 import { db } from '../config/db.js'; 
 import { eq } from 'drizzle-orm';
 import { objectToJson } from '../lib/toJson.js';
 import { carta } from '../db/schemas/carta.js';
+import { coleccion } from '../db/schemas/coleccion.js';
 
 const connectedUsers = new Map();
 const activeExchanges = new Map();
@@ -115,7 +115,7 @@ export function configureWebSocket(server) {
         return socket.emit('error', 'No eres parte de este intercambio');
       }
 
-      exchange.selectedCard[userId] = cardId;
+      exchange.selectedCard[userId] = card;
       exchange.confirmations[userId] = false;
 
       io.to(exchange.roomId).emit('cards_selected', {
@@ -156,10 +156,7 @@ export function configureWebSocket(server) {
           user2Card
         });
 
-        activeExchanges.delete(exchangeId);
-        exchange.participants.forEach(participantId => {
-          connectedUsers.get(participantId)?.leave(exchange.roomId);
-        });
+        handleCardExchange(io, exchangeId, user1, user2, user1Card, user2Card);
       }
     });
 
@@ -225,4 +222,104 @@ export function sendNotification(toUserId, type, data) {
 
 export function isConnected(userId) {
   return connectedUsers.has(String(userId));
+}
+
+async function handleCardExchange(io, exchangeId, user1, user2, user1Card, user2Card) {
+  const exchange = activeExchanges.get(exchangeId);
+  try {
+    const [user1Collection] = await db.select()
+        .from(coleccion)
+        .where(eq(coleccion.user_id, user1))
+        .where(eq(coleccion.carta_id, user1Card));
+
+    const [user2Collection] = await db.select()
+        .from(coleccion)
+        .where(eq(coleccion.user_id, user2))
+        .where(eq(coleccion.carta_id, user2Card));
+
+    if (!user1Collection || user1Collection.cantidad < 1 || 
+        !user2Collection || user2Collection.cantidad < 1) {
+        throw new Error('Una o ambas cartas no están disponibles para intercambio');
+    }
+
+    await db.transaction(async (tx) => {
+        // Quitar cartas a los usuarios
+        if (user1Collection.cantidad === 1) {
+            await tx.delete(coleccion)
+                .where(eq(coleccion.user_id, user1))
+                .where(eq(coleccion.carta_id, user1Card));
+        } else {
+            await tx.update(coleccion)
+                .set({ cantidad: user1Collection.cantidad - 1 })
+                .where(eq(coleccion.user_id, user1))
+                .where(eq(coleccion.carta_id, user1Card));
+        }
+
+        if (user2Collection.cantidad === 1) {
+            await tx.delete(coleccion)
+                .where(eq(coleccion.user_id, user2))
+                .where(eq(coleccion.carta_id, user2Card));
+        } else {
+            await tx.update(coleccion)
+                .set({ cantidad: user2Collection.cantidad - 1 })
+                .where(eq(coleccion.user_id, user2))
+                .where(eq(coleccion.carta_id, user2Card));
+        }
+
+        // Añadir cartas a los usuarios
+        const [user1NewCard] = await tx.select()
+            .from(coleccion)
+            .where(eq(coleccion.user_id, user1))
+            .where(eq(coleccion.carta_id, user2Card));
+
+        if (user1NewCard) {
+            await tx.update(coleccion)
+                .set({ cantidad: user1NewCard.cantidad + 1 })
+                .where(eq(coleccion.user_id, user1))
+                .where(eq(coleccion.carta_id, user2Card));
+        } else {
+            await tx.insert(coleccion).values({
+                user_id: user1,
+                carta_id: user2Card,
+                cantidad: 1
+            });
+        }
+
+        const [user2NewCard] = await tx.select()
+            .from(coleccion)
+            .where(eq(coleccion.user_id, user2))
+            .where(eq(coleccion.carta_id, user1Card));
+
+        if (user2NewCard) {
+            await tx.update(coleccion)
+                .set({ cantidad: user2NewCard.cantidad + 1 })
+                .where(eq(coleccion.user_id, user2))
+                .where(eq(coleccion.carta_id, user1Card));
+        } else {
+            await tx.insert(coleccion).values({
+                user_id: user2,
+                carta_id: user1Card,
+                cantidad: 1
+            });
+        }
+    });
+
+    io.to(exchange.roomId).emit('exchange_completed', {
+        exchangeId,
+        message: 'Intercambio realizado con éxito',
+        user1Card,
+        user2Card
+    });
+
+  } catch (error) {
+      io.to(exchange.roomId).emit('exchange_error', {
+          exchangeId,
+          message: 'Error en el intercambio: ' + error.message
+      });
+  } finally {
+      activeExchanges.delete(exchangeId);
+      exchange.participants.forEach(participantId => {
+          connectedUsers.get(participantId)?.leave(exchange.roomId);
+      });
+  }
 }
