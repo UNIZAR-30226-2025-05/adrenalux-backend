@@ -1,5 +1,7 @@
 import { db } from '../config/db.js';
 import { mercadoCartas, mercadoDiario, cartaState } from '../db/schemas/mercado.js';
+import { user } from '../db/schemas/user.js';
+import { coleccion } from '../db/schemas/coleccion.js';
 import { getDecodedToken } from '../lib/jwt.js';
 import { objectToJson } from '../lib/toJson.js';
 import { eq, like, and, gte, lte, inArray, not } from 'drizzle-orm';
@@ -66,16 +68,77 @@ export const obtenerCartasDiarias = async (req, res) => {
 export const comprarCartaDiaria = async (req, res) => {
   try {
     const { id } = req.params;
-    const comprador_id = req.user.id;
+    const compradorId = req.user.id;
 
-    const carta = await db.select().from(mercadoDiario).where(and(eq(mercadoDiario.id, id), eq(mercadoDiario.vendida, false)));
+    const mercadoEntries = await db
+      .select()
+      .from(mercadoDiario)
+      .where(and(eq(mercadoDiario.id, id), eq(mercadoDiario.vendida, false)));
 
-    if (!carta.length) {
-      return res.status(404).json({ success: false, message: 'Carta no disponible en el mercado diario' });
+    if (!mercadoEntries.length) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Carta no disponible en el mercado diario' 
+      });
     }
 
-    // Actualizar estado de la carta
-    await db.update(mercadoDiario).set({ vendida: true }).where(eq(mercadoDiario.id, id));
+    const mercadoEntry = mercadoEntries[0];
+    const { precio, cartaId } = mercadoEntry;
+
+    // Verificar saldo del comprador
+    const [comprador] = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, compradorId));
+
+    if (!comprador) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Usuario no encontrado' 
+      });
+    }
+
+    if (comprador.adrenacoins < precio) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No tienes suficientes adrenacoins' 
+      });
+    }
+
+    // Transacción para compra
+    await db.transaction(async (trx) => {
+      // Actualizar monedas del comprador
+      await trx.update(user)
+        .set({ adrenacoins: comprador.adrenacoins - precio })
+        .where(eq(user.id, compradorId));
+
+      // Marcar carta como vendida
+      await trx.update(mercadoDiario)
+        .set({ vendida: true })
+        .where(eq(mercadoDiario.id, id));
+
+      // Añadir a colección
+      const [coleccionExistente] = await trx
+        .select()
+        .from(coleccion)
+        .where(and(
+          eq(coleccion.user_id, compradorId),
+          eq(coleccion.carta_id, cartaId)
+        ));
+
+      if (coleccionExistente) {
+        await trx.update(coleccion)
+          .set({ cantidad: coleccionExistente.cantidad + 1 })
+          .where(eq(coleccion.id, coleccionExistente.id));
+      } else {
+        await trx.insert(coleccion)
+          .values({
+            user_id: compradorId,
+            carta_id: cartaId,
+            cantidad: 1
+          });
+      }
+    });
 
     res.json({ success: true, message: 'Carta comprada exitosamente' });
   } catch (error) {
@@ -187,64 +250,69 @@ export const publicarCarta = async (req, res) => {
 export const comprarCarta = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log("Comprando carta con id: ", id);
     const compradorId = req.user.id;
 
     // Obtener la carta y su precio
-    const carta = await db.select().from(mercadoCartas).where(and(eq(mercadoCartas.id, id), eq(mercadoCartas.estado, 'En venta')));
-
-    if (!carta.length) {
+    const carta = await db.select().from(mercadoCartas).where(and(eq(mercadoCartas.id, id), eq(mercadoCartas.estado, cartaState.EN_VENTA)));
+    const cartaId = carta[0].cartaId;
+    if (!carta) {
       return res.status(404).json({ success: false, message: 'Carta no disponible' });
     }
 
-    const cartaData = carta[0];
-    const precioCarta = cartaData.precio;
-    const vendedorId = cartaData.vendedorId;
+    const precioCarta = carta[0].precio;
+    const vendedorId = carta[0].vendedorId;
 
     // Obtener las monedas del comprador
-    const comprador = await db.select().from(usuarios).where(eq(usuarios.id, compradorId));
-
-    if (!comprador.length) {
+    const comprador = await db.select().from(user).where(eq(user.id, compradorId));
+    console.log("Comprador encontrado: ", comprador);
+    if (!comprador) {
+      console.log("Comprador no encontrado");
       return res.status(404).json({ success: false, message: 'Comprador no encontrado' });
     }
 
-    const compradorMonedas = comprador[0].monedas;
+    const compradorMonedas = comprador[0].adrenacoins;
 
     // Verificar si el comprador tiene suficientes monedas
     if (compradorMonedas < precioCarta) {
+      console.log("No tienes suficientes monedas para comprar esta carta");
       return res.status(400).json({ success: false, message: 'No tienes suficientes monedas para comprar esta carta' });
     }
 
     // Obtener las monedas del vendedor
-    const vendedor = await db.select().from(usuarios).where(eq(usuarios.id, vendedorId));
+    const vendedor = await db.select().from(user).where(eq(user.id, vendedorId));
+    console.log("Vendedor encontrado: ", vendedor);
 
-    if (!vendedor.length) {
+    if (!vendedor) {
+      console.log("Vendedor no encontrado ", vendedorId);
       return res.status(404).json({ success: false, message: 'Vendedor no encontrado' });
     }
 
-    const vendedorMonedas = vendedor[0].monedas;
-
+    const vendedorMonedas = vendedor[0].adrenacoins;
+    console.log("Empieza la transacción para comprar la carta con monedas ", compradorMonedas, precioCarta);
     // Iniciar una transacción para actualizar las monedas, la carta y la colección
     await db.transaction(async (trx) => {
       // Restar monedas al comprador
-      await trx.update(usuarios).set({ monedas: compradorMonedas - precioCarta }).where(eq(usuarios.id, compradorId));
-
+      await trx.update(user).set({ adrenacoins: compradorMonedas - precioCarta }).where(eq(user.id, compradorId));
+      console.log("Monedas restadas al comprador");
       // Añadir monedas al vendedor
-      await trx.update(usuarios).set({ monedas: vendedorMonedas + precioCarta }).where(eq(usuarios.id, vendedorId));
-
+      await trx.update(user).set({ adrenacoins: vendedorMonedas + precioCarta }).where(eq(user.id, vendedorId));
+      console.log("Monedas añadidas al vendedor");
       // Actualizar el estado de la carta en el mercado
-      await trx.update(mercadoCartas).set({ compradorId, estado: 'Vendida', fechaVenta: new Date() }).where(eq(mercadoCartas.id, id));
-
+      await trx.update(mercadoCartas).set({ compradorId, estado: cartaState.VENDIDA, fechaVenta: new Date() }).where(eq(mercadoCartas.id, id));
+      console.log("Actualizado el estado de la carta en el mercado");
       // Verificar si el comprador ya tiene la carta en su colección
-      const coleccionExistente = await trx.select().from(coleccion).where(and(eq(coleccion.user_id, compradorId), eq(coleccion.carta_id, cartaData.cartaId)));
-
+      const coleccionExistente = await trx.select().from(coleccion).where(and(eq(coleccion.user_id, compradorId), eq(coleccion.carta_id, cartaId)));
+      console.log("Coleccion existente: ", coleccionExistente);
       if (coleccionExistente.length > 0) {
         // Si la carta ya está en la colección del comprador, incrementar la cantidad
         const cantidadActual = coleccionExistente[0].cantidad;
         await trx.update(coleccion).set({ cantidad: cantidadActual + 1 }).where(eq(coleccion.id, coleccionExistente[0].id));
       } else {
+        console.log("Añadiendo carta a la colección del usuario ", compradorId, cartaId);
         // Si la carta no está en la colección, agregarla con cantidad 1
-        await trx.insertInto(coleccion).values({
-          carta_id: cartaData.cartaId,
+        await trx.insert(coleccion).values({
+          carta_id: cartaId,
           user_id: compradorId,
           cantidad: 1,
         });
