@@ -8,9 +8,11 @@ export const logro = pgTable('logro',
       .notNull(), 
     reward_type: varchar('reward_type', { length: 10 })
       .notNull(),
+    logro_type: varchar('logro_type', { length: 10 })
+      .notNull(),
     reward_amount: integer('reward_amount')
       .notNull(),
-    required_type: integer('required_type')
+    requierement: integer('requirement')
       .notNull(), 
  }
 );
