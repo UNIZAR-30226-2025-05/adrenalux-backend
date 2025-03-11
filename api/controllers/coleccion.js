@@ -7,8 +7,9 @@ import { db } from '../config/db.js';
 import { coleccion } from '../db/schemas/coleccion.js';
 import { carta } from '../db/schemas/carta.js';
 import { user } from '../db/schemas/user.js';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import {TIPOS_FILTROS,} from '../config/cartas.config.js';
+import { cartaState, mercadoCartas } from '../db/schemas/mercado.js';
 
 export async function obtenerColeccion(req, res, next) {
   const decodedToken = await getDecodedToken(req);
@@ -32,7 +33,7 @@ export async function filtrarCartas(req, res, next) {
 
   const cartasUsuario = await obtenerCartasDeUsuario(userId);
   const coleccionFiltrada = await obtenerTodasLasCartas(filtros);
-  const resultado = await generarResultadoColeccion(coleccionFiltrada, cartasUsuario, userId);
+  const resultado = await generarResultadoColeccion(coleccionFiltrada, cartasUsuario);
 
   return sendResponse(req, res, { data: resultado });
 }
@@ -80,24 +81,32 @@ function aplicarFiltros(parametros) {
 
 async function generarResultadoColeccion(coleccion, cartasUsuario) {
   const resultado = [];
-  coleccion.forEach(carta => {
 
+  for (const carta of coleccion) {
     const cartaUsuario = cartasUsuario.find(cu => cu.carta_id === carta.id);
 
     if (cartaUsuario) {
+      const estado = await db
+        .select({ estado: mercadoCartas.estado })
+        .from(mercadoCartas)
+        .where(and(eq(mercadoCartas.cartaId, cartaUsuario.carta_id), eq(mercadoCartas.vendedorId, cartaUsuario.user_id)));
+
+      const enVenta = estado.some(e => e.estado === cartaState.EN_VENTA);
       resultado.push({
-        ...carta, 
+        ...carta,
+        enVenta: enVenta,
         disponible: true,
         cantidad: cartaUsuario.cantidad,
       });
     } else {
       resultado.push({
-        ...carta, 
+        ...carta,
+        enVenta: false,
         disponible: false,
         cantidad: 0,
       });
     }
-  });
+  }
 
   return resultado;
 }

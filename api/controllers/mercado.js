@@ -237,6 +237,7 @@ export const publicarCarta = async (req, res) => {
       estado: 'En venta',
       fechaPublicacion: new Date(),
     });
+    
 
     res.status(201).json({ success: true, message: 'Carta puesta en venta', data: nuevaPublicacion });
   } catch (error) {
@@ -253,7 +254,6 @@ export const comprarCarta = async (req, res) => {
     console.log("Comprando carta con id: ", id);
     const compradorId = req.user.id;
 
-    // Obtener la carta y su precio
     const carta = await db.select().from(mercadoCartas).where(and(eq(mercadoCartas.id, id), eq(mercadoCartas.estado, cartaState.EN_VENTA)));
     const cartaId = carta[0].cartaId;
     if (!carta) {
@@ -263,25 +263,20 @@ export const comprarCarta = async (req, res) => {
     const precioCarta = carta[0].precio;
     const vendedorId = carta[0].vendedorId;
 
-    // Obtener las monedas del comprador
+
     const comprador = await db.select().from(user).where(eq(user.id, compradorId));
-    console.log("Comprador encontrado: ", comprador);
     if (!comprador) {
       console.log("Comprador no encontrado");
       return res.status(404).json({ success: false, message: 'Comprador no encontrado' });
     }
 
     const compradorMonedas = comprador[0].adrenacoins;
-
-    // Verificar si el comprador tiene suficientes monedas
     if (compradorMonedas < precioCarta) {
       console.log("No tienes suficientes monedas para comprar esta carta");
       return res.status(400).json({ success: false, message: 'No tienes suficientes monedas para comprar esta carta' });
     }
 
-    // Obtener las monedas del vendedor
     const vendedor = await db.select().from(user).where(eq(user.id, vendedorId));
-    console.log("Vendedor encontrado: ", vendedor);
 
     if (!vendedor) {
       console.log("Vendedor no encontrado ", vendedorId);
@@ -289,28 +284,22 @@ export const comprarCarta = async (req, res) => {
     }
 
     const vendedorMonedas = vendedor[0].adrenacoins;
-    console.log("Empieza la transacción para comprar la carta con monedas ", compradorMonedas, precioCarta);
-    // Iniciar una transacción para actualizar las monedas, la carta y la colección
+
     await db.transaction(async (trx) => {
-      // Restar monedas al comprador
       await trx.update(user).set({ adrenacoins: compradorMonedas - precioCarta }).where(eq(user.id, compradorId));
-      console.log("Monedas restadas al comprador");
-      // Añadir monedas al vendedor
+
       await trx.update(user).set({ adrenacoins: vendedorMonedas + precioCarta }).where(eq(user.id, vendedorId));
-      console.log("Monedas añadidas al vendedor");
-      // Actualizar el estado de la carta en el mercado
+
       await trx.update(mercadoCartas).set({ compradorId, estado: cartaState.VENDIDA, fechaVenta: new Date() }).where(eq(mercadoCartas.id, id));
-      console.log("Actualizado el estado de la carta en el mercado");
-      // Verificar si el comprador ya tiene la carta en su colección
+
       const coleccionExistente = await trx.select().from(coleccion).where(and(eq(coleccion.user_id, compradorId), eq(coleccion.carta_id, cartaId)));
-      console.log("Coleccion existente: ", coleccionExistente);
+
       if (coleccionExistente.length > 0) {
-        // Si la carta ya está en la colección del comprador, incrementar la cantidad
+
         const cantidadActual = coleccionExistente[0].cantidad;
         await trx.update(coleccion).set({ cantidad: cantidadActual + 1 }).where(eq(coleccion.id, coleccionExistente[0].id));
       } else {
-        console.log("Añadiendo carta a la colección del usuario ", compradorId, cartaId);
-        // Si la carta no está en la colección, agregarla con cantidad 1
+ 
         await trx.insert(coleccion).values({
           carta_id: cartaId,
           user_id: compradorId,
@@ -335,13 +324,15 @@ export const retirarCarta = async (req, res) => {
     const { id } = req.params;
     const vendedorId = req.user.id;
 
-    const carta = await db.select().from(mercadoCartas).where(and(eq(mercadoCartas.cartaId, id), eq(mercadoCartas.vendedorId, vendedorId)));
+    const carta = await db.select().from(mercadoCartas).where(and(and(eq(mercadoCartas.cartaId, id), eq(mercadoCartas.vendedorId, vendedorId)), 
+                                                                      eq(mercadoCartas.estado, cartaState.EN_VENTA)));
+    const cartaMercado = carta[0];
 
-    if (!carta.length) {
+    if (!cartaMercado) {
       return res.status(403).json({ success: false, message: 'No tienes permiso para retirar esta carta' });
     }
-
-    await db.delete(mercadoCartas).where(and(eq(mercadoCartas.id, id), eq(mercadoCartas.estado, cartaState.EN_VENTA)));
+    
+    await db.delete(mercadoCartas).where(and(eq(mercadoCartas.id, cartaMercado.id), eq(mercadoCartas.estado, cartaState.EN_VENTA)));
     res.json({ success: true, message: 'Carta retirada del mercado' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al retirar la carta', error });

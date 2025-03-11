@@ -150,13 +150,6 @@ export function configureWebSocket(server) {
         const user1Card = exchange.selectedCard[user1];
         const user2Card = exchange.selectedCard[user2];
 
-        io.to(exchange.roomId).emit('exchange_completed', {
-          exchangeId,
-          message: 'Intercambio realizado con éxito',
-          user1Card,
-          user2Card
-        });
-
         handleCardExchange(io, exchangeId, user1, user2, user1Card.id, user2Card.id);
       }
     });
