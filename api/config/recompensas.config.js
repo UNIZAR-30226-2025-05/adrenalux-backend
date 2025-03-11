@@ -14,6 +14,7 @@ export const RECOMPENSAS = {
     },
     EXPERIENCIA: {
       GANAR_PARTIDA: 50,
+      CARTAS_CONSEGUIDAS: 500,
       ABRIR_SOBRE: 100,
       PERDER_PARTIDA: 20,
       GANAR_TORNEO: 500,

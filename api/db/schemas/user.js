@@ -34,7 +34,7 @@ export const user = pgTable('user', {
   puntosClasificacion: integer('puntosClasificacion')
     .notNull()
     .default(0),
-  avatar: text('avatar').default('../imagenes/profile/avatarDefault.png'),
+  avatar: text('avatar').default('assets/default_profile.jpg'),
   created_at: text('created_at')
     .notNull()
     .default(new Date().toISOString()),

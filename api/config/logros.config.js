@@ -6,8 +6,8 @@ export const TIPOS_DE_LOGROS = {
 }
 
 export const DESCRIPCION_LOGROS = {
-  PARTIDAS_JUGADAS: 'Partidas jugadas',
-  PARTIDAS_GANADAS: 'Partidas ganadas',
-  CARTAS_CONSEGUIDAS: 'Cartas conseguidas',
-  NIVEL_ALCANZADO: 'Nivel alcanzado',
+  PARTIDAS_JUGADAS: "Partidas jugadas",
+  PARTIDAS_GANADAS: "Partidas ganadas",
+  CARTAS_CONSEGUIDAS: "Cartas conseguidas",
+  NIVEL_ALCANZADO: "Nivel alcanzado",
 }

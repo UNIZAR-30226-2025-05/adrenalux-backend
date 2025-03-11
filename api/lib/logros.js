@@ -5,7 +5,7 @@ import { logrosUsuario } from '../db/schemas/logrosUsuario.js';
 import { user } from '../db/schemas/user.js';
 import { partida } from '../db/schemas/partida.js';
 import { coleccion } from '../db/schemas/coleccion.js';
-import {DESCRIPCION_LOGROS} from '../config/logros.config.js';
+import {DESCRIPCION_LOGROS, TIPOS_DE_LOGROS} from '../config/logros.config.js';
 
 async function obtenerDatosUsuario(userId) {
   const [usuario] = await db.select()
@@ -63,16 +63,13 @@ export async function comprobarLogros(userId) {
   const logrosObtenidos = new Map();
 
   const logrosNoConseguidos = await obtenerLogrosNoConseguidos(userId);
-  console.log("Logros no conseguidos:", logrosNoConseguidos);
   const estadisticas_user = await obtenerEstadisticas(userId);
-  console.log("Estadisticas usuario:", estadisticas_user);
 
   for (const logro of logrosNoConseguidos) {
-    console.log("Comprobando logro:", logro.requirement, logro.reward_type);
-    if (cumpleRequisitosLogro(logro, estadisticas_user)) {
-      console.log("Logro obtenido:", logro);
-      logrosObtenidos.set(logro, logro.tipo);
-      await insertarLogro(userId, logro.id);
+    const achievement = logro.logro;
+    if (cumpleRequisitosLogro(achievement, estadisticas_user)) {
+      logrosObtenidos.set(achievement, achievement);
+      await insertarLogro(userId, achievement.id);
     }
   }
 
@@ -92,14 +89,14 @@ async function obtenerLogrosNoConseguidos(userId) {
 }
 
 function cumpleRequisitosLogro(logro, estadisticas_user) {
-    const requisitos = {
-      [DESCRIPCION_LOGROS.PARTIDAS_GANADAS]: estadisticas_user.partidas_jugadas,
-      [DESCRIPCION_LOGROS.PARTIDAS_GANADAS]: estadisticas_user.partidas_ganadas,
-      [DESCRIPCION_LOGROS.CARTAS_CONSEGUIDAS]: estadisticas_user.cartas_conseguidas,
-      [DESCRIPCION_LOGROS.NIVEL_ALCANZADO]: estadisticas_user.nivel,
-    };
-    return requisitos[logro.reward_type] >= logro.requirement;
-  }
+  const requisitos = {
+    [TIPOS_DE_LOGROS.PARTIDAS_JUGADAS]: estadisticas_user.partidas_jugadas,
+    [TIPOS_DE_LOGROS.PARTIDAS_GANADAS]: estadisticas_user.partidas_ganadas,
+    [TIPOS_DE_LOGROS.CARTAS_CONSEGUIDAS]: estadisticas_user.cartas_conseguidas,
+    [TIPOS_DE_LOGROS.NIVEL_ALCANZADO]: estadisticas_user.nivel,
+  };
+  return requisitos[logro.logro_type] >= logro.requirement;
+}
   
 
 async function insertarLogro(userId, logroId) {
