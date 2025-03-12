@@ -30,7 +30,7 @@ export const app = express()
 
 app.use(cors({
     origin: '*', 
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -38,7 +38,6 @@ app.set('port', process.env.PORT || 3000)
 app.set('trust proxy', true)
 
 app.use(helmet())
-app.use(cors())
 app.use(logger)
 app.use(cookieParser(process.env.SECRET_KEY))
 app.use(express.urlencoded({ extended: true }))

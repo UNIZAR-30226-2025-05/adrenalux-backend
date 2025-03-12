@@ -56,7 +56,7 @@ export async function abrirSobre(req, res, next) {
     XP: nuevaXP,
     nivel: nivel,
     xpMax: nuevaXPMax,
-    logros: logros
+    logros: logros ? logros.map(lo => objectToJson(lo)) : [],
   }
   return sendResponse(req, res, { data: {responseJson} });
 }
@@ -96,7 +96,7 @@ export async function abrirSobreRandom(req, res, next) {
     XP: nuevaXP,
     nivel: nivel,
     xpMax: nuevaXPMax,
-    logros: logros
+    logros: logros ? logros.map(lo => objectToJson(lo)) : [],
   }
   return sendResponse(req, res, { data: {responseJson} });
 }

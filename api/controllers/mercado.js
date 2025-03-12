@@ -251,7 +251,6 @@ export const publicarCarta = async (req, res) => {
 export const comprarCarta = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("Comprando carta con id: ", id);
     const compradorId = req.user.id;
 
     const carta = await db.select().from(mercadoCartas).where(and(eq(mercadoCartas.id, id), eq(mercadoCartas.estado, cartaState.EN_VENTA)));
@@ -266,7 +265,6 @@ export const comprarCarta = async (req, res) => {
 
     const comprador = await db.select().from(user).where(eq(user.id, compradorId));
     if (!comprador) {
-      console.log("Comprador no encontrado");
       return res.status(404).json({ success: false, message: 'Comprador no encontrado' });
     }
 
@@ -279,7 +277,6 @@ export const comprarCarta = async (req, res) => {
     const vendedor = await db.select().from(user).where(eq(user.id, vendedorId));
 
     if (!vendedor) {
-      console.log("Vendedor no encontrado ", vendedorId);
       return res.status(404).json({ success: false, message: 'Vendedor no encontrado' });
     }
 
@@ -292,12 +289,12 @@ export const comprarCarta = async (req, res) => {
 
       await trx.update(mercadoCartas).set({ compradorId, estado: cartaState.VENDIDA, fechaVenta: new Date() }).where(eq(mercadoCartas.id, id));
 
-      const coleccionExistente = await trx.select().from(coleccion).where(and(eq(coleccion.user_id, compradorId), eq(coleccion.carta_id, cartaId)));
+      const coleccionComprador = await trx.select().from(coleccion).where(and(eq(coleccion.user_id, compradorId), eq(coleccion.carta_id, cartaId)));
 
-      if (coleccionExistente.length > 0) {
+      if (coleccionComprador.length > 0) {
 
-        const cantidadActual = coleccionExistente[0].cantidad;
-        await trx.update(coleccion).set({ cantidad: cantidadActual + 1 }).where(eq(coleccion.id, coleccionExistente[0].id));
+        const cantidadActual = coleccionComprador[0].cantidad;
+        await trx.update(coleccion).set({ cantidad: cantidadActual + 1 }).where(eq(coleccion.id, coleccionComprador[0].id));
       } else {
  
         await trx.insert(coleccion).values({
@@ -305,6 +302,16 @@ export const comprarCarta = async (req, res) => {
           user_id: compradorId,
           cantidad: 1,
         });
+      }
+
+      const coleccionVendedor = await trx.select().from(coleccion).where(and(eq(coleccion.user_id, vendedorId), eq(coleccion.carta_id, cartaId)));
+
+      if (coleccionVendedor[0].cantidad > 1) {
+
+        const cantidadActual = coleccionVendedor[0].cantidad;
+        await trx.update(coleccion).set({ cantidad: cantidadActual - 1 }).where(eq(coleccion.id, coleccionVendedor[0].id));
+      } else {
+        await trx.delete(coleccion).where(and(eq(coleccion.user_id, vendedorId), eq(coleccion.carta_id, cartaId)));
       }
     });
 

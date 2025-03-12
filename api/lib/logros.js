@@ -1,6 +1,6 @@
 import { db } from '../config/db.js';
 import { logro } from '../db/schemas/logro.js';
-import { eq, isNull, or } from 'drizzle-orm';
+import { eq, isNull, or, and } from 'drizzle-orm';
 import { logrosUsuario } from '../db/schemas/logrosUsuario.js';
 import { user } from '../db/schemas/user.js';
 import { partida } from '../db/schemas/partida.js';
@@ -60,31 +60,30 @@ export async function obtenerEstadisticas(userId) {
 }
 
 export async function comprobarLogros(userId) {
-  const logrosObtenidos = new Map();
+  const logrosObtenidos = [];
 
   const logrosNoConseguidos = await obtenerLogrosNoConseguidos(userId);
   const estadisticas_user = await obtenerEstadisticas(userId);
 
+  console.log("Logros no conseguidos", logrosNoConseguidos);
   for (const logro of logrosNoConseguidos) {
     const achievement = logro.logro;
     if (cumpleRequisitosLogro(achievement, estadisticas_user)) {
-      logrosObtenidos.set(achievement, achievement);
+      logrosObtenidos.push(achievement);
       await insertarLogro(userId, achievement.id);
     }
   }
 
-  if (logrosObtenidos.size === 0) {
-    return null;
-  }
-
-  return logrosObtenidos;
+  return logrosObtenidos.length > 0 ? logrosObtenidos : null;
 }
 
 async function obtenerLogrosNoConseguidos(userId) {
   return  await db.select()
     .from(logro)
-    .leftJoin(logrosUsuario, eq(logrosUsuario.logro_id, logro.id))
-    .where(eq(logrosUsuario.user_id, userId))
+    .leftJoin(logrosUsuario, and(
+      eq(logrosUsuario.logro_id, logro.id),
+      eq(logrosUsuario.user_id, userId)
+    ))
     .where(isNull(logrosUsuario.logro_id));
 }
 
@@ -100,6 +99,7 @@ function cumpleRequisitosLogro(logro, estadisticas_user) {
   
 
 async function insertarLogro(userId, logroId) {
+  console.log('Insertando logro', logroId, 'para el usuario', userId);
   await db.insert(logrosUsuario).values({
     user_id: userId,
     logro_id: logroId,
