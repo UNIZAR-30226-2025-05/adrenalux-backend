@@ -288,7 +288,7 @@ async function getEquipoUnicos() {
   const equiposSet = new Set();
 
   for (const carta of cartas) {
-    equiposSet.add(carta.equipo);
+    equiposSet.add(carta.equipo,carta.escudo);
   }
 
   return Array.from(equiposSet);
