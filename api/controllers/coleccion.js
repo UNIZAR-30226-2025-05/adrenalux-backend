@@ -10,6 +10,7 @@ import { user } from '../db/schemas/user.js';
 import { eq, and } from 'drizzle-orm';
 import {TIPOS_FILTROS,} from '../config/cartas.config.js';
 import { cartaState, mercadoCartas } from '../db/schemas/mercado.js';
+import { usuarioIdValido } from './auth.js';
 
 export async function obtenerColeccion(req, res, next) {
   const decodedToken = await getDecodedToken(req);
@@ -112,7 +113,4 @@ async function generarResultadoColeccion(coleccion, cartasUsuario) {
 }
 
 
-async function usuarioIdValido(userId) {
-  const [usuario] = await db.select().from(user).where(eq(user.id, userId));
-  return !!usuario;
-}
+

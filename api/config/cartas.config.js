@@ -21,14 +21,14 @@ export const TIPOS_FILTROS = {
 };
 
 export const PRECIOS_SOBRES = {
-  [TIPOS_SOBRES.ENERGIA_LUX]: { precio: 750, maximo: 2, intervalo: 6 * 60 * 60 * 1000 },
-  [TIPOS_SOBRES.ELITE_LUX]: { precio: 2000, maximo: 1, intervalo: 8 * 60 * 60 * 1000 },
+  [TIPOS_SOBRES.ENERGIA_LUX]: { precio: 1200, maximo: 2, intervalo: 6 * 60 * 60 * 1000 },
+  [TIPOS_SOBRES.ELITE_LUX]: { precio: 3500, maximo: 1, intervalo: 8 * 60 * 60 * 1000 },
   [TIPOS_SOBRES.MASTER_LUX]: { precio: 6000, maximo: 1, intervalo: 2 * 24 * 60 * 60 * 1000 }
 };
 
 export const PROBABILIDADES_CARTAS = {
-  [TIPOS_SOBRES.ENERGIA_LUX]: { NORMAL: 98, LUXURY: 1.5, MEGALUXURY: 0.49, LUXURYXI: 0.01 },
-  [TIPOS_SOBRES.ELITE_LUX]: { NORMAL: 96, LUXURY: 3, MEGALUXURY: 0.75, LUXURYXI: 0.25 },
+  [TIPOS_SOBRES.ENERGIA_LUX]: { NORMAL: 99, LUXURY: 0.5, MEGALUXURY: 0.25, LUXURYXI: 0.01 },
+  [TIPOS_SOBRES.ELITE_LUX]: { NORMAL: 95, LUXURY: 3.5, MEGALUXURY: 1.25, LUXURYXI: 0.25 },
   [TIPOS_SOBRES.MASTER_LUX]: { NORMAL: 90, LUXURY: 6, MEGALUXURY: 3, LUXURYXI: 1 }
 };
 

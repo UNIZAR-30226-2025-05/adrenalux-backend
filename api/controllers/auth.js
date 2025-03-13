@@ -156,3 +156,9 @@ export async function validateToken(req, res, next) {
     return next(new Unauthorized('Token inválido'));
   }
 }
+
+export async function usuarioIdValido(userId) {
+  const [usuario] = await db.select().from(user).where(eq(user.id, userId));
+  return !!usuario;
+}
+

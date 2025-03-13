@@ -20,14 +20,20 @@ import {
   TIPOS_CARTAS,
   INTERVALO_SOBRE_GRATIS
 } from '../config/cartas.config.js'; 
-import { boolean } from 'drizzle-orm/mysql-core';
+import { usuarioIdValido } from './auth.js';
+import { obtenerTodasLasCartas } from './coleccion.js'; 
 
-// Funciones de generación de aperturas de sobres
+
+
 
 export async function abrirSobre(req, res, next) {
   const { tipo } = req.params;
   const decodedToken = await getDecodedToken(req);
   const userId = decodedToken.id;
+
+  if (!userId || !(await usuarioIdValido(userId))) {
+    return next(new Unauthorized({ message: 'No autorizado' }));
+  }
 
   if (!tipoSobreDefinido(tipo)) {
     return next(new BadRequest({ message: 'Tipo de sobre no definido' }));
@@ -46,8 +52,9 @@ export async function abrirSobre(req, res, next) {
       console.error('Carta no válida:', carta);
     }
   });
+  const cartasOrdenadas = cartas.sort((a, b) => a.tipo_carta - b.tipo_carta);
   const { nuevaXP, nivel,nuevaXPMax } = await agregarExp(userId, RECOMPENSAS.EXPERIENCIA.ABRIR_SOBRE);
-  const cartasJson = cartas.map(carta => objectToJson(carta));
+  const cartasJson = cartasOrdenadas.map(carta => objectToJson(carta));
   const logros = await comprobarLogros(userId);
 
   let responseJson = {
@@ -85,9 +92,10 @@ export async function abrirSobreRandom(req, res, next) {
       console.error('Carta no válida:', carta);
     }
   });
-  const { nuevaXP, nivel,nuevaXPMax } = await agregarExp(userId, RECOMPENSAS.EXPERIENCIA.ABRIR_SOBRE);
+  const cartasOrdenadas = cartas.sort((a, b) => a.tipo_carta - b.tipo_carta);
 
-  const cartasJson = cartas.map(carta => objectToJson(carta));
+  const { nuevaXP, nivel,nuevaXPMax } = await agregarExp(userId, RECOMPENSAS.EXPERIENCIA.ABRIR_SOBRE);
+  const cartasJson = cartasOrdenadas.map(carta => objectToJson(carta));
   const logros = await comprobarLogros(userId);
 
   let responseJson = {
@@ -157,14 +165,6 @@ async function generarCartas(sobreConfig) {
   return cartasGeneradas;
 }
 
-async function getAllCartas() {
-  const cartas = await db
-    .select()
-    .from(carta)
-    .then(result => result.map(c => ({ ...c })));
-  return cartas;
-}
-
 function seleccionarRareza(probabilidades) {
   const total = Object.values(probabilidades).reduce((acc, val) => acc + val, 0);
   const rand = Math.random() * total;
@@ -226,7 +226,6 @@ export async function sobresDisponibles(req, res, next) {
     }
 }
 
-
 async function tieneSobreGratis(usuario) {
 
   if (!usuario) return false;
@@ -245,3 +244,103 @@ async function restarSobre(usuario) {
     .where(eq(user.id, usuario.id));
 }
 
+export async function getEquipos(req, res, next) {
+  const decodedToken = await getDecodedToken(req);
+  const userId = decodedToken.id;
+
+  if (!userId || !(await esUsuarioValido(userId))) {
+    return next(new Unauthorized({ message: "No autorizado" }));
+  }
+
+  let equipos = await getEquipoUnicos();
+  equipos = ordenarAlfabeticamente(equipos);
+  const equiposFormateados = formatearLista(equipos); 
+
+  return sendResponse(req, res, { data: { equipos: equiposFormateados } });
+}
+
+export async function getPosiciones(req, res, next) {
+  const decodedToken = await getDecodedToken(req);
+  const userId = decodedToken.id;
+
+  if (!userId || !(await esUsuarioValido(userId))) {
+    return next(new Unauthorized({ message: "No autorizado" }));
+  }
+
+  let posiciones = await getPosicionesUnicas();
+  posiciones = ordenarAlfabeticamente(posiciones);
+  const posicionesFormateadas = formatearLista(posiciones); 
+
+  return sendResponse(req, res, { data: { equipos: posicionesFormateadas } });
+}
+
+async function getEquipoUnicos() {
+  const cartas = await obtenerTodasLasCartas(); 
+  const equiposSet = new Set();
+
+  for (const carta of cartas) {
+    equiposSet.add(carta.equipo);
+  }
+
+  return Array.from(equiposSet);
+}
+
+async function getPosicionesUnicas() {
+  const cartas = await obtenerTodasLasCartas(); 
+  const posicionesSet = new Set();
+
+  for (const carta of cartas) {
+    posicionesSet.add(carta.posicion);
+  }
+
+  return Array.from(posicionesSet);
+}
+
+function ordenarAlfabeticamente(array) {
+  return array.sort((a, b) => a.localeCompare(b));
+}
+
+function formatearLista(lista) {
+  return lista.map((item, index) => ({
+    id: index + 1,
+    nombre: item
+  }));
+}
+
+
+export async function getInfoSobres (req, res, next) {
+  const decodedToken = await getDecodedToken(req);
+  const userId = decodedToken.id;
+
+  if (!userId || !(await esUsuarioValido(userId))) {
+    return next(new Unauthorized({ message: "No autorizado" }));
+  }
+  let jsonInfoSobres = {};
+
+  jsonInfoSobres['SobreGratis'] = {
+    intervalo: INTERVALO_SOBRE_GRATIS,  
+    probabilidadGratis: PROBABILIDADES_SOBRES_GRATUITOS,  
+  };
+
+  for (const tipo in PRECIOS_SOBRES) {
+    const infoSobre = PRECIOS_SOBRES[tipo];
+
+    jsonInfoSobres[tipo] = {
+      intervalo: INTERVALO_SOBRE_GRATIS,  
+      numeroCartas: JUGADORES_POR_SOBRE,  
+      precio: infoSobre.precio,  
+      probabilidades: PROBABILIDADES_CARTAS[tipo] || "No definido",  
+    };
+  }
+  res.json({ data: jsonInfoSobres });
+};
+
+
+export async function getRarezascartas (req, res, next) {
+  const decodedToken = await getDecodedToken(req);
+  const userId = decodedToken.id;
+  if (!userId || !(await esUsuarioValido(userId))) {
+    return next(new Unauthorized({ message: "No autorizado" }));
+  }
+  res.json({ data: TIPOS_CARTAS });
+};
