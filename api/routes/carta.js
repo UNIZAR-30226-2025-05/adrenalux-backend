@@ -244,7 +244,7 @@ router.get('/getEquipos', authenticate, cartas.getEquipos);
  *                         LUXURYXI:
  *                           type: number
  */
-router.get('/getInfoSobres', authenticate);
+router.get('/getInfoSobres', authenticate, cartas.getInfoSobres);
 
 
 /**

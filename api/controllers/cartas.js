@@ -20,7 +20,6 @@ import {
   TIPOS_CARTAS,
   INTERVALO_SOBRE_GRATIS
 } from '../config/cartas.config.js'; 
-import { usuarioIdValido } from './auth.js';
 import { obtenerTodasLasCartas } from './coleccion.js'; 
 
 
@@ -31,7 +30,7 @@ export async function abrirSobre(req, res, next) {
   const decodedToken = await getDecodedToken(req);
   const userId = decodedToken.id;
 
-  if (!userId || !(await usuarioIdValido(userId))) {
+  if (!userId) {
     return next(new Unauthorized({ message: 'No autorizado' }));
   }
 
@@ -165,6 +164,16 @@ async function generarCartas(sobreConfig) {
   return cartasGeneradas;
 }
 
+async function getAllCartas() {
+  const cartas = await db
+    .select()
+    .from(carta)
+    .then(result => result.map(c => ({ ...c })));
+  return cartas;
+}
+
+
+
 function seleccionarRareza(probabilidades) {
   const total = Object.values(probabilidades).reduce((acc, val) => acc + val, 0);
   const rand = Math.random() * total;
@@ -248,7 +257,7 @@ export async function getEquipos(req, res, next) {
   const decodedToken = await getDecodedToken(req);
   const userId = decodedToken.id;
 
-  if (!userId || !(await esUsuarioValido(userId))) {
+  if (!userId) {
     return next(new Unauthorized({ message: "No autorizado" }));
   }
 
@@ -263,7 +272,7 @@ export async function getPosiciones(req, res, next) {
   const decodedToken = await getDecodedToken(req);
   const userId = decodedToken.id;
 
-  if (!userId || !(await esUsuarioValido(userId))) {
+  if (!userId) {
     return next(new Unauthorized({ message: "No autorizado" }));
   }
 
@@ -312,7 +321,7 @@ export async function getInfoSobres (req, res, next) {
   const decodedToken = await getDecodedToken(req);
   const userId = decodedToken.id;
 
-  if (!userId || !(await esUsuarioValido(userId))) {
+  if (!userId) {
     return next(new Unauthorized({ message: "No autorizado" }));
   }
   let jsonInfoSobres = {};
@@ -339,7 +348,7 @@ export async function getInfoSobres (req, res, next) {
 export async function getRarezascartas (req, res, next) {
   const decodedToken = await getDecodedToken(req);
   const userId = decodedToken.id;
-  if (!userId || !(await esUsuarioValido(userId))) {
+  if (!userId) {
     return next(new Unauthorized({ message: "No autorizado" }));
   }
   res.json({ data: TIPOS_CARTAS });
