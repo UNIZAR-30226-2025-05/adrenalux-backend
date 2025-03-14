@@ -21,9 +21,6 @@ export function configureWebSocket(server) {
   io.use(socketAuth);
 
   io.on('connection', (socket) => {
-
-    connectedUsers.set(String(socket.data.userID), socket);
-    
     const { username } = socket.handshake.query; 
     socket.data.username = username; 
 
@@ -39,7 +36,7 @@ export function configureWebSocket(server) {
         return socket.emit('error', 'No puedes intercambiar contigo mismo');
       }
 
-      const receptorSocket = connectedUsers.get(receptorId);
+      const receptorSocket = connectedUsers.get(String(receptorId));
       
       if (!receptorSocket) {
           return socket.emit('error', 'El usuario no está conectado');
@@ -49,7 +46,7 @@ export function configureWebSocket(server) {
 
       activeExchanges.set(exchangeId, {
           roomId: `exchange_${exchangeId}`,
-          participants: [solicitanteId, receptorId],
+          participants: [String(solicitanteId), String(receptorId)],
           estado: 'pendiente',
           selectedCards: {},
           confirmations: {},
