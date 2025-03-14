@@ -23,10 +23,10 @@ export function configureWebSocket(server) {
   io.on('connection', (socket) => {
     const { username } = socket.handshake.query; 
     socket.data.username = username; 
+    
+    connectedUsers.set(String(socket.data.userID), socket);
 
     console.log(`Usuario conectado: ${socket.data.userID}`);
-  
-    connectedUsers.set(String(socket.data.userID), socket);
 
     socket.on('request_exchange', ({ receptorId, solicitanteUsername }) => {
       const solicitanteId = String(socket.data.userID);
@@ -86,9 +86,13 @@ export function configureWebSocket(server) {
         [receptorId]: false
       };
 
+      if (!solicitanteSocket.rooms.has(intercambio.roomId)) {
+        solicitanteSocket.join(intercambio.roomId);
+      }
       
-      solicitanteSocket?.join(intercambio.roomId);
-      receptorSocket?.join(intercambio.roomId);
+      if (!receptorSocket.rooms.has(intercambio.roomId)) {
+        receptorSocket.join(intercambio.roomId);
+      }
 
       io.to(intercambio.roomId).emit('exchange_accepted', {
         exchangeId,
@@ -187,6 +191,7 @@ export function configureWebSocket(server) {
     });
     
     socket.on('disconnect', () => {
+      socket.rooms.forEach(room => socket.leave(room));
       connectedUsers.delete(String(socket.data.userID));
       console.log(`Usuario desconectado: ${socket.data.userID}`);
     });

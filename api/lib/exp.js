@@ -2,7 +2,7 @@ import { db } from '../config/db.js';
 import { user } from '../db/schemas/user.js';
 import { eq } from 'drizzle-orm';
 
-const XP_INCREMENTO_NIVEL = 1.2; // Aumento del requisito de XP por nivel
+const XP_INCREMENTO_NIVEL = 1.2; 
 const ERROR_USUARIO_NO_ENCONTRADO = 'Usuario no encontrado';
 const BASE_XP = 1000;
 

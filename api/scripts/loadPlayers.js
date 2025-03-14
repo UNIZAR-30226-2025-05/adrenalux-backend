@@ -56,26 +56,26 @@ const teamTiers = {
 const ratingRanges = {
     forward: { 
         ataque: [60, 90], 
-        medio: [50, 80],  
-        defensa: [50, 60],
+        medio: [60, 85],  
+        defensa: [50, 65],
         weight: { ataque: 1.2, medio: 0.8, defensa: 0.6 } 
     },
     midfielder: { 
         ataque: [60, 80],  
         medio: [60, 90], 
-        defensa: [60, 70], 
+        defensa: [60, 80], 
         weight: { ataque: 1.0, medio: 1.2, defensa: 0.8 } 
     },
     defender: { 
         ataque: [30, 60],  
-        medio: [40, 60],   
-        defensa: [70, 90], 
+        medio: [60, 85],   
+        defensa: [60, 90], 
         weight: { ataque: 0.7, medio: 0.8, defensa: 1.2 } 
     },
     goalkeeper: { 
         ataque: [30, 50], 
-        medio: [30, 50],  
-        defensa: [70, 90], 
+        medio: [40, 70],  
+        defensa: [60, 90], 
         weight: { ataque: 0.3, medio: 0.7, defensa: 1.5 } 
     }
 };
