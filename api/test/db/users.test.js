@@ -1,4 +1,4 @@
-import { db } from '../../api/config/db.js';
+import { db } from '../../config/db.js';
 import { setupTestDB } from '../setupTestDB.js';
 import { expect } from 'chai';
 

@@ -3,7 +3,7 @@ import { user } from '../db/schemas/user.js';
 import { carta } from '../db/schemas/carta.js';
 import { coleccion } from '../db/schemas/coleccion.js';
 import { TIPOS_CARTAS } from '../config/cartas.config.js';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 // Funciones auxiliares para obtener datos
 async function getUserByUsername(username) {
@@ -122,8 +122,20 @@ test('Eliminar cartas de la colección', async () => {
   const user1 = await getUserByUsername('user1');
   const carta1 = await getCartaByNombre('Jugador 1');
 
-  await db.delete(coleccion).where(eq(coleccion.user_id, user1.id)).andWhere(eq(coleccion.carta_id, carta1.id));
+  await db.delete(coleccion)
+  .where(
+    and(
+      eq(coleccion.user_id, user1.id),
+      eq(coleccion.carta_id, carta1.id)
+    )
+  );
 
-  const deletedColeccion = await db.select().from(coleccion).where(eq(coleccion.user_id, user1.id)).andWhere(eq(coleccion.carta_id, carta1.id));
+  const deletedColeccion = await db.select().from(coleccion).where(
+    and(
+      eq(coleccion.user_id, user1.id),
+      eq(coleccion.carta_id, carta1.id)
+    )
+  );
+
   expect(deletedColeccion.length).toBe(0);
 });

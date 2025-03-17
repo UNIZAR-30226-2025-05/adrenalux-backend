@@ -6,24 +6,26 @@ import { agregarExp, calcularXpNecesaria } from '../lib/exp.js';
 import { agregarMonedas, restarMonedas } from '../lib/monedas.js';
 import { agregarPuntosClasificacion, restarPuntosClasificacion } from '../lib/puntosClasificacion.js';
 
-let transaction;
+let tx;
 
 beforeAll(async () => {
-  // Limpiar datos antes de las pruebas
-  await db.delete(amistad); // Limpiar amistades primero por dependencias
-  await db.delete(user); // Limpiar usuarios antes de comenzar
+  await db.delete(coleccion);
+  await db.delete(amistad);
+  await db.delete(user);
 });
 
+
 beforeEach(async () => {
-  transaction = await db.beginTransaction(); // Iniciar transacción antes de cada test
+  tx = await db.transaction(); 
 });
 
 afterEach(async () => {
-  await transaction.rollback(); // Hacer rollback después de cada test para mantener la base de datos limpia
+  if (tx) {
+    await tx.rollback();
+  }
 });
-
 test('Insertar 3 usuarios en la BD', async () => {
-  const users = [
+  const usuarios = [
     {
       username: 'user1',
       email: 'user1@example.com',
@@ -53,7 +55,7 @@ test('Insertar 3 usuarios en la BD', async () => {
     },
   ];
 
-  await db.insert(user).values(users);
+  await db.insert(user).values(usuarios);
   const insertedUsers = await db.select().from(user);
   expect(insertedUsers.length).toBe(3);
 });

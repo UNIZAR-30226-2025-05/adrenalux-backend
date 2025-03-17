@@ -2,6 +2,7 @@ import { SignJWT } from 'jose'
 import passport from 'passport'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 import { jwtVerify } from 'jose';
+import { Unauthorized } from './http.js'
 
 import * as dotenv from "dotenv";
 
@@ -27,7 +28,6 @@ export async function verifyToken(token) {
     const { payload } = await jwtVerify(token, SECRET_KEY);
     return payload; // Retorna el payload si la verificación es exitosa
   } catch (error) {
-    console.error('Error al verificar el token:', error);
     throw new Error('Token inválido o expirado');
   }
 }
@@ -37,7 +37,7 @@ export async function verifyToken(token) {
  * @param {import('express').Request} req - Express request object.
  * @returns {string | null} The extracted token, or null if not found.
  */
-function fromCookie (req) {
+export function fromCookie (req) {
   let token = null
   if (req && req.signedCookies) {
     token = req.signedCookies['session-token']
@@ -49,7 +49,7 @@ export async function getDecodedToken(req) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return next(new Unauthorized('Formato de token inválido'));
+    return new Unauthorized('Formato de token inválido');
   }
 
   const token = authHeader.split(' ')[1];
@@ -59,7 +59,7 @@ export async function getDecodedToken(req) {
     return decoded;
     
   } catch (err) { 
-    return next(new Unauthorized('Token inválido'));
+    return new Unauthorized('Token inválido');
   }
 }
 

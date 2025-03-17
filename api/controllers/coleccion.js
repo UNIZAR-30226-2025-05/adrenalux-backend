@@ -17,7 +17,7 @@ export async function obtenerColeccion(req, res, next) {
   const userId = decodedToken.id;
 
   if (!await usuarioIdValido(userId)) {
-    return next(new BadRequest({ message: 'Usuario no válido' }));
+    return next(new Unauthorized({ message: 'Usuario no válido' }));
   }
   const coleccion = await obtenerTodasLasCartas();
   const cartasUsuario = await obtenerCartasDeUsuario(userId);

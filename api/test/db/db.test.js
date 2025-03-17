@@ -1,13 +1,13 @@
-import { db } from '../../api/config/db.js';  // Tu archivo de configuración de base de datos
+import { db } from '../../config/db.js';  // Tu archivo de configuración de base de datos
 import { expect } from 'chai';  
 
 describe('Database Tests', () => {
-  before(async () => {
+  beforeAll(async () => {
     // Conéctate a la base de datos de prueba (usa la configuración de .env.test)
     await db.connect();
   });
 
-  after(async () => {
+  afterAll(async () => {
     // Cierra la conexión a la base de datos después de las pruebas
     await db.disconnect();
   });

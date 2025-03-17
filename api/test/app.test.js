@@ -7,6 +7,4 @@ describe('App Tests', () => {
     expect(response.status).toBe(200);
     expect(response.text).toBe('Conexión exitosa a la API');
   });
-
-  // Otros tests para la app
 });
