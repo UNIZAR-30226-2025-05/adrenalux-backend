@@ -28,16 +28,30 @@ dotenv.config();
 
 export const app = express()
 
+const host = '54.37.50.18:3000';
+
 app.use(cors({
     origin: '*', 
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
 }));
 
 app.set('port', process.env.PORT || 3000)
 app.set('trust proxy', true)
 
-app.use(helmet())
+app.use((req, res, next) => {
+    res.removeHeader("Origin-Agent-Cluster");
+    res.removeHeader("Cross-Origin-Embedder-Policy");
+    next();
+});
+
+app.use((req, res, next) => {
+    if (!req.secure && req.get('x-forwarded-proto') !== 'https') {
+        return res.redirect(301, 'https://' + req.get('host') + req.url);
+    }
+    next();
+});
+
+app.use(helmet());
 app.use(logger)
 app.use(cookieParser(process.env.SECRET_KEY))
 app.use(express.urlencoded({ extended: true }))
@@ -52,7 +66,27 @@ app.use('/api/v1/profile', profileRouter)
 app.use('/api/v1/partidas', partidasRouter)
 app.use('/api/v1/jugadores', jugadoresRouter)
 app.use('/api/v1/mercado', mercadoRoutes);  
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+app.use('/public/swagger-ui', express.static(path.join(__dirname, 'public/swagger-ui')));
+app.use('/public', express.static(path.join(__dirname, 'public'))); 
 app.use('/public/images', express.static(path.join(__dirname, 'public', 'images')));
+
+app.use('/api-docs', 
+    swaggerUi.serve, 
+swaggerUi.setup(swaggerDocs, {
+        customCssUrl: 'https://54.37.50.18:3000/public/swagger-ui/swagger-ui.css', 
+        customJs: [
+        'https://54.37.50.18:3000/public/swagger-ui/swagger-ui-bundle.js',
+        'https://54.37.50.18:3000/public/swagger-ui/swagger-ui-standalone-preset.js'
+        ],
+        swaggerOptions: {
+        requestInterceptor: (req) => {
+            req.url = req.url.replace('http://', 'https://');
+            return req;
+        }
+        }
+    })
+);
+  
 
 app.use(errorHandler)
