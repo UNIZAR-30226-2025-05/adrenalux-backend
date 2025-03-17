@@ -10,7 +10,7 @@ import { db } from '../config/db.js';
 import { objectToJson } from '../lib/toJson.js';
 import { eq, and } from 'drizzle-orm'
 import { RECOMPENSAS } from '../config/recompensas.config.js';
-import { comprobarLogros } from '../lib/logros.js';
+import { comprobarLogros,aplicarRecompensa } from '../lib/logros.js';
 import {
   TIPOS_SOBRES,
   JUGADORES_POR_SOBRE,
@@ -54,7 +54,11 @@ export async function abrirSobre(req, res, next) {
   const cartasOrdenadas = cartas.sort((a, b) => a.tipo_carta - b.tipo_carta);
   const { nuevaXP, nivel,nuevaXPMax } = await agregarExp(userId, RECOMPENSAS.EXPERIENCIA.ABRIR_SOBRE);
   const cartasJson = cartasOrdenadas.map(carta => objectToJson(carta));
-  const logros = await comprobarLogros(userId);
+  const {logros,recompensas} = await comprobarLogros(userId);
+
+  for (const [tipo, cantidad] of Object.entries(recompensasTotales)) {
+    await aplicarRecompensa(userId, tipo, cantidad);
+  }
 
   let responseJson = {
     tipo: tipo,
@@ -63,6 +67,7 @@ export async function abrirSobre(req, res, next) {
     nivel: nivel,
     xpMax: nuevaXPMax,
     logros: logros ? logros.map(lo => objectToJson(lo)) : [],
+    recompensas: recompensas ? recompensas.map(re => objectToJson(re)) : [],
   }
   return sendResponse(req, res, { data: {responseJson} });
 }
@@ -95,7 +100,11 @@ export async function abrirSobreRandom(req, res, next) {
 
   const { nuevaXP, nivel,nuevaXPMax } = await agregarExp(userId, RECOMPENSAS.EXPERIENCIA.ABRIR_SOBRE);
   const cartasJson = cartasOrdenadas.map(carta => objectToJson(carta));
-  const logros = await comprobarLogros(userId);
+  const {logros,recompensas} = await comprobarLogros(userId);
+
+  for (const [tipo, cantidad] of Object.entries(recompensasTotales)) {
+    await aplicarRecompensa(userId, tipo, cantidad);
+  }
 
   let responseJson = {
     tipo: tipo,
@@ -104,6 +113,7 @@ export async function abrirSobreRandom(req, res, next) {
     nivel: nivel,
     xpMax: nuevaXPMax,
     logros: logros ? logros.map(lo => objectToJson(lo)) : [],
+    recompensas: recompensas ? recompensas.map(re => objectToJson(re)) : [],
   }
   return sendResponse(req, res, { data: {responseJson} });
 }
@@ -252,6 +262,7 @@ async function restarSobre(usuario) {
     })
     .where(eq(user.id, usuario.id));
 }
+
 
 export async function getEquipos(req, res, next) {
   const decodedToken = await getDecodedToken(req);

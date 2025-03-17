@@ -5,6 +5,10 @@ import { logrosUsuario } from '../db/schemas/logrosUsuario.js';
 import { user } from '../db/schemas/user.js';
 import { partida } from '../db/schemas/partida.js';
 import { coleccion } from '../db/schemas/coleccion.js';
+import{agregarExp} from '../lib/exp.js';
+import {agregarMonedas} from '../lib/monedas.js';
+import{} from '../lib/monedas.js';
+
 import {DESCRIPCION_LOGROS, TIPOS_DE_LOGROS} from '../config/logros.config.js';
 
 async function obtenerDatosUsuario(userId) {
@@ -61,21 +65,32 @@ export async function obtenerEstadisticas(userId) {
 
 export async function comprobarLogros(userId) {
   const logrosObtenidos = [];
+  const recompensasTotales = {};
 
   const logrosNoConseguidos = await obtenerLogrosNoConseguidos(userId);
   const estadisticas_user = await obtenerEstadisticas(userId);
 
   console.log("Logros no conseguidos", logrosNoConseguidos);
+
   for (const logro of logrosNoConseguidos) {
     const achievement = logro.logro;
     if (cumpleRequisitosLogro(achievement, estadisticas_user)) {
       logrosObtenidos.push(achievement);
       await insertarLogro(userId, achievement.id);
+
+      if (!recompensasTotales[achievement.reward_type]) {
+        recompensasTotales[achievement.reward_type] = 0;
+      }
+      recompensasTotales[achievement.reward_type] += achievement.reward_amount;
     }
   }
 
-  return logrosObtenidos.length > 0 ? logrosObtenidos : null;
+  return {
+    logrosObtenidos: logrosObtenidos.length > 0 ? logrosObtenidos : null,
+    recompensasTotales,
+  };
 }
+
 
 async function obtenerLogrosNoConseguidos(userId) {
   return  await db.select()
@@ -107,3 +122,19 @@ async function insertarLogro(userId, logroId) {
     achieved: true,
   });
 }
+
+export async function aplicarRecompensa(userId, tipo, cantidad) {
+  if (!cantidad || cantidad <= 0) return;
+
+  switch (tipo) {
+    case "XP":
+      await agregarExp(userId, cantidad);
+      break;
+    case "MONEDAS":
+      await agregarMonedas(userId, cantidad);
+      break;
+    default:
+      console.warn(`Tipo de recompensa desconocido: ${tipo}`);
+  }
+}
+

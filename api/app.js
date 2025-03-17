@@ -15,6 +15,7 @@ import coleccionRoutes from './routes/coleccion.js';
 import profileRouter from './routes/profile.js'
 import partidasRouter from './routes/partidas.js'
 import jugadoresRouter from './routes/jugadores.js'
+import plantillasRoutes from './routes/plantillas.js';
 import mercadoRoutes from './routes/mercado.js';  
 import * as dotenv from "dotenv";
 import path from 'path';
@@ -65,8 +66,8 @@ app.use('/api/v1/coleccion', coleccionRoutes);
 app.use('/api/v1/profile', profileRouter)
 app.use('/api/v1/partidas', partidasRouter)
 app.use('/api/v1/jugadores', jugadoresRouter)
-app.use('/api/v1/mercado', mercadoRoutes);  
-
+app.use('/api/v1/mercado', mercadoRoutes);
+app.use('/api/v1/plantillas', plantillasRoutes);  
 app.use('/public/swagger-ui', express.static(path.join(__dirname, 'public/swagger-ui')));
 app.use('/public', express.static(path.join(__dirname, 'public'))); 
 app.use('/public/images', express.static(path.join(__dirname, 'public', 'images')));

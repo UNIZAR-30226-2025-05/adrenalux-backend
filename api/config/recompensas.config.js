@@ -20,6 +20,12 @@ export const RECOMPENSAS = {
       GANAR_TORNEO: 500,
       PERDER_FINAL_TORNEO: 200,
     },
+    LOGROS:{
+      GANAR_PARTIDA: 10000,
+      JUGAR_PARTIDA: 5000,
+      SUBIR_NIVEL: 2000,
+      CARTAS_CONSEGUIDAS: 1500,
+    }
   };
   
   export const TIPOS_RANKING = {
