@@ -97,11 +97,15 @@ async function sendDataToAPI() {
     try {
         const playersData = JSON.parse(fs.readFileSync(outputFile, 'utf8'));
 
-        const response = await axios.post('http://54.37.50.18:3000/api/v1/jugadores/insertar', playersData, {
+        const response = await axios.post('https://adrenalux.duckdns.org/api/v1/jugadores/insertar', playersData, {
             headers: { 
                 'Content-Type': 'application/json',
                 'x-api-key': API_KEY,
-            }
+            },
+            agent: new https.Agent({
+                rejectUnauthorized: true, 
+                ca: fs.readFileSync('/etc/letsencrypt/live/adrenalux.duckdns.org/fullchain.pem'), 
+            }),
         });
 
         console.log('Datos enviados con éxito:', response.status);

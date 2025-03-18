@@ -6,6 +6,7 @@ import { getDecodedToken } from '../lib/jwt.js';
 import { objectToJson } from '../lib/toJson.js';
 import { eq, like, and, gte, lte, inArray, not } from 'drizzle-orm';
 import {carta} from '../db/schemas/carta.js';
+import { TIPOS_CARTAS } from '../config/cartas.config.js';
 
 /** 
  * 📌 MERCADO DIARIO 
@@ -345,3 +346,37 @@ export const retirarCarta = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error al retirar la carta', error });
   }
 };
+
+export const generarCartasMercado = async (req, res) =>  {
+  try {
+    const cartasMegaluxury = await db
+      .select()
+      .from(carta)
+      .where(eq(carta.tipo_carta, TIPOS_CARTAS.LUXURYXI.nombre)); 
+
+    if (cartasMegaluxury.length < 3) {
+      console.log('No hay suficientes cartas');
+      return res.status(400).json({ error: "No hay suficientes cartas Megaluxury" });
+    }
+
+    const cartasAleatorias = [];
+    while (cartasAleatorias.length < 3) {
+      const cartaAleatoria = cartasMegaluxury[Math.floor(Math.random() * cartasMegaluxury.length)];
+      if (!cartasAleatorias.includes(cartaAleatoria)) {
+        cartasAleatorias.push(cartaAleatoria);
+      }
+    }
+
+    for (const carta of cartasAleatorias) {
+      await db.insert(mercadoDiario).values({
+        cartaId: carta.id,
+        fechaDisponible: new Date(), 
+        precio: 999999, 
+      });
+    }
+    res.status(200).json({ message: "Cartas generadas exitosamente" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+}

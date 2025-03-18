@@ -29,12 +29,21 @@ dotenv.config();
 
 export const app = express()
 
-const host = '54.37.50.18:3000';
+  
+const allowedOrigins = [
+    'https://adrenalux.duckdns.org', 
+    'http://localhost:5173',
+    'http://localhost:57176'
+];
 
 app.use(cors({
-    origin: '*', 
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
+origin: allowedOrigins, 
+methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+credentials: true
 }));
+
+
+app.options('*', cors());
 
 app.set('port', process.env.PORT || 3000)
 app.set('trust proxy', true)
@@ -45,14 +54,24 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use(helmet({
+    crossOriginResourcePolicy: false, 
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "img-src": ["'self'", "https: data:"]
+        }
+    }
+}));
+
 app.use((req, res, next) => {
-    if (!req.secure && req.get('x-forwarded-proto') !== 'https') {
-        return res.redirect(301, 'https://' + req.get('host') + req.url);
+    if (process.env.NODE_ENV === 'dev') {
+        res.header('Access-Control-Allow-Origin', req.headers.origin);
+        res.header('Access-Control-Allow-Credentials', 'true');
     }
     next();
 });
 
-app.use(helmet());
 app.use(logger)
 app.use(cookieParser(process.env.SECRET_KEY))
 app.use(express.urlencoded({ extended: true }))
@@ -68,26 +87,29 @@ app.use('/api/v1/partidas', partidasRouter)
 app.use('/api/v1/jugadores', jugadoresRouter)
 app.use('/api/v1/mercado', mercadoRoutes);
 app.use('/api/v1/plantillas', plantillasRoutes);  
+
+
 app.use('/public/swagger-ui', express.static(path.join(__dirname, 'public/swagger-ui')));
-app.use('/public', express.static(path.join(__dirname, 'public'))); 
-app.use('/public/images', express.static(path.join(__dirname, 'public', 'images')));
+app.use('/public', express.static(path.join(__dirname, 'public')));
+app.use('/public/images/sobres', express.static(path.join(__dirname, 'public/images/sobres')));
 
 app.use('/api-docs', 
-    swaggerUi.serve, 
-swaggerUi.setup(swaggerDocs, {
-        customCssUrl: 'https://54.37.50.18:3000/public/swagger-ui/swagger-ui.css', 
+swaggerUi.serve, 
+    swaggerUi.setup(swaggerDocs, {
+        customCssUrl: '/public/swagger-ui/swagger-ui.css',
         customJs: [
-        'https://54.37.50.18:3000/public/swagger-ui/swagger-ui-bundle.js',
-        'https://54.37.50.18:3000/public/swagger-ui/swagger-ui-standalone-preset.js'
+        '/public/swagger-ui/swagger-ui-bundle.js',
+        '/public/swagger-ui/swagger-ui-standalone-preset.js'
         ],
         swaggerOptions: {
-        requestInterceptor: (req) => {
-            req.url = req.url.replace('http://', 'https://');
-            return req;
-        }
+        url: '/api-docs.json' 
         }
     })
 );
-  
+
+app.get('/api-docs.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerDocs);
+});
 
 app.use(errorHandler)

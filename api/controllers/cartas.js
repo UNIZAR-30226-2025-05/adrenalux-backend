@@ -102,7 +102,7 @@ export async function abrirSobreRandom(req, res, next) {
   const cartasJson = cartasOrdenadas.map(carta => objectToJson(carta));
   const {logros,recompensas} = await comprobarLogros(userId);
 
-  for (const [tipo, cantidad] of Object.entries(recompensasTotales)) {
+  for (const [tipo, cantidad] of Object.entries(recompensas || {})) {
     await aplicarRecompensa(userId, tipo, cantidad);
   }
 

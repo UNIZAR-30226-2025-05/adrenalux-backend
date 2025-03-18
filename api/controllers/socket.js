@@ -10,12 +10,15 @@ import { user } from '../db/schemas/user.js';
 const connectedUsers = new Map();
 const activeExchanges = new Map();
 
-export function configureWebSocket(server) {
-  const io = new Server(server, {
+export function configureWebSocket(httpServer) {
+  const io = new Server(httpServer, {
     cors: {
-      origin: '*',
-      methods: ['GET', 'POST'],
+      origin: "https://adrenalux.duckdns.org",
+      methods: ["GET", "POST"]
     },
+    path: "/socket.io", 
+    transports: ['websocket'], 
+    allowEIO3: true 
   });
 
   io.use(socketAuth);

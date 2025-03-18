@@ -1,6 +1,6 @@
 import express from 'express';
 import * as mercado from '../controllers/mercado.js';
-import { authenticate } from '../middlewares/auth.js';
+import { apiKeyAuth, authenticate } from '../middlewares/auth.js';
 
 const router = express.Router();
 
@@ -113,5 +113,8 @@ router.post('/mercadoCartas/comprarCarta/:id', authenticate, mercado.comprarCart
  *         description: Carta retirada del mercado
  */
 router.delete('/mercadoCartas/retirarCarta/:id', authenticate, mercado.retirarCarta);
+
+router.post('/generarCartasMercado', apiKeyAuth, mercado.generarCartasMercado);
+
 
 export default router;

@@ -8,9 +8,9 @@ const options = {
       version: '1.0.0',
       description: 'API documentation for Adrenalux project',
      },
-    servers: [{
-      url: "http://54.37.50.18:3000/api/v1",
-      description: 'Development Server'
+    servers: [{ 
+      url: "https://adrenalux.duckdns.org/api-docs",
+      description: 'Production Server'
     }]
   },
   apis: ['./api/routes/*.js']
