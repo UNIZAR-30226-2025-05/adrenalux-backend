@@ -84,7 +84,7 @@ router.get('/', authenticate, plantilla.obtenerPlantillas);
  *       401:
  *         description: No autorizado para modificar esta plantilla
  */
-router.put('/:plantillaId', authenticate, plantilla.actualizarPlantilla);
+router.put('/', authenticate, plantilla.actualizarPlantilla);
 
 /**
  * @swagger
@@ -107,7 +107,7 @@ router.put('/:plantillaId', authenticate, plantilla.actualizarPlantilla);
  *       401:
  *         description: No autorizado para eliminar esta plantilla
  */
-router.delete('/:plantillaId', authenticate, plantilla.eliminarPlantilla);
+router.delete('/', authenticate, plantilla.eliminarPlantilla);
 
 /**
  * @swagger
@@ -145,7 +145,7 @@ router.delete('/:plantillaId', authenticate, plantilla.eliminarPlantilla);
  *       401:
  *         description: No autorizado para modificar esta plantilla
  */
-router.post('/:plantillaId/cartas', authenticate, plantilla.agregarCartaAPlantilla);
+router.post('/agregarCartasPlantilla', authenticate, plantilla.agregarCartaAPlantilla);
 
 /**
  * @swagger
@@ -170,7 +170,7 @@ router.post('/:plantillaId/cartas', authenticate, plantilla.agregarCartaAPlantil
  *       404:
  *         description: No se encontraron cartas asociadas a esta plantilla
  */
-router.get('/:plantillaId/cartas', authenticate, plantilla.obtenerCartasDePlantilla);
+router.get('/getCartasporPlantilla', authenticate, plantilla.obtenerCartasDePlantilla);
 
 /**
  * @swagger
@@ -193,7 +193,7 @@ router.get('/:plantillaId/cartas', authenticate, plantilla.obtenerCartasDePlanti
  *       400:
  *         description: Posición inválida
  */
-router.get('/cartas/posicion/:posicion', authenticate, plantilla.devolverCartasPosicion);
+router.get('/getCartasPorPosicion', authenticate, plantilla.devolverCartasPosicion);
 
 /**
  * @swagger
@@ -224,6 +224,6 @@ router.get('/cartas/posicion/:posicion', authenticate, plantilla.devolverCartasP
  *       401:
  *         description: No autorizado para modificar esta plantilla
  */
-router.delete('/:plantillaId/cartas/:cartaId', authenticate, plantilla.eliminarCartaDePlantilla);
+router.delete('/eliminarCarta', authenticate, plantilla.eliminarCartaDePlantilla);
 
 export default router;
