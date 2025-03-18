@@ -9,8 +9,8 @@ dotenv.config();
 const port = process.env.PORT || 3000;
 
 const httpsOptions = {
-  key: fs.readFileSync('./key.pem'),
-  cert: fs.readFileSync('./cert.pem')
+  key: fs.readFileSync('/etc/letsencrypt/live/adrenalux.duckdns.org/privkey.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/adrenalux.duckdns.org/fullchain.pem')
 };
 
 const server = https.createServer(httpsOptions, app);
