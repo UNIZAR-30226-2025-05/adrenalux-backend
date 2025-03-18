@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticate } from '../middlewares/auth.js';
 import * as plantilla from '../controllers/plantillas.js';
+
 const router = express.Router();
 
 /**
@@ -18,38 +19,43 @@ const router = express.Router();
  *     tags: [Plantillas]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *                 description: Nombre de la plantilla
  *     responses:
  *       200:
  *         description: Plantilla creada exitosamente
+ *       400:
+ *         description: Nombre de plantilla inválido
  */
 router.post('/', authenticate, plantilla.crearPlantilla);
 
 /**
  * @swagger
- * /plantillas/{userId}:
+ * /plantillas:
  *   get:
- *     summary: Obtener todas las plantillas de un usuario
+ *     summary: Obtener todas las plantillas del usuario autenticado
  *     tags: [Plantillas]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *         description: ID del usuario
  *     responses:
  *       200:
  *         description: Lista de plantillas del usuario
  */
-router.get('/getPlantillas', authenticate, plantilla.obtenerPlantillas);
+router.get('/', authenticate, plantilla.obtenerPlantillas);
 
 /**
  * @swagger
  * /plantillas/{plantillaId}:
  *   put:
- *     summary: Actualizar nombre de una plantilla
+ *     summary: Actualizar el nombre de una plantilla
  *     tags: [Plantillas]
  *     security:
  *       - bearerAuth: []
@@ -58,11 +64,25 @@ router.get('/getPlantillas', authenticate, plantilla.obtenerPlantillas);
  *         name: plantillaId
  *         required: true
  *         schema:
- *           type: string
+ *           type: integer
  *         description: ID de la plantilla
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nuevoNombre:
+ *                 type: string
+ *                 description: Nuevo nombre de la plantilla
  *     responses:
  *       200:
  *         description: Plantilla actualizada exitosamente
+ *       400:
+ *         description: Nombre de plantilla inválido
+ *       401:
+ *         description: No autorizado para modificar esta plantilla
  */
 router.put('/:plantillaId', authenticate, plantilla.actualizarPlantilla);
 
@@ -79,11 +99,13 @@ router.put('/:plantillaId', authenticate, plantilla.actualizarPlantilla);
  *         name: plantillaId
  *         required: true
  *         schema:
- *           type: string
+ *           type: integer
  *         description: ID de la plantilla
  *     responses:
  *       200:
  *         description: Plantilla eliminada exitosamente
+ *       401:
+ *         description: No autorizado para eliminar esta plantilla
  */
 router.delete('/:plantillaId', authenticate, plantilla.eliminarPlantilla);
 
@@ -100,11 +122,28 @@ router.delete('/:plantillaId', authenticate, plantilla.eliminarPlantilla);
  *         name: plantillaId
  *         required: true
  *         schema:
- *           type: string
+ *           type: integer
  *         description: ID de la plantilla
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               cartaid:
+ *                 type: integer
+ *                 description: ID de la carta
+ *               posicion:
+ *                 type: string
+ *                 description: Posición de la carta en la plantilla
  *     responses:
  *       200:
  *         description: Carta agregada exitosamente
+ *       400:
+ *         description: Posición inválida o carta no encontrada
+ *       401:
+ *         description: No autorizado para modificar esta plantilla
  */
 router.post('/:plantillaId/cartas', authenticate, plantilla.agregarCartaAPlantilla);
 
@@ -121,16 +160,40 @@ router.post('/:plantillaId/cartas', authenticate, plantilla.agregarCartaAPlantil
  *         name: plantillaId
  *         required: true
  *         schema:
- *           type: string
+ *           type: integer
  *         description: ID de la plantilla
  *     responses:
  *       200:
  *         description: Lista de cartas de la plantilla
+ *       401:
+ *         description: No autorizado para ver esta plantilla
+ *       404:
+ *         description: No se encontraron cartas asociadas a esta plantilla
  */
 router.get('/:plantillaId/cartas', authenticate, plantilla.obtenerCartasDePlantilla);
 
-
-router.get('/getCartasPosicion/:posicion', authenticate, plantilla.devolverCartasPosicion);
+/**
+ * @swagger
+ * /plantillas/cartas/posicion/{posicion}:
+ *   get:
+ *     summary: Obtener cartas de una posición específica del usuario autenticado
+ *     tags: [Plantillas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: posicion
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Posición de la carta
+ *     responses:
+ *       200:
+ *         description: Lista de cartas en la posición especificada
+ *       400:
+ *         description: Posición inválida
+ */
+router.get('/cartas/posicion/:posicion', authenticate, plantilla.devolverCartasPosicion);
 
 /**
  * @swagger
@@ -145,20 +208,22 @@ router.get('/getCartasPosicion/:posicion', authenticate, plantilla.devolverCarta
  *         name: plantillaId
  *         required: true
  *         schema:
- *           type: string
+ *           type: integer
  *         description: ID de la plantilla
  *       - in: path
  *         name: cartaId
  *         required: true
  *         schema:
- *           type: string
+ *           type: integer
  *         description: ID de la carta
  *     responses:
  *       200:
  *         description: Carta eliminada exitosamente
+ *       400:
+ *         description: Carta no encontrada en la plantilla
+ *       401:
+ *         description: No autorizado para modificar esta plantilla
  */
 router.delete('/:plantillaId/cartas/:cartaId', authenticate, plantilla.eliminarCartaDePlantilla);
-
-
 
 export default router;

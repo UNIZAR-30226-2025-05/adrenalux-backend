@@ -6,10 +6,10 @@ import { plantilla } from '../db/schemas/plantilla.js';
 import { carta } from '../db/schemas/carta.js';
 import { carta_plantilla } from '../db/schemas/carta_plantilla.js';
 import { obtenerCartasDeUsuario } from './coleccion.js';
-import {getPosiciones} from './cartas.js'
+import { getPosiciones } from './cartas.js';
 import { coleccion } from '../db/schemas/coleccion.js';
 import { objectToJson } from '../lib/toJson.js';
-import { json } from 'drizzle-orm/mysql-core';
+import { eq } from 'drizzle-orm';
 
 export async function crearPlantilla(req, res, next) {
     try {
@@ -20,23 +20,26 @@ export async function crearPlantilla(req, res, next) {
             return next(new BadRequest('Nombre de plantilla inválido'));
         }
         const plantillaInsertada = await db.insert(plantilla).values({ nombre, user_id: userId });
-        return sendResponse(req, res, { data: plantillaInsertada });
+        const plantillaJson =  objectToJson(plantillaInsertada);
+
+        return sendResponse(req, res, {plantillaJson});
     } catch (error) {
         return next(error);
     }
-};
-
+}
 
 export async function obtenerPlantillas(req, res, next) {
     try {
         const token = await getDecodedToken(req);
         const userId = token.id;
         const plantillas = await db.select().from(plantilla).where(eq(plantilla.user_id, userId));
-        return sendResponse(req, res, { data: plantillas });
+        plantillaJson = plantillas.map(plantilla => objectToJson(plantilla));
+
+        return sendResponse(req, res, {plantillaJson});
     } catch (error) {
         return next(error);
     }
-};
+}
 
 export async function actualizarPlantilla(req, res, next) {
     try {
@@ -47,23 +50,28 @@ export async function actualizarPlantilla(req, res, next) {
             return next(new BadRequest('Nombre de plantilla inválido'));
         }
         const plantillaActualizada = await db.update(plantilla).set({ nombre: nuevoNombre }).where(eq(plantilla.id, plantillaId).and(eq(plantilla.user_id, userId)));
-        return sendResponse(req, res, { data: plantillaActualizada });
+        const plantillaJson =  objectToJson(plantillaActualizada);
+        return sendResponse(req, res, { plantillaJson});
     } catch (error) {
         return next(error);
     }
-};
+}
 
 export async function eliminarPlantilla(req, res, next) {
     try {
         const token = await getDecodedToken(req);
         const userId = token.id;
         const { plantillaId } = req.params;
+        const plantillaResult = await db.select().from(plantilla).where(eq(plantilla.id, plantillaId).and(eq(plantilla.user_id, userId)));
+        if (plantillaResult.length === 0) {
+            return next(new Unauthorized('No tienes permisos para eliminar esta plantilla'));
+        }
         await db.delete(plantilla).where(eq(plantilla.id, plantillaId).and(eq(plantilla.user_id, userId)));
         return sendResponse(req, res, { data: { message: 'Plantilla eliminada exitosamente' } });
     } catch (error) {
         return next(error);
     }
-};
+}
 
 export async function devolverCartasPosicion(req, res, next) {
     try {
@@ -75,26 +83,26 @@ export async function devolverCartasPosicion(req, res, next) {
         }
         const { cartasUsuario } = await obtenerCartasDeUsuario(userId);
         const cartasFiltradas = cartasUsuario.filter(carta => carta.posicion === posicion);
-
         if (cartasFiltradas.length === 0) {
-            return sendResponse(req, res, { data: [], message: 'No se encontraron cartas en esa posición' });
+            return next( new Unauthorized({ message: 'No se encontraron cartas en esa posición' }));
         }
-        return sendResponse(req, res, { data: cartasFiltradas });
+        cartasJson = cartasFiltradas.map(carta => objectToJson(carta));
+
+        return sendResponse(req, res, { cartasJson});
     } catch (error) {
         return next(error);
     }
 }
 
-
-export const agregarCartaAPlantilla = async (req, res, next) => {
+export async function agregarCartaAPlantilla  (req, res, next)  {
     try {
         const token = await getDecodedToken(req);
         const userId = token.id;
         const { plantillaId, cartaid, posicion } = req.params;
 
-        const plantilla = await db.select().from(plantilla).where(eq(plantilla.id, plantillaId).and(eq(plantilla.user_id, userId)));
+        const plantillaResult = await db.select().from(plantilla).where(eq(plantilla.id, plantillaId).and(eq(plantilla.user_id, userId)));
         
-        if (plantilla.length === 0) {   
+        if (plantillaResult.length === 0) {   
             return next(new Unauthorized('No tienes permisos para modificar esta plantilla'));
         }
 
@@ -102,8 +110,8 @@ export const agregarCartaAPlantilla = async (req, res, next) => {
             return next(new BadRequest('Posición inválida'));
         }
 
-        const carta = await db.select().from(carta).where(eq(carta.id, cartaid).and(eq(carta.user_id, userId)));
-        if (carta.length === 0) {
+        const cartaResult = await db.select().from(carta).where(eq(carta.id, cartaid).and(eq(carta.user_id, userId)));
+        if (cartaResult.length === 0) {
             return next(new BadRequest('No tienes esta carta en tu colección'));
         }
 
@@ -113,24 +121,24 @@ export const agregarCartaAPlantilla = async (req, res, next) => {
     } catch (error) {
         return next(error);
     }
-};
+}
 
-
-export const obtenerCartasDePlantilla = async (req, res, next) => {
+export async function obtenerCartasDePlantilla  (req, res, next)  {
     try {
         const token = await getDecodedToken(req);
         const userId = token.id;
         const { plantillaId } = req.params;
-        const plantilla = await db.select().from(plantilla).where(eq(plantilla.id, plantillaId).and(eq(plantilla.user_id, userId)));
-        if (plantilla.length === 0) {
+        const plantillaResult = await db.select().from(plantilla).where(eq(plantilla.id, plantillaId).and(eq(plantilla.user_id, userId)));
+        if (plantillaResult.length === 0) {
             return next(new Unauthorized('No tienes permisos para ver esta plantilla'));
         }
-        const idcartas = await db.select(carta_id).from(carta_plantilla).where(eq(carta_plantilla.plantilla_id, plantillaId));
+        const idcartas = await db.select({ carta_id: carta_plantilla.carta_id }).from(carta_plantilla).where(eq(carta_plantilla.plantilla_id, plantillaId));
 
-       for (let i = 0; i < idcartas.length; i++) {
-            const carta = await db.select().from(carta).where(eq(carta.id, idcartas[i].carta_id)); 
-            if (carta.length > 0) {
-                cartas.push(carta); 
+        const cartas = [];
+        for (let i = 0; i < idcartas.length; i++) {
+            const cartaResult = await db.select().from(carta).where(eq(carta.id, idcartas[i].carta_id)); 
+            if (cartaResult.length > 0) {
+                cartas.push(cartaResult[0]); 
             }
         }
         if (cartas.length === 0) {
@@ -142,22 +150,41 @@ export const obtenerCartasDePlantilla = async (req, res, next) => {
     } catch (error) {
         return next(error);
     }
-};
+}
 
-export const eliminarCartaDePlantilla = async (req, res, next) => {
+export async function eliminarCartaDePlantilla  (req, res, next)  {
     try {
-        // Assume logic for removing carta from plantilla
+        const token = await getDecodedToken(req);
+        const userId = token.id;
+        const { plantillaId, cartaid } = req.params;
+        const plantillaResult = await db.select().from(plantilla).where(eq(plantilla.id, plantillaId).and(eq(plantilla.user_id, userId)));
+    
+        if (plantillaResult.length === 0) {
+            return next(new Unauthorized('No tienes permisos para modificar esta plantilla'));
+        }
+
+        const cartaPlantillaResult = await db.select().from(carta_plantilla).where(eq(carta_plantilla.plantilla_id, plantillaId).and(eq(carta_plantilla.carta_id, cartaid)));
+        if (cartaPlantillaResult.length === 0) {
+            return next(new BadRequest('No tienes esta carta en esta plantilla'));
+        }
+
+        const cartaResult = await db.select().from(carta).where(eq(carta.id, cartaid).and(eq(carta.user_id, userId)));
+        if (cartaResult.length === 0) {
+            return next(new BadRequest('No tienes esta carta en tu colección'));
+        }
+        await db.delete(carta_plantilla).where(eq(carta_plantilla.plantilla_id, plantillaId).and(eq(carta_plantilla.carta_id, cartaid)));
+
         return sendResponse(req, res, { data: { message: 'Carta eliminada exitosamente' } });
     } catch (error) {
         return next(error);
     }
-};
+}
 
 function nombrePlantillaValido(nombre) {
     return typeof nombre === 'string' && nombre.length > 3;
 }
 
 function posicionInvalida(posicion) {
-    posicionesValidas =  getPosiciones();
+    const posicionesValidas = getPosiciones();
     return !posicionesValidas.includes(posicion);
 }
