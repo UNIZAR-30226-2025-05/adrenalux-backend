@@ -145,7 +145,7 @@ router.delete('/', authenticate, plantilla.eliminarPlantilla);
  *       401:
  *         description: No autorizado para modificar esta plantilla
  */
-router.post('/agregarCartasPlantilla', authenticate, plantilla.agregarCartaAPlantilla);
+//router.post('/agregarCartasPlantilla', authenticate, plantilla.agregarCartaAPlantilla);
 
 /**
  * @swagger

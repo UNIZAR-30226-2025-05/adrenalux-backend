@@ -1,5 +1,5 @@
 import { sendResponse } from '../lib/http.js';
-import { Unauthorized, BadRequest } from '../lib/http.js';
+import { Unauthorized, BadRequest, InternalServer } from '../lib/http.js';
 import { getDecodedToken } from '../lib/jwt.js';
 import { db } from '../config/db.js';
 import { plantilla } from '../db/schemas/plantilla.js';
@@ -41,7 +41,7 @@ export async function obtenerPlantillas(req, res, next) {
         return sendResponse(req, res, { data: plantillas });
     } catch (error) {
         console.error('Error al obtener plantillas:', error); // Agrega un log para capturar el error
-        return next(new InternalServerError('Error al obtener las plantillas')); // Maneja el error correctamente
+        return next(new InternalServer('Error al obtener las plantillas')); // Maneja el error correctamente
     }
 }
 
@@ -125,7 +125,7 @@ export async function devolverCartasPosicion(req, res, next) {
     } catch (error) {
         // Manejar errores
         console.error('Error en devolverCartasPosicion:', error);
-        return next(new InternalServerError('Error al obtener las cartas por posición'));
+        return next(new InternalServer('Error al obtener las cartas por posición'));
     }
 }
 
