@@ -111,19 +111,12 @@ router.delete('/', authenticate, plantilla.eliminarPlantilla);
 
 /**
  * @swagger
- * /plantillas/{plantillaId}/cartas:
+ * /agregarCartasPlantilla:
  *   post:
  *     summary: Agregar una carta a una plantilla
  *     tags: [Plantillas]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: plantillaId
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID de la plantilla
  *     requestBody:
  *       required: true
  *       content:
@@ -131,25 +124,33 @@ router.delete('/', authenticate, plantilla.eliminarPlantilla);
  *           schema:
  *             type: object
  *             properties:
- *               cartaid:
+ *               plantillaId:
  *                 type: integer
- *                 description: ID de la carta
- *               posicion:
- *                 type: string
- *                 description: Posición de la carta en la plantilla
+ *                 description: ID de la plantilla
+ *               cartasid:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 description: IDs de las cartas
+ *               posiciones:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Posiciones de las cartas en la plantilla
  *     responses:
  *       200:
- *         description: Carta agregada exitosamente
+ *         description: Cartas agregadas exitosamente
  *       400:
  *         description: Posición inválida o carta no encontrada
  *       401:
  *         description: No autorizado para modificar esta plantilla
  */
-router.post('/agregarCartasPlantilla', authenticate, plantilla.agregarCartaAPlantilla);
+router.post('/agregarCartasPlantilla', authenticate, plantilla.agregarCartasPlantilla);
+
 
 /**
  * @swagger
- * /plantillas/{plantillaId}/cartas:
+ * /getCartasPorPlantilla:
  *   get:
  *     summary: Obtener todas las cartas de una plantilla
  *     tags: [Plantillas]
@@ -174,7 +175,7 @@ router.get('/getCartasporPlantilla', authenticate, plantilla.obtenerCartasDePlan
 
 /**
  * @swagger
- * /plantillas/cartas/posicion/{posicion}:
+ * /getCartasPorPosicion:
  *   get:
  *     summary: Obtener cartas de una posición específica del usuario autenticado
  *     tags: [Plantillas]
@@ -197,8 +198,8 @@ router.get('/getCartasPorPosicion', authenticate, plantilla.devolverCartasPosici
 
 /**
  * @swagger
- * /plantillas/{plantillaId}/cartas/{cartaId}:
- *   delete:
+ * /actualizarCarta:
+ *   put:
  *     summary: Eliminar una carta de una plantilla
  *     tags: [Plantillas]
  *     security:
@@ -224,6 +225,6 @@ router.get('/getCartasPorPosicion', authenticate, plantilla.devolverCartasPosici
  *       401:
  *         description: No autorizado para modificar esta plantilla
  */
-router.delete('/eliminarCarta', authenticate, plantilla.eliminarCartaDePlantilla);
+router.put('/actualizarCarta', authenticate, plantilla.actualizarCarta);
 
 export default router;
