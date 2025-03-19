@@ -129,6 +129,65 @@ router.get('/getColeccion', coleccion.obtenerColeccion);
  */
 router.get('/filtrarCartas', coleccion.filtrarCartas);
 
+/**
+ * @swagger
+ * /filtrarPorEquipo/{equipo}:
+ *   get:
+ *     summary: Filtrar cartas por equipo
+ *     tags: [Carta]
+ *     parameters:
+ *       - in: path
+ *         name: equipo
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nombre del equipo por el que filtrar
+ *     responses:
+ *       200:
+ *         description: Cartas filtradas por equipo exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       nombreCompleto:
+ *                         type: string
+ *                       club:
+ *                         type: string
+ *                       posicion:
+ *                         type: string
+ *                       nacionalidad:
+ *                         type: string
+ *                       stats:
+ *                         type: object
+ *                         properties:
+ *                           defensa:
+ *                             type: integer
+ *                           medio:
+ *                             type: integer
+ *                           ataque:
+ *                             type: integer
+ *                       rareza:
+ *                         type: string
+ *                       foto:
+ *                         type: string
+ *                       disponible:
+ *                         type: boolean
+ *                       cantidad:
+ *                         type: integer
+ *       400:
+ *         description: Equipo no válido
+ */
+router.get('/filtrarPorEquipo/:equipo', coleccion.filtrarPorEquipo);
+
+
 
 
 export default router;

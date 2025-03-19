@@ -7,7 +7,7 @@ import { db } from '../config/db.js';
 import { coleccion } from '../db/schemas/coleccion.js';
 import { carta } from '../db/schemas/carta.js';
 import { user } from '../db/schemas/user.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, ilike } from 'drizzle-orm';
 import {TIPOS_FILTROS,} from '../config/cartas.config.js';
 import { cartaState, mercadoCartas } from '../db/schemas/mercado.js';
 import { usuarioIdValido } from './auth.js';
@@ -38,6 +38,35 @@ export async function filtrarCartas(req, res, next) {
 
   return sendResponse(req, res, { data: resultado });
 }
+
+export async function filtrarPorEquipo(req, res, next) {
+  const decodedToken = await getDecodedToken(req);
+  const userId = decodedToken.id;
+  const { equipo } = req.params;
+
+  if (!await usuarioIdValido(userId)) {
+    return next(new Unauthorized({ message: 'Usuario no válido' }));
+  }
+
+  try {
+    // Usamos ILIKE para buscar coincidencias parciales sin importar mayúsculas
+    const cartasFiltradas = await db
+      .select()
+      .from(carta)
+      .where(ilike(carta.equipo, `%${equipo}%`));
+
+    if (cartasFiltradas.length === 0) {
+      return next(new BadRequest({ message: 'No se encontraron cartas para el equipo especificado' }));
+    }
+
+    return sendResponse(req, res, { data: cartasFiltradas });
+
+  } catch (error) {
+    console.error('Error al filtrar cartas por equipo:', error);
+    return next(new BadRequest({ message: 'Error al procesar la solicitud' }));
+  }
+}
+
 
 export async function obtenerTodasLasCartas(filtros = []) {
   let query = db.select().from(carta);

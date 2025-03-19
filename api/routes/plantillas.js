@@ -148,6 +148,7 @@ router.delete('/', authenticate, plantilla.eliminarPlantilla);
 router.post('/agregarCartasPlantilla', authenticate, plantilla.agregarCartasPlantilla);
 
 
+
 /**
  * @swagger
  * /getCartasPorPlantilla:
