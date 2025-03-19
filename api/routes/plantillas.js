@@ -176,29 +176,6 @@ router.get('/getCartasporPlantilla/:id', authenticate, plantilla.obtenerCartasDe
 
 /**
  * @swagger
- * /getCartasPorPosicion:
- *   get:
- *     summary: Obtener cartas de una posición específica del usuario autenticado
- *     tags: [Plantillas]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: posicion
- *         required: true
- *         schema:
- *           type: string
- *         description: Posición de la carta
- *     responses:
- *       200:
- *         description: Lista de cartas en la posición especificada
- *       400:
- *         description: Posición inválida
- */
-router.get('/getCartasPorPosicion', authenticate, plantilla.devolverCartasPosicion);
-
-/**
- * @swagger
  * /actualizarCarta:
  *   put:
  *     summary: Eliminar una carta de una plantilla
