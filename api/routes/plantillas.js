@@ -172,7 +172,7 @@ router.post('/agregarCartasPlantilla', authenticate, plantilla.agregarCartasPlan
  *       404:
  *         description: No se encontraron cartas asociadas a esta plantilla
  */
-router.get('/getCartasporPlantilla', authenticate, plantilla.obtenerCartasDePlantilla);
+router.get('/getCartasporPlantilla/:id', authenticate, plantilla.obtenerCartasDePlantilla);
 
 /**
  * @swagger

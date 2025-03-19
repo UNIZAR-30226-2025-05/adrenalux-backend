@@ -24,11 +24,13 @@ export async function crearPlantilla(req, res, next) {
             return next(new BadRequest('Nombre de plantilla inválido'));
         }
 
-        const plantillaInsertada = await db.insert(plantilla).values({ nombre, user_id: userId });
-        
-        console.log("Plantilla insertada:", plantillaInsertada); 
+        const [plantillaInsertada] = await db.insert(plantilla).values({ nombre, user_id: userId });
 
-        return sendResponse(req, res, { plantilla: plantillaInsertada });
+        const plantillaJson = objectToJson(plantillaInsertada);
+        
+        console.log("Plantilla insertada:", plantillaJson); 
+
+        return sendResponse(req, res, { plantilla: plantillaJson });
     } catch (error) {
         console.error("Error en crearPlantilla:", error); 
         return next(error);
@@ -106,28 +108,6 @@ export async function eliminarPlantilla(req, res, next) {
     }
 }
 
-export async function devolverCartasPosicion(req, res, next) {
-    try {
-        const token = await getDecodedToken(req);
-        const userId = token.id;
-        const { posicion } = req.body;
-        const { cartasUsuario } = await obtenerColeccion(userId);
-
-        const cartasFiltradas = cartasUsuario.filter(carta => carta.posicion === posicion);
-
-        if (cartasFiltradas.length === 0) {
-            return next(new NotFound({ message: 'No se encontraron cartas en esa posición' }));
-        }
-
-        const cartasJson = cartasFiltradas.map(carta => objectToJson(carta));
-
-        return sendResponse(req, res, { data: cartasJson });
-    } catch (error) {
-        console.error('Error en devolverCartasPosicion:', error);
-        return next(new InternalServer('Error al obtener las cartas por posición'));
-    }
-}
-
 export async function agregarCartasPlantilla(req, res, next) {
     try {
         const token = await getDecodedToken(req);
@@ -184,7 +164,11 @@ export async function obtenerCartasDePlantilla (req, res, next)  {
     try {
         const token = await getDecodedToken(req);
         const userId = token.id;
-        const { plantillaId } = req.body;
+        const { id: plantillaId } = req.params; 
+
+        if (!plantillaId) {
+            return res.status(400).json({ error: 'plantillaId es requerido' });
+        }
         
         const plantillaResult = await db.select()
             .from(plantilla)
