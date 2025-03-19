@@ -88,7 +88,7 @@ app.use('/api/v1/partidas', partidasRouter)
 app.use('/api/v1/jugadores', jugadoresRouter)
 app.use('/api/v1/mercado', mercadoRoutes);
 app.use('/api/v1/plantillas', plantillasRoutes);  
-app-use('/api/v1/clasificacion', clasificacionRoutes);
+app.use('/api/v1/clasificacion', clasificacionRoutes);
 
 
 app.use('/public/swagger-ui', express.static(path.join(__dirname, 'public/swagger-ui')));
