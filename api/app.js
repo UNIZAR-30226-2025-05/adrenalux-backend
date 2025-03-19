@@ -16,7 +16,8 @@ import profileRouter from './routes/profile.js'
 import partidasRouter from './routes/partidas.js'
 import jugadoresRouter from './routes/jugadores.js'
 import plantillasRoutes from './routes/plantillas.js';
-import mercadoRoutes from './routes/mercado.js';  
+import mercadoRoutes from './routes/mercado.js';
+import clasificacionRoutes from './routes/clasificacion.js';  
 import * as dotenv from "dotenv";
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -87,6 +88,7 @@ app.use('/api/v1/partidas', partidasRouter)
 app.use('/api/v1/jugadores', jugadoresRouter)
 app.use('/api/v1/mercado', mercadoRoutes);
 app.use('/api/v1/plantillas', plantillasRoutes);  
+app-use('/api/v1/clasificacion', clasificacionRoutes);
 
 
 app.use('/public/swagger-ui', express.static(path.join(__dirname, 'public/swagger-ui')));

@@ -1,8 +1,6 @@
-// lib/puntosDeClasificacion.js
 import { db } from '../config/db.js';
 import { users } from '../db/schemas/user.js';
 import { eq } from 'drizzle-orm';
-import { RECOMPENSAS } from '../config/recompensas.config.js';
 
 export async function agregarPuntosClasificacion(userId, cantidad) {
   const [usuario] = await db.select().from(users).where(eq(users.id, userId));
