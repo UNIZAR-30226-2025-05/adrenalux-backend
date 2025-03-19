@@ -42,13 +42,9 @@ export async function obtenerPlantillas(req, res, next) {
         const plantillas = await db.select().from(plantilla).where(eq(plantilla.user_id, userId));
         return sendResponse(req, res, { data: plantillas });
     } catch (error) {
-<<<<<<< HEAD
-        console.error('Error al obtener plantillas:', error);
-        return next(new InternalServer('Error al obtener las plantillas')); 
-=======
-        console.error('Error al obtener plantillas:', error); // Agrega un log para capturar el error
-        return next(new InternalServer('Error al obtener las plantillas')); // Maneja el error correctamente
->>>>>>> 085c372f809298ff25d8c6b94d9c5e5a164d40b0
+
+        console.error('Error al obtener plantillas:', error); // Agrega un log para capturar el 
+        return next(new InternalServer('Error al obtener las plantillas')); // Maneja el error 
     }
 }
 
@@ -129,7 +125,6 @@ export async function devolverCartasPosicion(req, res, next) {
     } catch (error) {
         console.error('Error en devolverCartasPosicion:', error);
         return next(new InternalServer('Error al obtener las cartas por posición'));
-<<<<<<< HEAD
     }
 }
 
@@ -181,8 +176,7 @@ export async function agregarCartasPlantilla(req, res, next) {
     } catch (error) {
         console.error('Error en agregarCartaAPlantilla:', error);
         return next(new InternalServer('Error al agregar cartas a la plantilla'));
-=======
->>>>>>> 085c372f809298ff25d8c6b94d9c5e5a164d40b0
+
     }
 }
 
