@@ -162,4 +162,6 @@ router.post('/sign-out', authenticate, authCtrl.signOut);
  */
 router.post('/validate-token', authCtrl.validateToken);
 
+router.post('/google', authCtrl.googleSignIn);
+
 export default router;

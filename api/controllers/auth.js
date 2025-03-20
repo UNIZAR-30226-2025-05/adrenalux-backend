@@ -4,8 +4,9 @@ import { user } from '../db/schemas/user.js';
 import { db } from '../config/db.js'; 
 import { pbkdf2Sync, randomBytes } from 'crypto'
 import { v4 as uuidv4} from 'uuid'
-import { eq } from 'drizzle-orm'
+import { eq, or } from 'drizzle-orm'
 import { verifyToken } from '../lib/jwt.js';
+import { OAuth2Client } from 'google-auth-library';
 
 const HASH_CONFIG = {
   iterations: 100000,
@@ -19,6 +20,88 @@ const COOKIE_OPTIONS = {
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'strict',
   maxAge: 1 * 60 * 60 * 1000
+}
+
+const googleClients = {
+  web: new OAuth2Client(process.env.GOOGLE_WEB_CLIENT_ID),
+  android: new OAuth2Client(process.env.GOOGLE_ANDROID_CLIENT_ID)
+};
+
+export async function googleSignIn(req, res, next) {
+  const { tokenId, platform } = req.body;
+  
+  if (!['web', 'android'].includes(platform)) {
+    return next(new BadRequest('Plataforma no válida'));
+  }
+
+  try {
+    const ticket = await googleClients[platform].verifyIdToken({
+      idToken: tokenId,
+      audience: process.env[`GOOGLE_${platform.toUpperCase()}_CLIENT_ID`]
+    });
+
+    const { 
+      email, 
+      sub: googleId, 
+      given_name: name, 
+      family_name: lastname 
+    } = ticket.getPayload();
+
+    const [existingUser] = await db
+      .select()
+      .from(user)
+      .where(or(
+        eq(user.email, email),
+        eq(user.google_id, googleId)
+      ));
+
+    if (existingUser && !existingUser.google_id) {
+      await db.update(user)
+        .set({ google_id: googleId })
+        .where(eq(user.id, existingUser.id));
+    }
+
+    if (!existingUser) {
+      const usernameConflict = await db
+        .select()
+        .from(user)
+        .where(eq(user.username, email.split('@')[0]))
+        .limit(1);
+
+      const generatedFriendCode = await generateUniqueFriendCode();
+      
+      await db.insert(user).values({
+        email,
+        google_id: googleId,
+        name: name || '',
+        lastname: lastname || '',
+        username: usernameConflict.length > 0 
+          ? `${email.split('@')[0]}${Math.floor(Math.random() * 1000)}`
+          : email.split('@')[0],
+        friend_code: generatedFriendCode,
+        password: null,
+        salt: null
+      });
+    }
+
+    const [userData] = await db.select()
+      .from(user)
+      .where(eq(user.email, email));
+
+    const token = await createToken({ id: userData.id, email });
+    res.cookie('session-token', token, COOKIE_OPTIONS);
+
+    return sendResponse(req, res, { 
+      data: { 
+        token,
+        isNewUser: !existingUser 
+      } 
+    });
+
+  } catch (err) {
+    console.error('Google Sign-In Error:', err);
+    next(new Unauthorized('Error en autenticación con Google'));
+  }
 }
 
 export async function signUp(req, res, next) {
@@ -126,34 +209,44 @@ const generateUniqueFriendCode = async () => {
   return friendCode;
 };
 
-
 export async function validateToken(req, res, next) {
-
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader?.startsWith('Bearer ')) {
     return next(new Unauthorized('Formato de token inválido'));
   }
 
   const token = authHeader.split(' ')[1];
   
   try {
-    // Verificar firma JWT
     const decoded = await verifyToken(token);
-
-    const [usuario] = await db
-      .select({ id: user.id })
+    const result = await db
+      .select({
+        id: user.id,
+        google_id: user.google_id,
+      })
       .from(user)
-      .where(eq(user.id, decoded.id));
+      .where(eq(user.id, decoded.id))
+      .limit(1);
 
-    if (!usuario) return next(new NotFound('Usuario no existe'));
+      if (result.length === 0) {
+        return next(new NotFound('Usuario no existe'));
+      }
+
+    req.user = { 
+      id: user.id,
+      authMethod: user.google_id ? 'google' : 'email' 
+    };
 
     return sendResponse(req, res, { 
-      status: { httpCode: 200 },
-      data: { isValid: true }
+      data: { 
+        isValid: true,
+        authMethod: req.user.authMethod 
+      } 
     });
-  }catch (err) { 
-    return next(new Unauthorized('Token inválido'));
+    
+  } catch (err) { 
+    next(new Unauthorized('Token inválido'));
   }
 }
 
@@ -162,3 +255,9 @@ export async function usuarioIdValido(userId) {
   return !!usuario;
 }
 
+export async function usuarioGoogleIdValido(googleId) {
+  const [usuario] = await db.select()
+    .from(user)
+    .where(eq(user.google_id, googleId));
+  return !!usuario;
+}

@@ -15,10 +15,8 @@ export const user = pgTable('user', {
     .notNull(),
   lastname: varchar('lastname', { length: 100 })
     .notNull(),
-  password: text('password')
-    .notNull(),
-  salt: text('salt')  
-    .notNull(),
+  password: text('password'),
+  salt: text('salt'),
   friend_code: varchar('friend_code', { length: 10 })
     .notNull()
     .unique(),
@@ -39,6 +37,7 @@ export const user = pgTable('user', {
     .notNull()
     .default(new Date().toISOString()),
   ultimo_sobre_gratis: timestamp('ultimo_sobre_gratis'),
+  google_id: varchar('google_id', { length: 255 }).unique(),
 });
 
 export const userSelectSchema = createSelectSchema(user).partial();
