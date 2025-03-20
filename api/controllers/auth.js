@@ -22,22 +22,16 @@ const COOKIE_OPTIONS = {
   maxAge: 1 * 60 * 60 * 1000
 }
 
-const googleClients = {
-  web: new OAuth2Client(process.env.GOOGLE_WEB_CLIENT_ID),
-  android: new OAuth2Client(process.env.GOOGLE_ANDROID_CLIENT_ID)
-};
+const CLIENT_ID_WEB = process.env.GOOGLE_WEB_CLIENT_ID; 
+const oAuth2Client = new OAuth2Client(CLIENT_ID_WEB);
 
 export async function googleSignIn(req, res, next) {
-  const { tokenId, platform } = req.body;
+  const { tokenId } = req.body;
   
-  if (!['web', 'android'].includes(platform)) {
-    return next(new BadRequest('Plataforma no válida'));
-  }
-
   try {
-    const ticket = await googleClients[platform].verifyIdToken({
+    const ticket = await oAuth2Client.verifyIdToken({
       idToken: tokenId,
-      audience: process.env[`GOOGLE_${platform.toUpperCase()}_CLIENT_ID`]
+      audience: CLIENT_ID_WEB 
     });
 
     const { 
