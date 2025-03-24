@@ -10,10 +10,8 @@ const API_KEY = process.env.CURRENT_API_KEY;
 
 const currentDir = path.dirname(new URL(import.meta.url).pathname);
 
-//const inputFile = path.join(currentDir, 'playersData', 'S2425-laliga-players.json');
-
 const inputFile = path.join(currentDir, 'playersData', 'S2425-laliga-players.json');
-const outputFile = path.join(currentDir, 'playersMetrics', '${getOutputFileName(inputFile)}');
+const outputFile = path.join(currentDir, 'laliga-data/datasets', '${getOutputFileName(inputFile)}');
 // Asegurar que el archivo existe o crearlo vacío
 if (!fs.existsSync(outputFile)) {
     fs.writeFileSync(outputFile, '[]');
@@ -32,50 +30,50 @@ const players = [];
 const teamTiers = {
     "Real Madrid": 1.5,
     "FC Barcelona": 1.5,
-    "Atlético de Madrid": 1.4,
-    "Athletic Club": 1.3,
+    "Atlético de Madrid": 1.3,
+    "Sevilla FC": 1.2,
     "Real Sociedad": 1.2,
     "Villarreal CF": 1.2,
     "Real Betis": 1.2,
+    "Athletic Club": 1.2,
     "Valencia CF": 1.1,
     "RC Celta": 1.1,
     "RCD Espanyol de Barcelona": 1.0,
     "Getafe CF": 1.0,
-    "Sevilla FC": 1.0,
     "Rayo Vallecano": 1.0,
     "CA Osasuna": 1.0,
-    "RCD Mallorca": 1.0,
+    "RCD Mallorca": 0.9,
     "Girona FC": 0.9,
     "UD Las Palmas": 0.9,
     "Deportivo Alavés": 0.8,
-    "CD Leganés": 0.8,
-    "Real Valladolid CF": 0.7
+    "Real Valladolid CF": 0.8,
+    "CD Leganés": 0.8
 };
 
 // Valores minimos, maximos y peso del rating por posicion 
 const ratingRanges = {
     forward: { 
         ataque: [60, 90], 
-        medio: [60, 75],  
-        defensa: [30, 50],
+        medio: [50, 80],  
+        defensa: [50, 60],
         weight: { ataque: 1.2, medio: 0.8, defensa: 0.6 } 
     },
     midfielder: { 
         ataque: [60, 80],  
         medio: [60, 90], 
-        defensa: [60, 80], 
-        weight: { ataque: 0.8, medio: 1.2, defensa: 0.8 } 
+        defensa: [60, 70], 
+        weight: { ataque: 1.0, medio: 1.2, defensa: 0.8 } 
     },
     defender: { 
-        ataque: [30, 50],  
-        medio: [60, 75],   
-        defensa: [60, 90], 
-        weight: { ataque: 0.6, medio: 0.8, defensa: 1.2 } 
+        ataque: [30, 60],  
+        medio: [40, 60],   
+        defensa: [70, 90], 
+        weight: { ataque: 0.7, medio: 0.8, defensa: 1.2 } 
     },
     goalkeeper: { 
         ataque: [30, 50], 
         medio: [30, 50],  
-        defensa: [60, 90], 
+        defensa: [70, 90], 
         weight: { ataque: 0.3, medio: 0.7, defensa: 1.5 } 
     }
 };
@@ -101,11 +99,7 @@ async function sendDataToAPI() {
             headers: { 
                 'Content-Type': 'application/json',
                 'x-api-key': API_KEY,
-            },
-            agent: new https.Agent({
-                rejectUnauthorized: true, 
-                ca: fs.readFileSync('/etc/letsencrypt/live/adrenalux.duckdns.org/fullchain.pem'), 
-            }),
+            }
         });
 
         console.log('Datos enviados con éxito:', response.status);
@@ -119,7 +113,7 @@ async function sendDataToAPI() {
         for (let endpoint of endpoints) {
             try {
                 const response = await axios.post(
-                    `http://54.37.50.18:3000${endpoint}`, 
+                    `https://adrenalux.duckdns.org${endpoint}`, 
                     {}, 
                     { 
                         headers: {
@@ -154,11 +148,7 @@ function calculateRating(player) {
 
     const starts = player.starts || 0;
     const appearances = player.appearances || 1;
-    const minAppearances = 5;
-    const appearanceWeight = Math.min(1, appearances / minAppearances);
     const minutesPlayed = player.time_played || 0;
-    const totalMinutesPossible = appearances * 90;
-    const minutesWeight = minutesPlayed / totalMinutesPossible;
     const goals = player.goals || 0;
     const goalsPerMatch = goals / appearances;
     const assists = player.goal_assists || 0;
@@ -170,12 +160,9 @@ function calculateRating(player) {
     const aerialDuelsLost = player.aerial_duels_lost || 0;
     const tacklesWon = player.tackles_won || 0;
     const tacklesLost = player.tackles_lost || 0;
-    const consistencyFactor = Math.min(1, appearances / 10);
-    const performanceWeight = 0.7 + 0.3 * minutesWeight; // Bonus por regularidad
-    //const substituteOff = player.substitute_off || 0;
+    const substituteOff = player.substitute_off || 0;
 
     rating += 5 * (minutesPlayed / (90 * appearances)) // Hasta 5 puntos por tiempo jugado
-    rating *= minutesWeight;                  // Ponderación por minutos jugados
     rating += 5 * (starts / appearances);   // Hasta 5 puntos por titularidad
     rating += 0.5 * goals;                  // + 0.5 por gol
     rating += goalsPerMatch * 10;           // Goles por partido * 10
@@ -184,30 +171,35 @@ function calculateRating(player) {
     rating += (groundDuelsWon / ((groundDuelsWon + groundDuelsLost) || 1)); // Porcentaje de duelos de suelo ganados
     rating += (aerialDuelsWon / ((aerialDuelsWon + aerialDuelsLost) || 1)); // Porcentaje de duelos aereos ganados
     rating += (tacklesWon / ((tacklesWon + tacklesLost) || 1)); // Porcentaje de tackles exitosos
-    rating = rating * appearanceWeight + (5 * (1 - appearanceWeight)); // Ponderación por partidos jugados
-    rating *= consistencyFactor; // Ponderación por consistencia
-    rating *= performanceWeight; // Ponderación por regularidad de minutos jugados
-    //rating -= 0.1 * substituteOff; // - 0.1 por cada partido cambiado
+    rating -= 0.1 * substituteOff; // - 0.1 por cada partido cambiado
 
     return rating;
 }
 
-function validatePlayerData(player, fields) {
-    for (let field of fields) {
-        if (!player[field] || typeof player[field] !== 'string') {
-            console.error(`Dato faltante o incorrecto: ${field} para ${player.name}`);
-            return false;
-        }
-    }
-    return true;
-}
-
 function evaluatePlayer(player) {
-    if (
-        !validatePlayerData(player, ['position', 'team', 'photo', 'country']) ||
-        !ratingRanges[player.position.toLowerCase()] ||
-        !teamTiers[player.team]
-    ) return null;
+    const position = player.position && typeof player.position === 'string' ? player.position.toLowerCase() : null;
+    if (!position || !ratingRanges[position]) {
+        console.error(`Posición no reconocida para: ${player.name}`);
+        return null;
+    }
+
+    const team = player.team && typeof player.team === 'string' ? player.team : null;
+    if (!team || !teamTiers[team]) {
+        console.error(`Equipo no reconocido para: ${player.name} (${player.team})`);
+        return null;
+    }
+
+    const photo = player.photo && typeof player.photo === 'string' ? player.photo : null;
+    if (!photo) {
+        console.error(`Foto no reconocida para: ${player.name}`);
+        return null;
+    }
+
+    const country = player.country && typeof player.country === 'string' ? player.country : null;
+    if (!country) {
+        console.error(`País no reconocido para: ${player.name}`);
+        return null;
+    }
 
     const teamFactor = teamTiers[player.team] || 1;
     const weights = ratingRanges[position].weight;

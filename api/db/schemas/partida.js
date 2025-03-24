@@ -10,6 +10,8 @@ export const partida = pgTable('partida', {
   estado: varchar('estado', { length: 20 })
     .notNull()
     .default('parada'), 
+  puntuacion1: integer('puntuacion1').default(0),
+  puntuacion2: integer('puntuacion2').default(0),
   ganador_id: integer('ganador_id', { length: 50 }), 
   fecha: text('fecha').notNull()
     .default(new Date()

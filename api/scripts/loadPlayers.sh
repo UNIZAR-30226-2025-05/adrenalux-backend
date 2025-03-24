@@ -1,9 +1,12 @@
 #!/bin/bash
 
-# Crea y ejecuta el contenedor con el scraper de python
-cd /home/ubuntu/adrenalux-backend/api/scripts/scraper/
-sudo docker-compose up -d
+cd /home/ubuntu/adrenalux-backend/api/scripts/laliga-data/
 
-# Ejecuta el script que lee, calcula y actualiza los jugadores
-cd /home/ubuntu/adrenalux-backend/api/scripts/
-node loadPlayers.js
+sudo docker-compose up --build --abort-on-container-exit
+
+if [ $? -eq 0 ]; then
+    cd /home/ubuntu/adrenalux-backend/api/scripts/
+    node loadPlayers.js
+else
+    echo "El contenedor falló, no se ejecutará loadPlayers.js"
+fi

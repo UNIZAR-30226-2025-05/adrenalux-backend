@@ -106,13 +106,12 @@ export async function generarCartasLuxuryXI(req, res, next) {
     console.log('Jugadores raw:', JSON.stringify(mejoresJugadores));
     for (let jugador of mejoresJugadores) {
       try {
-        jugador = await actualizarEstadisticas(
+        await actualizarEstadisticas(
           jugador,
           TIPOS_CARTAS.LUXURYXI.nombre,
           CARTA_CONSTANTS.INCREMENTOS.LUXURYXI,
           CARTA_CONSTANTS.INCREMENTOS.MAX
         );
-        await insertarCartaEnBD(jugador);
       } catch (error) {
         console.error(`Error procesando jugador ${jugador.id}:`, error);
       }
@@ -131,8 +130,7 @@ export async function generarCartasMegaLuxury(req, res, next) {
   try {
     const mejoresJugadores = await seleccionarMejoresJugadores(CARTA_CONSTANTS.NUMERO_CARTAS.MEGALUXURY, CARTA_CONSTANTS.NUMERO_CARTAS.LUXURYXI + 1);
     for (let jugador of mejoresJugadores) {
-      jugador = await actualizarEstadisticas(jugador,TIPOS_CARTAS.MEGALUXURY.nombre, CARTA_CONSTANTS.INCREMENTOS.MEGALUXURY, CARTA_CONSTANTS.INCREMENTOS.MAX);
-      await insertarCartaEnBD(jugador);
+      await actualizarEstadisticas(jugador,TIPOS_CARTAS.MEGALUXURY.nombre, CARTA_CONSTANTS.INCREMENTOS.MEGALUXURY, CARTA_CONSTANTS.INCREMENTOS.MAX);
     }
     return sendResponse(req, res, { message: 'Cartas MegaLuxury generadas exitosamente' });
   } catch (error) {
@@ -144,8 +142,7 @@ export async function generarCartasLuxury(req, res, next) {
   try {
     const mejoresJugadores = await seleccionarMejoresJugadores(CARTA_CONSTANTS.NUMERO_CARTAS.LUXURY, CARTA_CONSTANTS.NUMERO_CARTAS.MEGALUXURY + 1);
     for (let jugador of mejoresJugadores) {
-      jugador = await actualizarEstadisticas(jugador,TIPOS_CARTAS.LUXURY.nombre, CARTA_CONSTANTS.INCREMENTOS.LUXURY, CARTA_CONSTANTS.INCREMENTOS.MAX);
-      await insertarCartaEnBD(jugador);
+      await actualizarEstadisticas(jugador,TIPOS_CARTAS.LUXURY.nombre, CARTA_CONSTANTS.INCREMENTOS.LUXURY, CARTA_CONSTANTS.INCREMENTOS.MAX);
     }
     return sendResponse(req, res, { message: 'Cartas Luxury generadas exitosamente' });
   } catch (error) {
