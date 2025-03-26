@@ -1,28 +1,78 @@
-import { db } from '../../config/db.js';
-import { setupTestDB } from '../setupTestDB.js';
 import { expect } from 'chai';
+import db from '../db.js'; // Asegúrate de importar la conexión a la base de datos
+import { setupTestDB } from '../setupTestDB.js'; // Inicialización de base de datos
 
 describe('🃏 Pruebas de la tabla de cartas', () => {
   before(async () => {
     await setupTestDB();
   });
 
-  it('Debería agregar una nueva carta', async () => {
-    await db.execute(`INSERT INTO cartas (id, nombre, rareza) VALUES (1, 'Carta Test', 'Rara')`);
-    const cartas = await db.execute(`SELECT * FROM cartas WHERE id = 1`);
-    expect(cartas.length).to.equal(1);
-    expect(cartas[0].nombre).to.equal('Carta Test');
+  describe('🔹 Agregar una nueva carta', () => {
+    it('Debería agregar una nueva carta', async () => {
+      await db.execute(`INSERT INTO cartas (id, nombre) VALUES (1, 'Vinícius Júnior')`);
+      const cartas = await db.execute(`SELECT * FROM cartas WHERE id = 1`);
+      expect(cartas.length).to.equal(1);
+      expect(cartas[0].nombre).to.equal('Vinícius Júnior');
+    });
   });
 
-  it('Debería obtener todas las cartas', async () => {
-    const cartas = await db.execute('SELECT * FROM cartas');
-    expect(cartas).to.be.an('array');
-    expect(cartas.length).to.be.greaterThan(0);
+  describe('🔹 Obtener una carta por su ID', () => {
+    it('Debería obtener una carta por su ID', async () => {
+      await db.execute(`INSERT INTO cartas (id, nombre) VALUES (2, 'Pedri')`);
+      const cartas = await db.execute(`SELECT * FROM cartas WHERE id = 2`);
+      expect(cartas.length).to.equal(1);
+      expect(cartas[0].nombre).to.equal('Pedri');
+    });
   });
 
-  it('Debería eliminar una carta', async () => {
-    await db.execute('DELETE FROM cartas WHERE id = 1');
-    const cartas = await db.execute(`SELECT * FROM cartas WHERE id = 1`);
-    expect(cartas.length).to.equal(0);
+  describe('🔹 Evitar duplicados de cartas', () => {
+    it('Debería evitar duplicados de cartas', async () => {
+      await db.execute(`INSERT INTO cartas (id, nombre) VALUES (3, 'Jude Bellingham')`);
+      
+      try {
+        await db.execute(`INSERT INTO cartas (id, nombre) VALUES (4, 'Jude Bellingham')`);
+      } catch (error) {
+        expect(error).to.exist;
+      }
+
+      const cartas = await db.execute(`SELECT * FROM cartas WHERE nombre = 'Jude Bellingham'`);
+      expect(cartas.length).to.equal(1);
+    });
   });
+
+  describe('🔹 Filtrar cartas por nombre', () => {
+    it('Debería filtrar cartas por nombre', async () => {
+      await db.execute(`INSERT INTO cartas (id, nombre) VALUES (5, 'Antoine Griezmann')`);
+      await db.execute(`INSERT INTO cartas (id, nombre) VALUES (6, 'Robert Lewandowski')`);
+      
+      const cartas = await db.execute(`SELECT * FROM cartas WHERE nombre IN ('Antoine Griezmann', 'Robert Lewandowski')`);
+      expect(cartas).to.be.an('array');
+      expect(cartas.length).to.equal(2);
+      expect(cartas.map(c => c.nombre)).to.include('Antoine Griezmann');
+      expect(cartas.map(c => c.nombre)).to.include('Robert Lewandowski');
+    });
+  });
+
+  describe('🔹 Eliminar todas las cartas de un jugador', () => {
+    it('Debería eliminar todas las cartas de un jugador', async () => {
+      await db.execute(`INSERT INTO cartas (id, nombre) VALUES (7, 'João Félix')`);
+      await db.execute(`INSERT INTO cartas (id, nombre) VALUES (8, 'João Félix')`);
+      
+      await db.execute(`DELETE FROM cartas WHERE nombre = 'João Félix'`);
+      
+      const cartas = await db.execute(`SELECT * FROM cartas WHERE nombre = 'João Félix'`);
+      expect(cartas.length).to.equal(0);
+    });
+  });
+
+  describe('🔹 Eliminar una carta por su ID', () => {
+    it('Debería eliminar una carta por su ID', async () => {
+      await db.execute(`INSERT INTO cartas (id, nombre) VALUES (9, 'Federico Valverde')`);
+      await db.execute(`DELETE FROM cartas WHERE id = 9`);
+      
+      const cartas = await db.execute(`SELECT * FROM cartas WHERE id = 9`);
+      expect(cartas.length).to.equal(0);
+    });
+  });
+
 });
