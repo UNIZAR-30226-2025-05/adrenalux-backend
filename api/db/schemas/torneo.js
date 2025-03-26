@@ -8,7 +8,8 @@ export const torneo = pgTable('torneo', {
   contrasena: varchar('contrasena', { length: 100 }), 
   ganador_id: varchar('ganador_id', { length: 50 }), 
   premio: integer('premio').notNull(), 
-  descripcion: text('descripcion').notNull(), 
+  descripcion: text('descripcion').notNull(),
+  fecha_inicio: text('fecha_inicio').notNull(), 
 });
 
 // Schemas para validaciones
