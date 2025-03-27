@@ -2,47 +2,55 @@ import { user } from '../db/schemas/user.js';
 import {torneo} from '../db/schemas/torneo.js';
 import { db } from '../config/db.js';
 import { sendResponse, NotFound, BadRequest } from '../lib/http.js';
+import { isNull } from 'drizzle-orm';
 import { getDecodedToken } from '../lib/jwt.js';
 import { objectToJson } from '../lib/toJson.js';
 import { participacionTorneo } from '../db/schemas/participacionTorneo.js';
-import { BadRequest, NotFound, sendResponse } from '../lib/http.js';
 import { eq } from 'drizzle-orm';
-import {MAX_PARTICIPANTES} from '../config/torneo.config.js';
+import {MAX_PARTICIPANTES} from '../config/torneos.config.js';
 
 
- export async function crearTorneo(req, res, next) {
+export async function crearTorneo(req, res, next) {
     try {
+        console.log("Recibiendo solicitud para crear torneo...");
+
         const token = await getDecodedToken(req);
+        if (!token || !token.id) {
+            return next(new Error("Token inválido o usuario no autenticado"));
+        }
         const userId = token.id;
+        const { nombre, contrasena, premio, descripcion } = req.body;
 
-        const { nombre, contrasena, premio, descripcion  } = req.body;
-
+        if (!nombre || !premio || !descripcion) {
+            return next(new Error("Faltan campos obligatorios (nombre, premio, descripcion)"));
+        }
         const torneoCreado = await db.insert(torneo).values({
-                  nombre: nombre,
-                  contrasena: contrasena,
-                  premio: premio,
-                  descripcion: descripcion,
-                  ganador_id: null,
-                  fecha_inicio: new Date(),    
-                });
-        
-         const torneo = await db.select().from(torneo).where(eq(torneo.nombre, nombre));
-            if (!torneo) {
-                return next(new NotFound('Torneo no encontrado'));
+              nombre,
+              contrasena: contrasena || null,
+              premio,
+              descripcion,
+              ganador_id: null,
+        });
+
+        const [torneoEncontrado] = await db.select().from(torneo).where(eq(torneo.nombre, nombre));
+
+        if (!torneoEncontrado) {
+            return next(new NotFound("Torneo no encontrado"));
         }
 
-        const participacion = await db.insert(participacionTorneo).values({
-            torneo_id: torneo.id,
+        await db.insert(participacionTorneo).values({
+            torneo_id: torneoEncontrado.id,
             user_id: userId,
         });
-        torneoJson = objectToJson(torneo);
 
+        const torneoJson = objectToJson(torneoEncontrado);
+        return sendResponse(req, res, { data: torneoJson });
+
+    } catch (error) {
+        return next(new Error("Error al crear torneo"));
     }
-    catch (error) {
-        throw new Error("Error al crear torneo");
-    }
-    return sendResponse(req, res, { data: torneoJson });
 }
+
 
 export async function unirseTorneo(req, res, next) {
     try {
@@ -50,24 +58,21 @@ export async function unirseTorneo(req, res, next) {
         const userId = token.id;
         const { torneo_id, contrasena } = req.body;
     
-        // Obtener el torneo
         const torneoData = await db.select().from(torneo).where(eq(torneo.id, torneo_id));
         if (!torneoData) {
             return next(new NotFound('Torneo no encontrado'));
         }
-    
+
         // Verificar si el torneo alcanza el máximo de participantes
         const participantes = await db.select().from(participacionTorneo).where(eq(participacionTorneo.torneo_id, torneo_id));
         if (participantes.length >= MAX_PARTICIPANTES) {
             return next(new BadRequest('El torneo ha alcanzado su capacidad máxima'));
         }
-    
-        // Verificación de contraseña si el torneo tiene una contraseña
+
         if (torneoData.contrasena && torneoData.contrasena !== contrasena) {
             return next(new BadRequest('Contraseña incorrecta'));
         }
     
-        // Insertar la participación en el torneo
         await db.insert(participacionTorneo).values({
             torneo_id: torneo_id,
             user_id: userId,
@@ -82,52 +87,57 @@ export async function unirseTorneo(req, res, next) {
     
 }
 
- export async function obtenerTorneosActivos(req, res, next) {
+export async function obtenerTorneosActivos(req, res, next) {
     try {
         const token = await getDecodedToken(req);
         const userId = token.id;
+        const torneos = await db.select().from(torneo).where(isNull(torneo.ganador_id));
 
-        const torneos = await db.select().from(torneo).where(eq(torneo.ganador_id, null));
-        if (!torneos) {
+        if (!torneos || torneos.length === 0) {
             return next(new NotFound('No hay torneos activos'));
         }
-        const torneosJson = torneos.map(torneo => objectToJson(torneo));
-    }
-    catch (error) {
-        throw new Error("Error al obtener torneos activos");
-    }
-    return  sendResponse(req, res, { data :torneosJson });
 
- }
+        const torneosJson = torneos.map(t => objectToJson(t));
+        return sendResponse(req, res, { data: torneosJson });
 
- export async function obtenerTorneosJugados(req, res, next) {
+    } catch (error) {
+        console.error("Error al obtener torneos activos:", error);
+        return next(new Error("Error al obtener torneos activos"));
+    }
+}
+
+
+export async function obtenerTorneosJugados(req, res, next) {
     try {
         const token = await getDecodedToken(req);
         const userId = token.id;
-        let torneosJson = [];
+        const torneosConInfo = [];
 
-        // Obtener los torneos en los que el usuario ha participado
+
         const torneosJugados = await db
-            .select(participacionTorneo.torneo_id)
+            .select() // Seleccionamos los campos de la tabla participacionTorneo
             .from(participacionTorneo)
             .where(eq(participacionTorneo.user_id, userId));
 
         if (torneosJugados.length === 0) {
             return next(new NotFound('No hay torneos jugados'));
         }
+        for (let i = 0; i < torneosJugados.length; i++) {
+            const torneoId = torneosJugados[i].torneo_id;
 
-        // Obtener información de cada torneo
-        for (const participacion of torneosJugados) {
-            const torneoData = await db
-                .select()
-                .from(torneo)
-                .where(eq(torneo.id, participacion.torneo_id))
+            const torneoInfo = await db
+                .select() 
+                .from(torneo) 
+                .where(eq(torneo.id, torneoId));
 
-            if (torneoData) {
-                torneosJson.push(objectToJson(torneoData));
+            if (torneoInfo.length > 0) {
+                torneosConInfo.push({
+                    ...torneosJugados[i], 
+                    torneo: torneoInfo[0], 
+                });
             }
         }
-        return sendResponse(req, res, { data: torneosJson });
+        return sendResponse(req, res, { data: torneosConInfo });
 
     } catch (error) {
         console.error(error);
@@ -135,28 +145,57 @@ export async function unirseTorneo(req, res, next) {
     }
 }
 
+
+
 export async function obtenerDetallesTorneo(req, res, next) {
+    let DetallesTorneoJson = {};
     try {
         const token = await getDecodedToken(req);
         const userId = token.id;
         const { torneo_id } = req.body;
+        const participantesConDetalles = [];
+
 
         const torneoData = await db.select().from(torneo).where(eq(torneo.id, torneo_id));
-        if (!torneoData) {
+
+        if (!torneoData || torneoData.length === 0) {
+            console.error('Torneo no encontrado');
             return next(new NotFound('Torneo no encontrado'));
         }
 
         const participantes = await db.select().from(participacionTorneo).where(eq(participacionTorneo.torneo_id, torneo_id));
-        const participantesJson = participantes.map(participante => objectToJson(participante));
-        const torneoJson = objectToJson(torneoData);
-        
+        console.log('Participantes del torneo:', participantes);
+
+        if (!participantes || participantes.length === 0) {
+            console.warn('No hay participantes en este torneo');
+        }
+
+        for (let usuario of participantes) {
+            const usuarioDetails = await db.select().from(user).where(eq(user.id, usuario.user_id));
+
+            if (usuarioDetails && usuarioDetails.length > 0) {
+                const usuarioJson = usuarioDetails[0]; 
+                participantesConDetalles.push({
+                    user_id: usuario.user_id,
+                    nombre: usuarioJson.name,
+                    nivel: usuarioJson.level,
+                    avatar: usuarioJson.avatar,
+                });
+            } else {
+                console.warn('Usuario no encontrado para el participante:', usuario.user_id);
+            }
+        }
+
+        const torneoJson = torneoData[0]; 
+
         DetallesTorneoJson = {
             torneo: torneoJson,
-            participantes: participantesJson,
+            participantes: participantesConDetalles,
         };
-    }
-    catch (error) {
-        throw new Error("Error al obtener detalles del torneo");
+
+    } catch (error) {
+        console.error('Error al obtener detalles del torneo:', error);
+        return next(new Error("Error al obtener detalles del torneo"));
     }
     return sendResponse(req, res, { data: DetallesTorneoJson });
 }

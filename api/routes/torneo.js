@@ -1,16 +1,16 @@
-const express = require('express');
+import express from 'express';
 import { authenticate } from '../middlewares/auth.js';
-import * as torneos from '../controllers/torneos.js';
+import * as torneos from '../controllers/torneo.js';
 import { validateRequest } from '../middlewares/validator.js';
 import { z } from 'zod';
+
 const router = express.Router();
 
 const Torneoschema = z.object({
-  nombre: z.string().min(3).max(50)(),
+  nombre: z.string().min(3).max(50),
   contrasena: z.string().min(1).max(100).optional(),
-  premio: z.string().min(1).max(100)(),
-  descripcion: z.string().url()(),
-
+  premio: z.string().min(1).max(100),
+  descripcion: z.string().url(),
 });
 
 /**
@@ -22,7 +22,7 @@ const Torneoschema = z.object({
 
 /**
  * @swagger
- * /torneos:
+ * /torneos/crear:
  *   post:
  *     summary: Crear un nuevo torneo
  *     tags: [Torneos]
@@ -42,69 +42,90 @@ const Torneoschema = z.object({
  *                 format: date
  *               maxParticipantes:
  *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Torneo creado exitosamente
  */
 router.post('/crear', authenticate, validateRequest(Torneoschema), torneos.crearTorneo);
 
 /**
  * @swagger
- * /unirse:
+ * /torneos/unirse:
  *   post:
  *     summary: Unirse a un torneo
  *     tags: [Torneos]
  *     security:
  *       - BearerAuth: []
- *    requestBody:
- *      required: id
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: ID del torneo
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 description: ID del torneo al que se quiere unir
+ *     responses:
+ *       200:
+ *         description: Usuario unido al torneo exitosamente
+ *       400:
+ *         description: Error en la solicitud
  */
 router.post('/unirse', authenticate, torneos.unirseTorneo);
 
 /**
  * @swagger
- * /getTorneosActivos:
+ * /torneos/getTorneosActivos:
  *   get:
  *     summary: Obtener torneos activos
  *     tags: [Torneos]
+ *     responses:
+ *       200:
+ *         description: Lista de torneos activos
  */
 router.get('/getTorneosActivos', torneos.obtenerTorneosActivos);
 
 /**
  * @swagger
- * /getTorneosJugador:
+ * /torneos/getTorneosJugador:
  *   get:
  *     summary: Obtener torneos jugados por un jugador
  *     tags: [Torneos]
  *     security:
  *       - BearerAuth: []
  *     parameters:
- *       - in: path
+ *       - in: query
  *         name: jugadorId
  *         required: true
  *         schema:
  *           type: string
  *         description: ID del jugador
+ *     responses:
+ *       200:
+ *         description: Lista de torneos en los que ha participado el jugador
  */
 router.get('/getTorneosJugador', authenticate, torneos.obtenerTorneosJugados);
 
 /**
  * @swagger
- * /getTorneo:
+ * /torneos/getTorneo:
  *   get:
  *     summary: Obtener detalles de un torneo
  *     tags: [Torneos]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: ID del torneo
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 description: ID del torneo del cual obtener la información
+ *     responses:
+ *       200:
+ *         description: Detalles del torneo
  */
 router.get('/getTorneo', torneos.obtenerDetallesTorneo);
 

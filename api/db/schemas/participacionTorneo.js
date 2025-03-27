@@ -1,7 +1,7 @@
 import { pgTable, primaryKey,integer } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { torneo } from './torneo';
-import { user } from './user';
+import { torneo } from './torneo.js';
+import { user } from './user.js';
 
 export const participacionTorneo = pgTable('participacionTorneo', {
   user_id: integer('user_id')
