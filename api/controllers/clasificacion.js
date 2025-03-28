@@ -43,7 +43,6 @@ export async function obtenerClasificacionTotal(req, res, next) {
         return next(error);
     }
 }
-
 export async function obtenerClasificacionAmigos(req, res, next) {
     try {
         const token = await getDecodedToken(req);
@@ -51,18 +50,17 @@ export async function obtenerClasificacionAmigos(req, res, next) {
 
         const miUser = await db.select().from(user).where(eq(user.id, userId));
 
-        miUsuario = {
-            userid: miUser.id,
-            username: miUser.username,
-            name: miUser.name,
-            lastname: miUser.lastname,
-            avatar: miUser.avatar,
-            friend_code: miUser.friend_code,
-            level: miUser.level,
-            experience: miUser.experience,
-            clasificacion: miUser.puntosClasificacion
+        const miUsuario = {
+            userid: miUser[0].id,
+            username: miUser[0].username,
+            name: miUser[0].name,
+            lastname: miUser[0].lastname,
+            avatar: miUser[0].avatar,
+            friend_code: miUser[0].friend_code,
+            level: miUser[0].level,
+            experience: miUser[0].experience,
+            clasificacion: miUser[0].puntosClasificacion
         }
-
 
         const amigos = await getFriends(userId);
         const clasificacionAmigos = [];
@@ -96,6 +94,7 @@ export async function obtenerClasificacionAmigos(req, res, next) {
         return next(error);
     }
 }
+
 
 async function getEstadisticasPartidas(userId) {
     const partidasJugadas = await db

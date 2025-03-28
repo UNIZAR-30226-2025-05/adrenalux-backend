@@ -273,7 +273,6 @@ export async function getEquipos(req, res, next) {
   }
 
   let equipos = await getEquipoUnicos();
-  equipos = ordenarAlfabeticamente(equipos);
 
   return sendResponse(req, res, { data: { equipo: equipos } });
 }
@@ -298,11 +297,19 @@ async function getEquipoUnicos() {
   const equiposSet = new Set();
 
   for (const carta of cartas) {
-    equiposSet.add(carta.equipo,carta.escudo);
+    if (carta.equipo && carta.escudo) {
+      // Usamos JSON.stringify para convertir el objeto en una cadena única
+      equiposSet.add(JSON.stringify({
+        equipo: carta.equipo,
+        escudo: carta.escudo  
+      }));
+    }
   }
 
-  return Array.from(equiposSet);
+  // Convertimos el Set a un array de objetos de nuevo
+  return Array.from(equiposSet).map(item => JSON.parse(item));
 }
+
 
 async function getPosicionesUnicas() {
   const cartas = await obtenerTodasLasCartas(); 
