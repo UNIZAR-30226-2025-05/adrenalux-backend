@@ -49,6 +49,21 @@ export async function obtenerClasificacionAmigos(req, res, next) {
         const token = await getDecodedToken(req);
         const userId = token.id;
 
+        const miUser = await db.select().from(user).where(eq(user.id, userId));
+
+        miUsuario = {
+            userid: miUser.id,
+            username: miUser.username,
+            name: miUser.name,
+            lastname: miUser.lastname,
+            avatar: miUser.avatar,
+            friend_code: miUser.friend_code,
+            level: miUser.level,
+            experience: miUser.experience,
+            clasificacion: miUser.puntosClasificacion
+        }
+
+
         const amigos = await getFriends(userId);
         const clasificacionAmigos = [];
 
@@ -72,6 +87,8 @@ export async function obtenerClasificacionAmigos(req, res, next) {
                 });
             }
         }
+        clasificacionAmigos.push(miUsuario);
+        clasificacionAmigos.sort((a, b) => b.clasificacion - a.clasificacion);
 
         return sendResponse(req, res, { data: clasificacionAmigos });
     } catch (error) {

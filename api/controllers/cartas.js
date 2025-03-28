@@ -274,9 +274,8 @@ export async function getEquipos(req, res, next) {
 
   let equipos = await getEquipoUnicos();
   equipos = ordenarAlfabeticamente(equipos);
-  const equiposFormateados = formatearLista(equipos); 
 
-  return sendResponse(req, res, { data: { equipos: equiposFormateados } });
+  return sendResponse(req, res, { data: { equipo: equipos } });
 }
 
 export async function getPosiciones(req, res, next) {
