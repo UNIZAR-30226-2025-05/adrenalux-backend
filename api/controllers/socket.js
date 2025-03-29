@@ -295,6 +295,23 @@ export function configureWebSocket(httpServer) {
       socket.emit('matchmaking_status', { inQueue: false });
     });
 
+    socket.on('surrender', ({ matchId }) => {  
+      const userId = String(socket.data.userID);
+      
+      const match = activeMatches.get(matchId);
+      if (!match) {
+        return socket.emit('error', 'Partida no encontrada o ya finalizada');
+      }
+    
+      if (!match.players[userId]) {
+        return socket.emit('error', 'No eres parte de esta partida');
+      }
+    
+      const opponentId = Object.keys(match.players).find(id => id !== userId);
+      
+      finishMatch(matchId, opponentId);
+    });
+
     const createMatch = async (player1, player2) => {
       const user1_id = String(player1.userId);
       const user2_id = String(player2.userId);
@@ -555,13 +572,19 @@ export function configureWebSocket(httpServer) {
         );
 
         await db.transaction(async (tx) => {
+          const newPuntosJ1 = match.players[player1Id].puntosIniciales + puntosChange[player1Id];
+          const puntosFinalesJ1 = newPuntosJ1 < 0 ? 0 : newPuntosJ1;
+        
+          const newPuntosJ2 = match.players[player2Id].puntosIniciales + puntosChange[player2Id];
+          const puntosFinalesJ2 = newPuntosJ2 < 0 ? 0 : newPuntosJ2;
+        
           await tx.update(user)
-              .set({ puntosClasificacion: match.players[player1Id].puntosIniciales + puntosChange[player1Id] })
-              .where(eq(user.id, Number(player1Id)));
-
+            .set({ puntosClasificacion: puntosFinalesJ1 })
+            .where(eq(user.id, Number(player1Id)));
+        
           await tx.update(user)
-              .set({ puntosClasificacion: match.players[player2Id].puntosIniciales + puntosChange[player2Id] })
-              .where(eq(user.id, Number(player2Id)));
+            .set({ puntosClasificacion: puntosFinalesJ2 })
+            .where(eq(user.id, Number(player2Id)));
         });
         
         io.to(match.roomId).emit('match_ended', {
