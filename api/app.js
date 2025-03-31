@@ -22,10 +22,6 @@ import torneosRoutes from './routes/torneo.js';
 import * as dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { torneo } from './db/schemas/torneo.js';
-import fs from 'fs';
-import { execSync } from 'child_process';
-import { AgOptions, generateAsyncAPIDocs } from './utils/asyncapi.js';  // Asegúrate de agregar este archivo si no existe.
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
