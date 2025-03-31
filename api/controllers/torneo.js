@@ -27,7 +27,6 @@ async function insertarTorneo({ nombre, contrasena, premio, descripcion }) {
             fecha_inicio: new Date()
         });
 
-        // Obtener el torneo recién insertado, usando un SELECT por nombre o algún identificador único
         const [torneoCreado] = await db.select().from(torneo).where(eq(torneo.nombre, nombre));
 
         if (!torneoCreado) {

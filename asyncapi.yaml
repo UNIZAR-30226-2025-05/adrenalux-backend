@@ -1,0 +1,218 @@
+asyncapi: 3.0.0
+info:
+  title: Adrenalux WebSocket API
+  version: 1.0.0
+  description: API para manejar eventos de WebSocket en Adrenalux.
+  contact:
+    name: Equipo de Adrenalux
+    email: soporte@adrenalux.com
+    url: https://adrenalux.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  production:
+    host: adrenalux.duckdns.org
+    protocol: wss
+    pathname: /socket.io
+    description: Servidor WebSocket de producción.
+  local:
+    host: localhost
+    protocol: ws
+    pathname: /socket.io
+    description: Servidor WebSocket local.
+
+channels:
+  /request_exchange:
+    address: /request_exchange
+    description: Canal para solicitud de intercambio de cartas
+    messages:
+      RequestExchange:
+        $ref: '#/components/messages/RequestExchange'
+      RequestExchangeResponse:
+        $ref: '#/components/messages/RequestExchangeResponse'
+
+  /accept_exchange:
+    address: /accept_exchange
+    description: Canal para aceptación de intercambio
+    messages:
+      AcceptExchange:
+        $ref: '#/components/messages/AcceptExchange'
+      AcceptExchangeResponse:
+        $ref: '#/components/messages/AcceptExchangeResponse'
+
+  /select_cards:
+    address: /select_cards
+    description: Canal para selección de cartas
+    messages:
+      SelectCards:
+        $ref: '#/components/messages/SelectCards'
+      SelectCardsResponse:
+        $ref: '#/components/messages/SelectCardsResponse'
+
+  /confirm_exchange:
+    address: /confirm_exchange
+    description: Canal para confirmación de intercambio
+    messages:
+      ConfirmExchange:
+        $ref: '#/components/messages/ConfirmExchange'
+      ConfirmExchangeResponse:
+        $ref: '#/components/messages/ConfirmExchangeResponse'
+
+  /exchange_completed:
+    address: /exchange_completed
+    description: Canal para notificación de intercambio completado
+    messages:
+      ExchangeCompleted:
+        $ref: '#/components/messages/ExchangeCompleted'
+
+components:
+  messages:
+    RequestExchange:
+      name: RequestExchange
+      title: Solicitud de intercambio
+      summary: Mensaje para solicitar un intercambio de cartas
+      payload:
+        type: object
+        properties:
+          receptorId:
+            type: string
+            description: ID del usuario receptor
+          solicitanteUsername:
+            type: string
+            description: Nombre de usuario del solicitante
+        required: [receptorId, solicitanteUsername]
+
+    RequestExchangeResponse:
+      name: RequestExchangeResponse
+      title: Respuesta de solicitud de intercambio
+      summary: Mensaje de respuesta a solicitud de intercambio
+      payload:
+        type: object
+        properties:
+          exchangeId:
+            type: string
+            description: ID único del intercambio
+          solicitanteId:
+            type: string
+            description: ID del solicitante
+          solicitanteUsername:
+            type: string
+            description: Nombre de usuario del solicitante
+          timestamp:
+            type: string
+            format: date-time
+            description: Marca de tiempo del evento
+
+    AcceptExchange:
+      name: AcceptExchange
+      title: Aceptación de intercambio
+      summary: Mensaje para aceptar un intercambio
+      payload:
+        type: object
+        properties:
+          exchangeId:
+            type: string
+            description: ID único del intercambio
+        required: [exchangeId]
+
+    AcceptExchangeResponse:
+      name: AcceptExchangeResponse
+      title: Respuesta de aceptación de intercambio
+      summary: Mensaje de respuesta a aceptación de intercambio
+      payload:
+        type: object
+        properties:
+          exchangeId:
+            type: string
+            description: ID único del intercambio
+          roomId:
+            type: string
+            description: ID de la sala de intercambio
+          solicitanteUsername:
+            type: string
+            description: Nombre de usuario del solicitante
+          receptorUsername:
+            type: string
+            description: Nombre de usuario del receptor
+
+    SelectCards:
+      name: SelectCards
+      title: Selección de cartas
+      summary: Mensaje para seleccionar cartas en un intercambio
+      payload:
+        type: object
+        properties:
+          exchangeId:
+            type: string
+            description: ID único del intercambio
+          cardId:
+            type: string
+            description: ID de la carta seleccionada
+        required: [exchangeId, cardId]
+
+    SelectCardsResponse:
+      name: SelectCardsResponse
+      title: Respuesta de selección de cartas
+      summary: Mensaje de respuesta a selección de cartas
+      payload:
+        type: object
+        properties:
+          exchangeId:
+            type: string
+            description: ID único del intercambio
+          userId:
+            type: string
+            description: ID del usuario que seleccionó la carta
+          card:
+            type: object
+            description: Detalles de la carta seleccionada
+
+    ConfirmExchange:
+      name: ConfirmExchange
+      title: Confirmación de intercambio
+      summary: Mensaje para confirmar un intercambio
+      payload:
+        type: object
+        properties:
+          exchangeId:
+            type: string
+            description: ID único del intercambio
+        required: [exchangeId]
+
+    ConfirmExchangeResponse:
+      name: ConfirmExchangeResponse
+      title: Respuesta de confirmación de intercambio
+      summary: Mensaje de respuesta a confirmación de intercambio
+      payload:
+        type: object
+        properties:
+          exchangeId:
+            type: string
+            description: ID único del intercambio
+          confirmations:
+            type: object
+            additionalProperties:
+              type: boolean
+            description: Estado de las confirmaciones de los participantes
+
+    ExchangeCompleted:
+      name: ExchangeCompleted
+      title: Intercambio completado
+      summary: Mensaje de notificación de intercambio completado
+      payload:
+        type: object
+        properties:
+          exchangeId:
+            type: string
+            description: ID único del intercambio
+          message:
+            type: string
+            description: Mensaje de confirmación
+          user1Card:
+            type: string
+            description: ID de la carta del usuario 1
+          user2Card:
+            type: string
+            description: ID de la carta del usuario 2
