@@ -94,21 +94,9 @@ app.use('/api/v1/plantillas', plantillasRoutes);
 app.use('/api/v1/clasificacion', clasificacionRoutes);
 app.use('/api/v1/torneos', torneosRoutes);
 
-// Ruta para servir AsyncAPI docs
-app.use('/asyncapi', express.static(path.join(__dirname, 'public/asyncapi')));
 
-// Ruta para servir el JSON de AsyncAPI
-app.get('/asyncapi.json', (req, res) => {
-    const asyncAPIFilePath = path.join(__dirname, 'asyncapi.yaml');
-    const asyncAPI = fs.readFileSync(asyncAPIFilePath, 'utf8');
-    res.setHeader('Content-Type', 'application/json');
-    res.send(asyncAPI);
-});
+app.use('/asyncapi-docs', express.static(path.join(__dirname, '../docs')));
 
-// Generación de documentación AsyncAPI si no existe en la carpeta public/asyncapi
-if (!fs.existsSync(path.join(__dirname, 'public/asyncapi'))) {
-    execSync('ag asyncapi.yaml @asyncapi/html-template -o public/asyncapi');
-}
 
 // Swagger UI configuración
 app.use('/public/swagger-ui', express.static(path.join(__dirname, 'public/swagger-ui')));
