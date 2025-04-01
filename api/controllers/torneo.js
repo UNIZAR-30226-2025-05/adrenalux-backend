@@ -148,12 +148,12 @@ export async function obtenerDetallesTorneo(req, res, next) {
     try {
         console.log("[API] Obteniendo detalles del torneo...");
         const token = await getDecodedToken(req);
-        const { torneo_id } = req.body;
+        const { id } = req.params;
 
-        const [torneoData] = await db.select().from(torneo).where(eq(torneo.id, torneo_id));
+        const [torneoData] = await db.select().from(torneo).where(eq(torneo.id, id));
         if (!torneoData) return next(new NotFound('Torneo no encontrado'));
 
-        const participantes = await db.select().from(participacionTorneo).where(eq(participacionTorneo.torneo_id, torneo_id));
+        const participantes = await db.select().from(participacionTorneo).where(eq(participacionTorneo.torneo_id, id));
         const participantesConDetalles = [];
 
         for (let { user_id } of participantes) {
