@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import db from '../db.js'; // Asegúrate de importar la conexión a la base de datos
+import { db } from '../../config/db.js'; // Asegúrate de importar la conexión a la base de datos
 import { setupTestDB } from '../setupTestDB.js'; // Inicialización de base de datos
 
 describe('🛒 Pruebas del Mercado de Cartas', () => {
@@ -14,7 +14,7 @@ describe('🛒 Pruebas del Mercado de Cartas', () => {
 
   describe('🔹 Vender una carta en el mercado', () => {
     it('Debería permitir vender una carta en el mercado', async () => {
-      await db.execute(`INSERT INTO cartas (nombre) VALUES ('Pedri')`);
+      await db.execute(`INSERT INTO carta (nombre) VALUES ('Pedri')`);
       await db.execute(`INSERT INTO mercado_cartas (precio, vendedor) VALUES (100, 'userTest')`);
       
       const mercado = await db.execute(`SELECT * FROM mercado_cartas WHERE nombre = Pedri`);
@@ -26,7 +26,7 @@ describe('🛒 Pruebas del Mercado de Cartas', () => {
 
   describe('🔹 Comprar una carta del mercado', () => {
     it('Debería permitir comprar una carta del mercado', async () => {
-      await db.execute(`INSERT INTO cartas (nombre) VALUES ('Pedri')`);
+      await db.execute(`INSERT INTO carta (nombre) VALUES ('Pedri')`);
       await db.execute(`INSERT INTO mercado_cartas (precio, vendedor) VALUES (150, 'userTest')`);
       
       // Simulamos la compra de la carta
@@ -39,8 +39,8 @@ describe('🛒 Pruebas del Mercado de Cartas', () => {
 
   describe('🔹 Ver todas las cartas disponibles en el mercado', () => {
     it('Debería mostrar todas las cartas disponibles en el mercado', async () => {
-      await db.execute(`INSERT INTO cartas (nombre) VALUES ('Antoine Griezmann')`);
-      await db.execute(`INSERT INTO cartas (nombre) VALUES ('Robert Lewandowski')`);
+      await db.execute(`INSERT INTO carta (nombre) VALUES ('Antoine Griezmann')`);
+      await db.execute(`INSERT INTO carta (nombre) VALUES ('Robert Lewandowski')`);
       await db.execute(`INSERT INTO mercado_cartas (precio, vendedor) VALUES (200, 'userTest')`);
       await db.execute(`INSERT INTO mercado_cartas (precio, vendedor) VALUES (250, 'userTest')`);
       
@@ -54,8 +54,8 @@ describe('🛒 Pruebas del Mercado de Cartas', () => {
 
   describe('🔹 Filtrar cartas en el mercado por precio', () => {
     it('Debería permitir filtrar cartas por precio', async () => {
-      await db.execute(`INSERT INTO cartas (nombre) VALUES ('Federico Valverde')`);
-      await db.execute(`INSERT INTO cartas (nombre) VALUES ('Jude Bellingham')`);
+      await db.execute(`INSERT INTO carta (nombre) VALUES ('Federico Valverde')`);
+      await db.execute(`INSERT INTO carta (nombre) VALUES ('Jude Bellingham')`);
       await db.execute(`INSERT INTO mercado_cartas (precio, vendedor) VALUES (300, 'userTest')`);
       await db.execute(`INSERT INTO mercado_cartas (precio, vendedor) VALUES (500, 'userTest')`);
       
@@ -68,7 +68,7 @@ describe('🛒 Pruebas del Mercado de Cartas', () => {
 
   describe('🔹 Eliminar una carta del mercado', () => {
     it('Debería eliminar una carta del mercado', async () => {
-      await db.execute(`INSERT INTO cartas (nombre) VALUES ('Federico Valverde')`);
+      await db.execute(`INSERT INTO carta (nombre) VALUES ('Federico Valverde')`);
       await db.execute(`INSERT INTO mercado_cartas (precio, vendedor) VALUES (350, 'Jugador G')`);
       
       await db.execute(`DELETE FROM mercado_cartas WHERE nombre = 'Federico Valverde'`);
@@ -80,8 +80,8 @@ describe('🛒 Pruebas del Mercado de Cartas', () => {
 
     describe('🔹 Eliminar todas las cartas del mercado', () => {
         it('Debería eliminar todas las cartas del mercado', async () => {
-        await db.execute(`INSERT INTO cartas (nombre) VALUES ('Federico Valverde')`);
-        await db.execute(`INSERT INTO cartas (nombre) VALUES ('Jude Bellingham')`);
+        await db.execute(`INSERT INTO carta (nombre) VALUES ('Federico Valverde')`);
+        await db.execute(`INSERT INTO carta (nombre) VALUES ('Jude Bellingham')`);
         await db.execute(`INSERT INTO mercado_cartas (precio, vendedor) VALUES (400, 'userTest')`);
         await db.execute(`INSERT INTO mercado_cartas (precio, vendedor) VALUES (600, 'userTest')`);
         
@@ -125,7 +125,7 @@ describe('🛒 Pruebas del Mercado de Cartas', () => {
           `);
       
           // Crear carta y ponerla en venta
-          await db.execute(`INSERT INTO cartas (nombre) VALUES ('Pedri')`);
+          await db.execute(`INSERT INTO carta (nombre) VALUES ('Pedri')`);
           await db.execute(`
             INSERT INTO mercado_cartas (precio, vendedor)
             VALUES (100, 'userTest3')
@@ -153,7 +153,7 @@ describe('🛒 Pruebas del Mercado de Cartas', () => {
           `);
       
           // Crear carta y agregarla al mercado
-          await db.execute(`INSERT INTO cartas (nombre) VALUES ('Federico Valverde')`);
+          await db.execute(`INSERT INTO carta (nombre) VALUES ('Federico Valverde')`);
       
           // Intentar que un jugador que no tiene la carta la ponga en venta
           try {
