@@ -152,18 +152,18 @@ export async function obtenerDetallesTorneo(req, res, next) {
     try {
         const token = await getDecodedToken(req);
         const userId = token.id;
-        const { torneo_id } = req.body;
+        const { id } = req.params;
         const participantesConDetalles = [];
 
 
-        const torneoData = await db.select().from(torneo).where(eq(torneo.id, torneo_id));
+        const torneoData = await db.select().from(torneo).where(eq(torneo.id, id));
 
         if (!torneoData || torneoData.length === 0) {
             console.error('Torneo no encontrado');
             return next(new NotFound('Torneo no encontrado'));
         }
 
-        const participantes = await db.select().from(participacionTorneo).where(eq(participacionTorneo.torneo_id, torneo_id));
+        const participantes = await db.select().from(participacionTorneo).where(eq(participacionTorneo.torneo_id, id));
         console.log('Participantes del torneo:', participantes);
 
         if (!participantes || participantes.length === 0) {
