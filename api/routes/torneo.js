@@ -10,7 +10,7 @@ const Torneoschema = z.object({
   nombre: z.string().min(3).max(50),
   contrasena: z.string().min(1).max(100).optional(),
   premio: z.string().min(1).max(100),
-  descripcion: z.string().url(),
+  descripcion: z.string().min(1).max(250),
 });
 
 /**
