@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { db } from '../../config/db.js'; // Asegúrate de importar la conexión a la base de datos
+import { db } from '../../../config/db.js'; // Asegúrate de importar la conexión a la base de datos
 import { setupTestDB } from '../setupTestDB.js'; // Inicialización de base de datos
 
 describe('🛒 Pruebas del Mercado de Cartas', () => {

@@ -1,4 +1,4 @@
-import { db } from '../../config/db.js';
+import { db } from '../../../config/db.js';
 import { expect } from 'chai';
 
 describe('ðŸ‘¤ Pruebas de la tabla de usuarios', () => {

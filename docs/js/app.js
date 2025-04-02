@@ -7,8 +7,8 @@
     "description": "API para manejar eventos de WebSocket en Adrenalux.",
     "contact": {
       "name": "Equipo de Adrenalux",
-      "email": "soporte@adrenalux.com",
-      "url": "https://adrenalux.com"
+      "email": "adrenalux@gmail.com",
+      "url": "https://adrenalux.duckdns.org/"
     },
     "license": {
       "name": "MIT",
