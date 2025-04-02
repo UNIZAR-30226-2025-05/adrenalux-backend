@@ -1,5 +1,7 @@
 import { db } from '../../config/db.js';
 import { eq } from 'drizzle-orm';
+import request from 'supertest';
+import { app } from '../../app.js';
 import {
   user,
   amistad,
@@ -97,4 +99,34 @@ export const seedTestData = async () => {
   ]);
 
   return { testUser };
+};
+
+export const getAuthToken = async () => {
+  const testUserData = {
+    username: 'testUser',
+    email: 'test@example.com',
+    password: 'TestPassword123!'
+  };
+
+  // Verifica si el usuario ya existe
+  let user = await userHelper.findOne({ email: testUserData.email });
+
+  // Si no existe, créalo
+  if (!user) {
+    user = await userHelper.create({
+      ...testUserData, //Copiamos las propiedades del objeto
+      password: 'hashed_password', 
+      salt: 'salt123'
+    });
+  }
+
+  // Realiza una solicitud de inicio de sesión para obtener el token
+  const response = await request(app)
+    .post('/api/v1/auth/login')
+    .send({
+      email: testUserData.email,
+      password: testUserData.password
+    });
+
+  return response.body.token;
 };
