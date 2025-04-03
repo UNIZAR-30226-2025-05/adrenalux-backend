@@ -174,6 +174,8 @@ router.post('/agregarCartasPlantilla', authenticate, plantilla.agregarCartasPlan
  */
 router.get('/getCartasporPlantilla/:id', authenticate, plantilla.obtenerCartasDePlantilla);
 
+router.post('/activarPlantilla', authenticate, plantilla.activarPlantilla);
+
 /**
  * @swagger
  * /actualizarCarta:

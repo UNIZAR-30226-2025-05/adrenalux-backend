@@ -1,5 +1,6 @@
 import { pgTable, varchar, serial, text, integer, timestamp  } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { plantilla } from './plantilla.js';
 
  // export const DEFAULT_AVATAR_URL = '../imagenes/profile/avatarDefault.png';
 export const user = pgTable('user', {
@@ -36,6 +37,8 @@ export const user = pgTable('user', {
   created_at: text('created_at')
     .notNull()
     .default(new Date().toISOString()),
+  plantilla_activa_id: integer('plantilla_activa_id')
+    .references(() => plantilla.id),
   ultimo_sobre_gratis: timestamp('ultimo_sobre_gratis'),
   google_id: varchar('google_id', { length: 255 }).unique(),
 });

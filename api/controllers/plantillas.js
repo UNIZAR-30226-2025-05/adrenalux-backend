@@ -3,10 +3,9 @@ import { Unauthorized, BadRequest, InternalServer } from '../lib/http.js';
 import { getDecodedToken } from '../lib/jwt.js';
 import { db } from '../config/db.js';
 import { plantilla } from '../db/schemas/plantilla.js';
+import { user } from '../db/schemas/user.js';
 import { carta } from '../db/schemas/carta.js';
 import { carta_plantilla } from '../db/schemas/carta_plantilla.js';
-import { obtenerColeccion } from './coleccion.js';
-import { getPosiciones } from './cartas.js';
 import { objectToJson } from '../lib/toJson.js';
 import { eq,and } from 'drizzle-orm';
 import { coleccion } from '../db/schemas/coleccion.js';
@@ -96,6 +95,10 @@ export async function eliminarPlantilla(req, res, next) {
         const {plantillaIdNum} = req.body;
 
         console.log("Intentando eliminar plantilla con ID:", plantillaIdNum, "y userId:", userId);
+
+        await db.update(user)
+            .set({plantilla_activa_id : null})
+            .where(and(eq(user.id, userId), eq(user.plantilla_activa_id, plantillaIdNum)));
 
         await db.delete(carta_plantilla)
             .where(eq(carta_plantilla.plantilla_id, plantillaIdNum));
@@ -229,6 +232,37 @@ export async function obtenerCartasDePlantilla (req, res, next)  {
         const jsonCartas = objectToJson(cartas);
 
         return sendResponse(req, res, { data: jsonCartas });
+    } catch (error) {
+        return next(error);
+    }
+}
+
+
+
+export async function activarPlantilla (req, res, next)  {
+    try {
+        const token = await getDecodedToken(req);
+        const userId = token.id;
+        const { plantillaId } = req.body;
+
+        if (!plantillaId) {
+            return res.status(400).json({ error: 'plantillaId es requerido' });
+        }
+        
+        const plantillaResult = await db.select()
+            .from(plantilla)
+            .where(and(eq(plantilla.id, plantillaId), eq(plantilla.user_id, userId)));
+        console.log("Resultado: ", plantillaResult);
+      
+        if (plantillaResult.length === 0) {
+            return next(new Unauthorized('No existe esta plantilla'));
+        }
+        await db.update(user)
+        .set({ plantilla_activa_id: plantillaId }) 
+        .where(eq(user.id, userId));
+
+
+        return sendResponse(req, res, { data: {success: true} });
     } catch (error) {
         return next(error);
     }

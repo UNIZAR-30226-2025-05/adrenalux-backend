@@ -202,17 +202,17 @@ export function configureWebSocket(httpServer) {
     const getPlantilla = async (userId) => {
       const numericUserId = Number(userId);
       try {
-        const userPlantillas = await db.select()
-          .from(plantilla)
-          .where(eq(plantilla.user_id, numericUserId));
-        
-        if (userPlantillas.length === 0) {
-          console.log("No hay plantillas del usuario");
-          return [];
+        const [usuario] = await db.select()
+          .from(user)
+          .where(eq(user.id, numericUserId));
+    
+        if (!usuario || usuario.plantilla_activa_id === null) {
+          console.log("Usuario sin plantilla activa");
+          return { plantillaId: null, cartas: [] }; 
         }
     
-        const plantillaId = userPlantillas[0].id;
-
+        const plantillaId = usuario.plantilla_activa_id;
+    
         const cartas = await db.select({
           id: carta.id,
           nombre: carta.nombre,
@@ -223,13 +223,13 @@ export function configureWebSocket(httpServer) {
         })
         .from(carta_plantilla)
         .innerJoin(carta, eq(carta_plantilla.carta_id, carta.id))
-        .where(eq(carta_plantilla.plantilla_id, plantillaId),);
-
-        return cartas;
+        .where(eq(carta_plantilla.plantilla_id, plantillaId));
+    
+        return { plantillaId, cartas }; 
         
       } catch (error) {
         console.error('Error obteniendo plantilla:', error);
-        return [];
+        return { plantillaId: null, cartas: [] }; 
       }
     };
 
@@ -297,8 +297,8 @@ export function configureWebSocket(httpServer) {
 
     socket.on('surrender', ({ matchId }) => {  
       const userId = String(socket.data.userID);
-      
-      const match = activeMatches.get(matchId);
+      console.log("Recibida rendicion de: ", userId);
+      const match = activeMatches.get(Number(matchId));
       if (!match) {
         return socket.emit('error', 'Partida no encontrada o ya finalizada');
       }
@@ -318,18 +318,23 @@ export function configureWebSocket(httpServer) {
 
       console.log(`Match creado entre ${player1.userId} y ${player2.userId}.`);
 
+      const [plantilla1, plantilla2] = await Promise.all([
+        getPlantilla(user1_id),
+        getPlantilla(user2_id)
+      ]);
+
+      console.log("Plantilla1: ", plantilla1.plantillaId, " Plantilla2: ", plantilla2.plantillaId);
+
       const [newMatch] = await db.insert(partida)
         .values({
           turno: user1_id,
           user1_id: user1_id,
           user2_id: user2_id,
+          plantilla1_id: plantilla1.plantillaId,
+          plantilla2_id: plantilla2.plantillaId,
           estado: 'activa'
         }).returning();
     
-      const [plantilla1, plantilla2] = await Promise.all([
-        getPlantilla(user1_id),
-        getPlantilla(user2_id)
-      ]);
       const matchId = newMatch.id;
       const roomId = `match_${matchId}`;
 
@@ -339,14 +344,14 @@ export function configureWebSocket(httpServer) {
           [user1_id]: {
             id : user1_id,
             socket: player1.socket,
-            plantilla: plantilla1,
+            plantilla: plantilla1.cartas,
             puntosIniciales: player1.puntos,
             score: 0
           },
           [user2_id]: {
             id : user2_id,
             socket: player2.socket,
-            plantilla: plantilla2,
+            plantilla: plantilla2.cartas,
             puntosIniciales: player2.puntos,
             score: 0
           }
@@ -411,18 +416,13 @@ export function configureWebSocket(httpServer) {
         });
       });
     
-      const selectionTimer = setTimeout(() => {
-        //handleTimeout(matchId);
-      }, 30000); 
-    
+
       Object.values(match.players).forEach(player => {
         player.socket.once('select_card', async ({ cartaId, skill }) => {
           const userId = String(player.socket.data.userID);
           console.log("Llego evento select_card de usuario ", userId);
           if (userId !== match.currentRoundData.starter) return;
-    
-          clearTimeout(selectionTimer);
-    
+     
           const cartaValida = match.players[userId].plantilla.some(c => String(c.id) === String(cartaId));
 
           console.log("Skill, ", skill);

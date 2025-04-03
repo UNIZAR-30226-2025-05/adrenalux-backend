@@ -127,6 +127,6 @@ router.get('/getTorneosJugador', authenticate, torneos.obtenerTorneosJugados);
  *       200:
  *         description: Detalles del torneo
  */
-router.get('/getTorneo:id', torneos.obtenerDetallesTorneo);
+router.get('/getTorneo/:id', torneos.obtenerDetallesTorneo);
 
 export default router;

@@ -2,6 +2,7 @@ import { pgTable, integer, varchar, text, serial } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { user } from './user.js';
 import { torneo } from './torneo.js';
+import { plantilla } from './plantilla.js';
 
 export const partida = pgTable('partida', {
   id: serial('id').primaryKey(), 
@@ -18,10 +19,16 @@ export const partida = pgTable('partida', {
     .toISOString()), 
   user1_id: integer('usuario1')
     .notNull()
-    .references(() => user.id), // Usuario local
+    .references(() => user.id),
   user2_id: integer('usuario2')
     .notNull()
-    .references(() => user.id), // Usuario visitante
+    .references(() => plantilla.id),
+  plantilla1_id: integer('plantilla1')
+    .notNull()
+    .references(() => plantilla.id),
+  plantilla2_id: integer('plantilla2')
+    .notNull()
+    .references(() => plantilla.id),
   torneo_id: integer('torneo_id')
     .references(() => torneo.id), 
 });

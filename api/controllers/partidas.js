@@ -1,5 +1,8 @@
 import { db } from '../config/db.js';
-
+import { getDecodedToken } from '../lib/jwt.js';
+import { partida } from '../db/schemas/partida.js';
+import { eq,and,or } from 'drizzle-orm';
+import { sendResponse } from '../lib/http.js';
 
 // cuando se termine una partida siempre se debe actualizar el nivel de experiencia del usuario
 // se debe actualizar la cantidad de partidas jugadas por el usuario
@@ -7,60 +10,24 @@ import { db } from '../config/db.js';
 // se debe actualizar los puntos del usuario 
 // si es partida de torneo dar premios 
 
-export async function matchmaking(req, res, next) {
+
+export async function getPartidasPausadas(req, res, next) {
   try {
-    const userId = req.user.id;
-    
-    return sendResponse(req, res, { message: 'Partida encontrada exitosamente' });
-  } catch (err) {
-    next(err);
-  }
-}
+      const token = await getDecodedToken(req);
+      const userId = token.id;
 
-export async function desafiarAmigo(req, res, next) {
-  try {
-    const userId = req.user.id;
-    const { friendId } = req.body;
-    
-    return sendResponse(req, res, { message: 'Desafío enviado exitosamente' });
-  } catch (err) {
-    next(err);
-  }
-}
+      const pausedMatches = await db.select()
+          .from(partida)
+          .where(and(
+              eq(partida.estado, 'pausada'),
+              or(
+                  eq(partida.user1_id, userId),
+                  eq(partida.user2_id, userId)
+              )
+          ));
 
-export async function aceptarDesafio(req, res, next) {
-  try {
-    const userId = req.user.id;
-    const { desafioId } = req.body;
-    // Validar y aceptar desafío
-
-    return sendResponse(req, res, { message: 'Desafío aceptado exitosamente' });
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function realizarJugada(req, res, next) {
-  try {
-    const userId = req.user.id;
-    const { partidaId, cartaId, estadistica } = req.body;
-    // Validar y registrar la jugada
-    
-    return sendResponse(req, res, { message: 'Jugada realizada exitosamente' });
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function abandonarPartida(req, res, next) {
-  try {
-    const userId = req.user.id;
-    const { partidaId } = req.body;
-    // Validar y abandonar la partida
-    //
-
-    return sendResponse(req, res, { message: 'Partida abandonada exitosamente' });
-  } catch (err) {
-    next(err);
+      return sendResponse(req, res, { data: {pausedMatches: pausedMatches ?? []} });
+  } catch (error) {
+      return next(error);
   }
 }
