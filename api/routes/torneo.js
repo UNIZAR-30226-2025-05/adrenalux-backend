@@ -129,4 +129,61 @@ router.get('/getTorneosJugador', authenticate, torneos.obtenerTorneosJugados);
  */
 router.get('/getTorneo/:id', torneos.obtenerDetallesTorneo);
 
+/**
+ * @swagger
+ * /torneos/iniciarTorneo:
+ *   post:
+ *     summary: Iniciar un torneo (solo creador)
+ *     tags: [Torneos]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/IniciarTorneo'
+ *     responses:
+ *       200:
+ *         description: Torneo iniciado correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Torneo'
+ *       400:
+ *         description: No se puede iniciar el torneo (participantes insuficientes o no es creador)
+ *       404:
+ *         description: Torneo no encontrado
+ */
+router.post('/iniciarTorneo', authenticate, torneos.empezarTorneo);
+
+/**
+ * @swagger
+ * /torneos/FinalizarTorneo:
+ *   post:
+ *     summary: Finalizar un torneo y declarar ganador (solo creador)
+ *     tags: [Torneos]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/FinalizarTorneo'
+ *     responses:
+ *       200:
+ *         description: Torneo finalizado correctamente
+ *       400:
+ *         description: Torneo ya tiene ganador o no es creador
+ *       404:
+ *         description: Torneo no encontrado
+ */
+router.post('/finalizarTorneo', authenticate, torneos.finalizarTorneo);
+
 export default router;
