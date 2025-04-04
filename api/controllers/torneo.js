@@ -15,16 +15,17 @@ function validarDatosTorneo({ nombre, premio, descripcion }) {
     }
 }
 
-async function insertarTorneo({ nombre, contrasena, premio, descripcion }) {
+async function insertarTorneo({creador_id, nombre, contrasena, premio, descripcion }) {
     try {
-        console.log("[DB] Insertando nuevo torneo...");
         
         await db.insert(torneo).values({
+            creador_id: creador_id,
             nombre: nombre,
             contrasena: contrasena || null,
             premio: premio,
             descripcion: descripcion,
-            fecha_inicio: new Date()
+            fecha_inicio: new Date(),
+            torneo_en_curso: false
         });
 
         const [torneoCreado] = await db.select().from(torneo).where(eq(torneo.nombre, nombre));
@@ -32,11 +33,8 @@ async function insertarTorneo({ nombre, contrasena, premio, descripcion }) {
         if (!torneoCreado) {
             throw new Error("No se pudo recuperar el torneo creado.");
         }
-
-        console.log("[DB] Torneo creado con ID:", torneoCreado.id);
         return torneoCreado;
     } catch (error) {
-        console.error("[DB ERROR] Error al insertar torneo:", error);
         throw new Error("Error al crear torneo en la base de datos");
     }
 }
@@ -44,11 +42,8 @@ async function insertarTorneo({ nombre, contrasena, premio, descripcion }) {
 
 async function inscribirUsuarioAlTorneo(userId, torneoId) {
     try {
-        console.log(`[DB] Inscribiendo usuario ${userId} en torneo ${torneoId}...`);
         await db.insert(participacionTorneo).values({ torneo_id: torneoId, user_id: userId });
-        console.log("[DB] Usuario inscrito correctamente.");
     } catch (error) {
-        console.error("[DB ERROR] Error al inscribir usuario en torneo:", error);
         throw new Error("Error al inscribir usuario en el torneo");
     }
 }
@@ -56,57 +51,118 @@ async function inscribirUsuarioAlTorneo(userId, torneoId) {
 
 export async function crearTorneo(req, res, next) {
     try {
-        console.log("[API] Recibiendo solicitud para crear torneo...");
         const token = await getDecodedToken(req);
         if (!token?.id) return next(new Error("Token inválido o usuario no autenticado"));
 
         const userId = token.id;
         validarDatosTorneo(req.body);
 
-        const torneoCreado = await insertarTorneo(req.body);
+        const torneoCreado = await insertarTorneo(userId,req.body);
         await inscribirUsuarioAlTorneo(userId, torneoCreado.id);
 
         return sendResponse(req, res, { data: objectToJson(torneoCreado) });
 
     } catch (error) {
-        console.error("[ERROR] Error en crearTorneo:", error);
         return next(error);
     }
 }
 
+async function verificarTorneoDisponible(torneoId) {
+    const [torneoData] = await db.select().from(torneo).where(eq(torneo.id, torneoId));
+    
+    if (!torneoData) {
+        throw new NotFound('Torneo no encontrado');
+    }
+    
+    if (torneoData.torneo_en_curso) {
+        throw new BadRequest('El torneo ya está en curso');
+    }
+    
+    return torneoData;
+}
 
+async function verificarInscripcionUsuario(torneoId, userId) {
+    const [yaInscrito] = await db.select()
+        .from(participacionTorneo)
+        .where(
+            and(
+                eq(participacionTorneo.torneo_id, torneoId),
+                eq(participacionTorneo.user_id, userId)
+            )
+        );
+    
+    if (yaInscrito) {
+        throw new BadRequest('Ya estás inscrito en este torneo');
+    }
+}
+
+async function verificarCapacidadTorneo(torneoId) {
+    const participantes = await db.select()
+        .from(participacionTorneo)
+        .where(eq(participacionTorneo.torneo_id, torneoId));
+    
+    if (participantes.length >= MAX_PARTICIPANTES) {
+        throw new BadRequest('El torneo ha alcanzado su capacidad máxima');
+    }
+    
+    return participantes;
+}
+
+async function verificarContrasenaTorneo(torneoData, contrasena) {
+    if (torneoData.contrasena && torneoData.contrasena !== contrasena) {
+        throw new BadRequest('Contraseña incorrecta');
+    }
+}
+
+async function manejarInicioAutomatico(torneoId) {
+    const participantesActualizados = await db.select()
+        .from(participacionTorneo)
+        .where(eq(participacionTorneo.torneo_id, torneoId));
+    
+    if (participantesActualizados.length === MAX_PARTICIPANTES) {
+        await ponerEnMarchaTorneo(torneoId);
+        await realizarEmparejamientoInicial(torneoId, participantesActualizados);
+        return true;
+    }
+    
+    return false;
+}
+
+// Función principal
 export async function unirseTorneo(req, res, next) {
     try {
-        console.log("[API] Recibiendo solicitud para unirse a torneo...");
         const token = await getDecodedToken(req);
         if (!token?.id) return next(new Error("Token inválido o usuario no autenticado"));
 
         const userId = token.id;
         const { torneo_id, contrasena } = req.body;
 
-        const [torneoData] = await db.select().from(torneo).where(eq(torneo.id, torneo_id));
-        if (!torneoData) return next(new NotFound('Torneo no encontrado'));
-
-        const participantes = await db.select().from(participacionTorneo).where(eq(participacionTorneo.torneo_id, torneo_id));
-        if (participantes.length >= MAX_PARTICIPANTES) return next(new BadRequest('El torneo ha alcanzado su capacidad máxima'));
-
-        if (torneoData.contrasena && torneoData.contrasena !== contrasena) {
-            return next(new BadRequest('Contraseña incorrecta'));
-        }
+        const torneoData = await verificarTorneoDisponible(torneo_id);
+        await verificarInscripcionUsuario(torneo_id, userId);
+        await verificarCapacidadTorneo(torneo_id);
+        await verificarContrasenaTorneo(torneoData, contrasena);
 
         await inscribirUsuarioAlTorneo(userId, torneo_id);
 
-        return sendResponse(req, res, { data: objectToJson(torneoData) });
+        const torneoIniciado = await manejarInicioAutomatico(torneo_id);
+
+        return sendResponse(req, res, { 
+            success: true,
+            message: torneoIniciado 
+                ? '¡Torneo iniciado automáticamente al completarse!' 
+                : 'Te has unido al torneo correctamente',
+            data: objectToJson(torneoData),
+            iniciado: torneoIniciado
+        });
 
     } catch (error) {
-        console.error("[ERROR] Error en unirseTorneo:", error);
+        console.error("Error en unirseTorneo:", error);
         return next(error);
     }
 }
 
 export async function obtenerTorneosActivos(req, res, next) {
     try {
-        console.log("[API] Obteniendo torneos activos...");
         await getDecodedToken(req);
 
         const torneos = await db.select().from(torneo).where(isNull(torneo.ganador_id));
@@ -123,7 +179,6 @@ export async function obtenerTorneosActivos(req, res, next) {
 
 export async function obtenerTorneosJugados(req, res, next) {
     try {
-        console.log("[API] Obteniendo torneos jugados...");
         const token = await getDecodedToken(req);
         const userId = token.id;
 
@@ -139,16 +194,17 @@ export async function obtenerTorneosJugados(req, res, next) {
         return sendResponse(req, res, { data: torneosConInfo });
 
     } catch (error) {
-        console.error("[ERROR] Error en obtenerTorneosJugados:", error);
         return next(error);
     }
 }
 
 export async function obtenerDetallesTorneo(req, res, next) {
     try {
-        console.log("[API] Obteniendo detalles del torneo...");
         const token = await getDecodedToken(req);
+        const userId = token.id;
         const { id } = req.params;
+
+        if (!userId) return next(new Error("Token inválido o usuario no autenticado"));
 
         const [torneoData] = await db.select().from(torneo).where(eq(torneo.id, id));
         if (!torneoData) return next(new NotFound('Torneo no encontrado'));
@@ -171,8 +227,73 @@ export async function obtenerDetallesTorneo(req, res, next) {
         return sendResponse(req, res, { data: { torneo: torneoData, participantes: participantesConDetalles } });
 
     } catch (error) {
-        console.error("[ERROR] Error en obtenerDetallesTorneo:", error);
         return next(error);
+    }
+}
+
+export async function empezarTorneo(req, res, next) {
+    try {
+        const token = await getDecodedToken(req);
+        const userId = token.id;
+        const { torneo_id } = req.body;
+
+        if (!userId) return next(new Error("Token inválido o usuario no autenticado"));
+
+        // Obtener datos del torneo
+        const [torneoData] = await db.select().from(torneo).where(eq(torneo.id, torneo_id));
+        if (!torneoData) return next(new NotFound('Torneo no encontrado'));
+
+        if (torneoData.creador_id !== userId) {
+            return next(new BadRequest('Solo el creador del torneo puede iniciarlo'));
+        }
+
+        if (torneoData.torneo_en_curso) {
+            return next(new BadRequest('El torneo ya está en curso'));
+        }
+
+        const participantes = await db.select().from(participacionTorneo).where(eq(participacionTorneo.torneo_id, torneo_id));
+        
+        if (participantes.length < 2) {
+            return next(new BadRequest('Se necesitan al menos 2 participantes para empezar'));
+        }
+
+        if (participantes.length % 2 !== 0) {
+            return next(new BadRequest('El número de participantes debe ser par (2, 4, 6 u 8)'));
+        }
+
+        await ponerEnMarchaTorneo(torneo_id);
+        // Aquí iría la lógica para el emparejamiento inicial
+        // await realizarEmparejamientoInicial(torneo_id, participantes);
+
+        return sendResponse(req, res, { 
+            message: 'Torneo iniciado correctamente',
+            data: objectToJson(torneoData) 
+        });
+
+    } catch (error) {
+        return next(error);
+    }
+}
+
+async function ponerEnMarchaTorneo(torneoId) {
+    try {
+        await db.update(torneo).set({ torneo_en_curso: true }).where(eq(torneo.id, torneoId));
+    } catch (error) {
+        throw new Error("Error al cerrar torneo en la base de datos");
+    }
+}
+
+
+async function anadirGanadorAlTorneo(torneoId, userId) {
+    try {
+        const [torneoData] = await db.select().from(torneo).where(eq(torneo.id, torneoId));
+        if (!torneoData) return next(new NotFound('Torneo no encontrado'));
+
+        if (torneoData.ganador_id) return next(new BadRequest('El torneo ya tiene un ganador'));
+
+        await db.update(torneo).set({ ganador_id: userId }).where(eq(torneo.id, torneoId));
+    } catch (error) {
+        throw new Error("Error al cerrar torneo en la base de datos");
     }
 }
 
