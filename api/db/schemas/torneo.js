@@ -1,6 +1,7 @@
 import { pgTable, integer, varchar, text, serial } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { user } from './user.js';
+import { boolean } from 'drizzle-orm/pg-core';
 
 export const torneo = pgTable('torneo', {
   id: serial('id').primaryKey(),
@@ -14,7 +15,7 @@ export const torneo = pgTable('torneo', {
   premio: integer('premio').notNull(), 
   descripcion: text('descripcion').notNull(),
   fecha_inicio: text('fecha_inicio').notNull(),
-  torneo_en_curso: bool ('torneo_en_curso').notNull().default(false), 
+  torneo_en_curso: boolean('torneo_en_curso').notNull().default(false),
 });
 
 // Schemas para validaciones
