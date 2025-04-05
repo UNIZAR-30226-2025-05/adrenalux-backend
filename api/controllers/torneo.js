@@ -138,7 +138,7 @@ export async function crearTorneo(req, res, next) {
         const token = await getDecodedToken(req);
         const userId = token.id;
 
-        if (userId) return next(new Error("Token inválido o usuario no autenticado"));
+        if (!userId) return next(new Error("Token inválido o usuario no autenticado"));
 
        const {nombre, contrasena, premio, descripcion} = req.body;
 
@@ -156,7 +156,7 @@ export async function unirseTorneo(req, res, next) {
     try {
         const token = await getDecodedToken(req);
         const userId = token.id;
-        if (userId) return next(new Error("Token inválido o usuario no autenticado"));
+        if (!userId) return next(new Error("Token inválido o usuario no autenticado"));
 
         const { torneo_id, contrasena } = req.body;
 
@@ -223,7 +223,7 @@ export async function obtenerDetallesTorneo(req, res, next) {
         const token = await getDecodedToken(req);
         const userId = token.id;
         const { torneo_id } = req.params;
-        if (userId) return next(new Error("Token inválido o usuario no autenticado"));
+        if (!userId) return next(new Error("Token inválido o usuario no autenticado"));
 
         const torneoData = await obtenerTorneoPorId(torneo_id);
         const participantes = await obtenerDetallesParticipantes(torneo_id);
@@ -241,7 +241,7 @@ export async function empezarTorneo(req, res, next) {
         const token = await getDecodedToken(req);
         const userId = token.id;
         const { torneo_id } = req.body;
-        if (userId) return next(new Error("Token inválido o usuario no autenticado"));
+        if (!userId) return next(new Error("Token inválido o usuario no autenticado"));
 
         const torneoData = await validarInicioTorneo(userId, torneo_id);
         await marcarTorneoEnCurso(torneo_id);
