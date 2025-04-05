@@ -712,6 +712,16 @@ export function configureWebSocket(httpServer) {
 
       const playerIds = Object.keys(match.players);
       
+      const user1Id = match.currentRoundData.starter;
+      const user2Id = getOpponentId(match.players, user1Id);
+
+      const puntuacion1 = match.players[user1Id].score;
+      const puntuacion2 = match.players[user2Id].score;
+
+      await db.update(partida)
+        .set({ puntuacion1, puntuacion2 })
+        .where(eq(partida.id, matchId));
+  
       if (playerIds.some(id => match.players[id].score >= 6) || match.currentRound >= 11) {
         const ganadorId = playerIds.reduce((maxId, id) =>
           match.players[id].score > match.players[maxId].score ? id : maxId,
