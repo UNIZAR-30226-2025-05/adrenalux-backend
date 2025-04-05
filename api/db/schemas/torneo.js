@@ -5,9 +5,6 @@ import { boolean } from 'drizzle-orm/pg-core';
 
 export const torneo = pgTable('torneo', {
   id: serial('id').primaryKey(),
-  creador_id: integer('creador_id')
-    .notNull()
-    .references(() => user.id),
   nombre: varchar('nombre', { length: 100 })
     .notNull(), 
   contrasena: varchar('contrasena', { length: 100 }), 

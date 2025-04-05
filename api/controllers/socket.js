@@ -1,7 +1,7 @@
 import { Server } from 'socket.io';
 import {socketAuth} from '../middlewares/socket_auth.js';
 import { db } from '../config/db.js'; 
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and, asc } from 'drizzle-orm';
 import { objectToJson } from '../lib/toJson.js';
 import { carta } from '../db/schemas/carta.js';
 import { coleccion } from '../db/schemas/coleccion.js';
@@ -15,6 +15,7 @@ const connectedUsers = new Map();
 const activeExchanges = new Map();
 const matchmakingQueue = new Map(); 
 const activeMatches = new Map();
+const pausedMatches = new Map();
 
 export function configureWebSocket(httpServer) {
   const io = new Server(httpServer, {
@@ -375,11 +376,6 @@ export function configureWebSocket(httpServer) {
       const confirmations = pausedMatches.get(matchId);
       confirmations[userId] = true;
     
-      io.to(`match_${matchId}`).emit('resume_confirmation', {
-        confirmations,
-        userId
-      });
-    
       if (Object.values(confirmations).every(Boolean)) {
         const usedCards = await getUsedCards(matchId);
         const scores = {
@@ -411,6 +407,14 @@ export function configureWebSocket(httpServer) {
         });
 
         startNewRound(matchId);
+      }else {
+        const opponentId = Object.keys(confirmations).find(id => id !== userId);
+        const opponent = connectedUsers.get(String(opponentId));
+
+        opponent.socket.emit('resume_confirmation', {
+          confirmations,
+          userId
+        });
       }
     });
 
@@ -471,35 +475,40 @@ export function configureWebSocket(httpServer) {
       };
   }
 
-    async function getUsedCards(matchId) {
-      const rounds = await db.select({
-        carta_j1: {
-          id: carta.id,
-          nombre: carta.nombre,
-          posicion: carta.posicion,
-          defensa: carta.defensa,
-          control: carta.control,
-          ataque: carta.ataque
-        },
-        carta_j2: {
-          id: carta.id,
-          nombre: carta.nombre,
-          posicion: carta.posicion,
-          defensa: carta.defensa,
-          control: carta.control,
-          ataque: carta.ataque
-        }
-      })
-      .from(ronda)
-      .leftJoin(carta, eq(ronda.carta_j1, carta.id))
-      .leftJoin(carta, eq(ronda.carta_j2, carta.id))
-      .where(eq(ronda.partida_id, matchId));
-    
-      return {
-        user1: rounds.map(r => r.carta_j1),
-        user2: rounds.map(r => r.carta_j2)
-      };
-    }
+  async function getUsedCards(matchId) {
+    const roundsJ1 = await db.select({
+      carta_j1: {
+        id: carta.id,
+        nombre: carta.nombre,
+        posicion: carta.posicion,
+        defensa: carta.defensa,
+        control: carta.control,
+        ataque: carta.ataque
+      }
+    })
+    .from(ronda)
+    .leftJoin(carta, eq(ronda.carta_j1, carta.id))
+    .where(eq(ronda.partida_id, matchId));
+  
+    const roundsJ2 = await db.select({
+      carta_j2: {
+        id: carta.id,
+        nombre: carta.nombre,
+        posicion: carta.posicion,
+        defensa: carta.defensa,
+        control: carta.control,
+        ataque: carta.ataque
+      }
+    })
+    .from(ronda)
+    .leftJoin(carta, eq(ronda.carta_j2, carta.id))
+    .where(eq(ronda.partida_id, matchId));
+  
+    return {
+      user1: roundsJ1.map(r => r.carta_j1),
+      user2: roundsJ2.map(r => r.carta_j2)
+    };
+  }
 
     const createMatch = async (player1, player2) => {
       const user1_id = String(player1.userId);
@@ -711,7 +720,7 @@ export function configureWebSocket(httpServer) {
       });
 
       const playerIds = Object.keys(match.players);
-      
+
       const user1Id = match.currentRoundData.starter;
       const user2Id = getOpponentId(match.players, user1Id);
 
