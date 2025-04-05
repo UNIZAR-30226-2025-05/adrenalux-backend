@@ -343,15 +343,13 @@ export function configureWebSocket(httpServer) {
     
         io.to(match.roomId).emit('match_paused', {
           matchId,
-          scores: {
-            [match.players[0].id]: match.players[0].score,
-            [match.players[1].id]: match.players[1].score
-          }
         });
         
         activeMatches.delete(matchId);
       } else {
-        io.to(match.roomId).emit('pause_requested', { userId });
+        const opponentId = Object.keys(match.players).find(id => id !== userId);
+        const opponent = match.players[opponentId];
+        opponent.socket.emit('pause_requested', { userId });
       }
     });
     
