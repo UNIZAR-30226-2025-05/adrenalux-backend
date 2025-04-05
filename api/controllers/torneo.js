@@ -16,13 +16,12 @@ function validarDatosCreacion({ nombre, premio, descripcion }) {
     }
 }
 
-async function crearTorneoEnDB({ creador_id, nombre, contrasena, premio, descripcion }) {
+async function crearTorneoEnDB({ nombre, contrasena, premio, descripcion }) {
     await db.insert(torneo).values({
-        creador_id,
-        nombre,
+        nombre: nombre,
         contrasena: contrasena || null,
-        premio,
-        descripcion,
+        premio : premio,
+        descripcion:  descripcion,
         fecha_inicio: new Date(),
         torneo_en_curso: false
     });
@@ -111,7 +110,6 @@ async function obtenerDetallesParticipantes(torneoId) {
 
 async function validarInicioTorneo(userId, torneoId) {
     const torneoData = await obtenerTorneoPorId(torneoId);
-    if (torneoData.creador_id !== userId) throw new BadRequest('Solo el creador puede iniciarlo');
     if (torneoData.torneo_en_curso) throw new BadRequest('El torneo ya está en curso');
     
     const participantes = await contarParticipantes(torneoId);
@@ -143,7 +141,7 @@ export async function crearTorneo(req, res, next) {
        const {nombre, contrasena, premio, descripcion} = req.body;
 
         validarDatosCreacion(req.body);
-        const torneoCreado = await crearTorneoEnDB({userId, nombre, contrasena, premio, descripcion});
+        const torneoCreado = await crearTorneoEnDB({nombre, contrasena, premio, descripcion});
         await registrarParticipante(userId, torneoCreado.id);
 
         return sendResponse(req, res, { data: objectToJson(torneoCreado) });
@@ -261,10 +259,7 @@ export async function finalizarTorneo(req, res, next) {
         const { torneo_id, ganador_id } = req.body;
 
         const torneoData = await obtenerTorneoPorId(torneo_id);
-        if (torneoData.creador_id !== token.id) {
-            throw new BadRequest('Solo el creador del torneo puede finalizarlo');
-        }
-
+        if (!torneoData.torneo_en_curso) throw new BadRequest('El torneo no está en curso');
         await asignarGanador(torneo_id, ganador_id);
         return sendResponse(req, res, { message: 'Torneo finalizado correctamente' });
     } catch (error) {
