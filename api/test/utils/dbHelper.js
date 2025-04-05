@@ -2,19 +2,18 @@ import { db } from '../../config/db.js';
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { app } from '../../app.js';
-import {
-  user,
-  amistad,
-  partida,
-  carta,
-  torneo,
-  participacionTorneo,
-  coleccion,
-  logro,
-  carta_plantilla,
-  mercado,
-  plantilla
-} from '../../db/schemas';
+import { user } from '../../db/schemas/user.js';
+import { amistad } from '../../db/schemas/amistad.js';
+import { partida } from '../../db/schemas/partida.js';
+import { carta } from '../../db/schemas/carta.js';
+import { torneo } from '../../db/schemas/torneo.js';
+import { participacionTorneo } from '../../db/schemas/participacionTorneo.js';
+import { coleccion } from '../../db/schemas/coleccion.js';
+import { logro } from '../../db/schemas/logro.js';
+import { carta_plantilla } from '../../db/schemas/carta_plantilla.js';
+import { mercadoCartas } from '../../db/schemas/mercado.js';
+import { mercadoDiario } from '../../db/schemas/mercado.js';
+import { plantilla } from '../../db/schemas/plantilla.js';
 
 /**
  * Helper genérico para operaciones CRUD en cualquier tabla
@@ -69,14 +68,16 @@ export const participacionTorneoHelper = createDBHelper(participacionTorneo);
 export const coleccionHelper = createDBHelper(coleccion);
 export const logroHelper = createDBHelper(logro);
 export const cartaPlantillaHelper = createDBHelper(carta_plantilla);
-export const mercadoHelper = createDBHelper(mercado);
+export const mercadoCartasHelper = createDBHelper(mercadoCartas);
+export const mercadoDiarioHelper = createDBHelper(mercadoDiario);
 export const plantillaHelper = createDBHelper(plantilla);
 
 export const clearAllTables = async () => {
   await db.transaction(async (tx) => {
     await tx.delete(plantilla);
     await tx.delete(carta_plantilla);
-    await tx.delete(mercado);
+    await tx.delete(mercadoCartas);
+    await tx.delete(mercadoDiario);
     await tx.delete(coleccion);
     await tx.delete(logro);
     await tx.delete(participacionTorneo);
