@@ -375,11 +375,6 @@ export function configureWebSocket(httpServer) {
       const confirmations = pausedMatches.get(matchId);
       confirmations[userId] = true;
     
-      io.to(`match_${matchId}`).emit('resume_confirmation', {
-        confirmations,
-        userId
-      });
-    
       if (Object.values(confirmations).every(Boolean)) {
         const usedCards = await getUsedCards(matchId);
         const scores = {
@@ -411,6 +406,14 @@ export function configureWebSocket(httpServer) {
         });
 
         startNewRound(matchId);
+      }else {
+        const opponentId = Object.keys(matchState.players).find(id => id !== userId);
+        const opponent = matchState.players[opponentId];
+
+        opponent.socket.emit('resume_confirmation', {
+          confirmations,
+          userId
+        });
       }
     });
 
@@ -711,7 +714,7 @@ export function configureWebSocket(httpServer) {
       });
 
       const playerIds = Object.keys(match.players);
-      
+
       const user1Id = match.currentRoundData.starter;
       const user2Id = getOpponentId(match.players, user1Id);
 
