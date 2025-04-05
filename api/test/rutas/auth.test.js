@@ -1,5 +1,11 @@
 import request from 'supertest';
-import { app } from '../app.js'; 
+import { app } from '../../app.js';
+import { clearAllTables } from '../../../api/test/utils/dbHelper.js'; 
+
+beforeEach(async () => {
+  await clearAllTables();
+});
+
 
 describe('Rutas de Autenticación', () => {
   let token;

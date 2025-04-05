@@ -6,6 +6,6 @@ export default {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/api/$1'
   },
-  setupFilesAfterEnv: ['<rootDir>/api/test/setupTestDB.js'],
+  setupFilesAfterEnv: ['<rootDir>/api/test/db/setupTestDB.js'],
   testTimeout: 30000
 };
