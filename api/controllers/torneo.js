@@ -133,22 +133,43 @@ async function asignarGanador(torneoId, userId) {
 
 export async function crearTorneo(req, res, next) {
     try {
+        // Log para ver el inicio de la función
+        console.log("[INFO] Iniciando creación de torneo...");
+
         const token = await getDecodedToken(req);
+        console.log("[INFO] Token decodificado:", token); // Log para verificar el token
+
         const userId = token.id;
+        if (!userId) {
+            console.error("[ERROR] Token inválido o usuario no autenticado");
+            return next(new Error("Token inválido o usuario no autenticado"));
+        }
 
-        if (!userId) return next(new Error("Token inválido o usuario no autenticado"));
+        // Log para ver el body de la solicitud
+        const { nombre, contrasena, premio, descripcion } = req.body;
+        console.log("[INFO] Datos recibidos para el torneo:", { nombre, contrasena, premio, descripcion });
 
-       const {nombre, contrasena, premio, descripcion} = req.body;
-
+        // Validación de datos (si se realiza alguna)
         validarDatosCreacion(req.body);
-        const torneoCreado = await crearTorneoEnDB({nombre, contrasena, premio, descripcion});
-        await registrarParticipante(userId, torneoCreado.id);
 
+        // Log para verificar los datos antes de insertar
+        console.log("[INFO] Insertando torneo en DB...");
+        const torneoCreado = await crearTorneoEnDB({ nombre, contrasena, premio, descripcion });
+        console.log("[INFO] Torneo creado:", torneoCreado);
+
+        // Registro del usuario como participante
+        await registrarParticipante(userId, torneoCreado.id);
+        console.log("[INFO] Participante registrado en el torneo");
+
+        // Respuesta exitosa
         return sendResponse(req, res, { data: objectToJson(torneoCreado) });
     } catch (error) {
+        // Log del error
+        console.error("[ERROR] Error en la creación del torneo:", error);
         return next(error);
     }
 }
+
 
 export async function unirseTorneo(req, res, next) {
     try {
@@ -218,21 +239,42 @@ export async function obtenerTorneosJugados(req, res, next) {
 
 export async function obtenerDetallesTorneo(req, res, next) {
     try {
+        console.log("[INFO] Iniciando obtenerDetallesTorneo...");
+        
         const token = await getDecodedToken(req);
+        console.log("[INFO] Token decodificado:", token);
+        
         const userId = token.id;
-        const { torneo_id } = req.params;
-        if (!userId) return next(new Error("Token inválido o usuario no autenticado"));
+        const { id } = req.params;
+        
+        if (!userId) {
+            console.log("[ERROR] Token inválido o usuario no autenticado.");
+            return next(new Error("Token inválido o usuario no autenticado"));
+        }
+        
+        console.log("[INFO] Obteniendo params con ID:", req.params.id);
+        console.log("[INFO] Obteniendo torneo con ID:", id);
+        
+        const torneoData = await obtenerTorneoPorId(id);
+        if (!torneoData) {
+            console.log("[ERROR] No se encontró torneo con ID:", id);
+            return next(new Error("Torneo no encontrado"));
+        }
 
-        const torneoData = await obtenerTorneoPorId(torneo_id);
-        const participantes = await obtenerDetallesParticipantes(torneo_id);
+        console.log("[INFO] Torneo encontrado:", torneoData);
+
+        const participantes = await obtenerDetallesParticipantes(id);
+        console.log("[INFO] Participantes obtenidos:", participantes);
 
         return sendResponse(req, res, { 
             data: { torneo: torneoData, participantes } 
         });
     } catch (error) {
+        console.error("[ERROR] Error en obtenerDetallesTorneo:", error);
         return next(error);
     }
 }
+
 
 export async function empezarTorneo(req, res, next) {
     try {
