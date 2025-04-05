@@ -136,11 +136,15 @@ async function asignarGanador(torneoId, userId) {
 export async function crearTorneo(req, res, next) {
     try {
         const token = await getDecodedToken(req);
-        if (!token?.id) return next(new Error("Token inválido o usuario no autenticado"));
+        const userId = token.id;
+
+        if (userId) return next(new Error("Token inválido o usuario no autenticado"));
+
+       const {nombre, contrasena, premio, descripcion} = req.body;
 
         validarDatosCreacion(req.body);
-        const torneoCreado = await crearTorneoEnDB({ creador_id: token.id, ...req.body });
-        await registrarParticipante(token.id, torneoCreado.id);
+        const torneoCreado = await crearTorneoEnDB({userId, nombre, contrasena, premio, descripcion});
+        await registrarParticipante(userId, torneoCreado.id);
 
         return sendResponse(req, res, { data: objectToJson(torneoCreado) });
     } catch (error) {
@@ -151,19 +155,22 @@ export async function crearTorneo(req, res, next) {
 export async function unirseTorneo(req, res, next) {
     try {
         const token = await getDecodedToken(req);
-        if (!token?.id) return next(new Error("Token inválido o usuario no autenticado"));
+        const userId = token.id;
+        if (userId) return next(new Error("Token inválido o usuario no autenticado"));
 
-        const torneoData = await obtenerTorneoPorId(req.body.torneo_id);
+        const { torneo_id, contrasena } = req.body;
+
+        const torneoData = await obtenerTorneoPorId(torneo_id);
         if (torneoData.torneo_en_curso) throw new BadRequest('El torneo ya está en curso');
 
-        await verificarUsuarioInscrito(req.body.torneo_id, token.id);
-        const participantes = await contarParticipantes(req.body.torneo_id);
-        if (participantes.length >= MAX_PARTICIPANTES) throw new BadRequest('Capacidad máxima alcanzada');
+        await verificarUsuarioInscrito(contrasena, userId);
+        const participantes = await contarParticipantes(torneo_id);
+        if (participantes.length == MAX_PARTICIPANTES) throw new BadRequest('Capacidad máxima alcanzada');
 
-        validarContrasena(torneoData, req.body.contrasena);
-        await registrarParticipante(token.id, req.body.torneo_id);
+        validarContrasena(torneoData, contrasena);
+        await registrarParticipante(userId, torneo_id);
 
-        const iniciado = await iniciarTorneoSiCompleto(req.body.torneo_id);
+        const iniciado = await iniciarTorneoSiCompleto(torneo_id);
         const mensaje = iniciado 
             ? '¡Torneo iniciado automáticamente al completarse!' 
             : 'Te has unido al torneo correctamente';
@@ -195,7 +202,8 @@ export async function obtenerTorneosActivos(req, res, next) {
 export async function obtenerTorneosJugados(req, res, next) {
     try {
         const token = await getDecodedToken(req);
-        const torneosJugados = await obtenerTorneosDeUsuario(token.id);
+        const userId = token.id;
+        const torneosJugados = await obtenerTorneosDeUsuario(userId);
         if (!torneosJugados.length) return next(new NotFound('No hay torneos jugados'));
 
         const torneosConInfo = [];
@@ -213,10 +221,12 @@ export async function obtenerTorneosJugados(req, res, next) {
 export async function obtenerDetallesTorneo(req, res, next) {
     try {
         const token = await getDecodedToken(req);
-        if (!token?.id) return next(new Error("Token inválido o usuario no autenticado"));
+        const userId = token.id;
+        const { torneo_id } = req.params;
+        if (userId) return next(new Error("Token inválido o usuario no autenticado"));
 
-        const torneoData = await obtenerTorneoPorId(req.params.id);
-        const participantes = await obtenerDetallesParticipantes(req.params.id);
+        const torneoData = await obtenerTorneoPorId(torneo_id);
+        const participantes = await obtenerDetallesParticipantes(torneo_id);
 
         return sendResponse(req, res, { 
             data: { torneo: torneoData, participantes } 
@@ -229,10 +239,12 @@ export async function obtenerDetallesTorneo(req, res, next) {
 export async function empezarTorneo(req, res, next) {
     try {
         const token = await getDecodedToken(req);
-        if (!token?.id) return next(new Error("Token inválido o usuario no autenticado"));
+        const userId = token.id;
+        const { torneo_id } = req.body;
+        if (userId) return next(new Error("Token inválido o usuario no autenticado"));
 
-        const torneoData = await validarInicioTorneo(token.id, req.body.torneo_id);
-        await marcarTorneoEnCurso(req.body.torneo_id);
+        const torneoData = await validarInicioTorneo(userId, torneo_id);
+        await marcarTorneoEnCurso(torneo_id);
 
         return sendResponse(req, res, { 
             message: 'Torneo iniciado correctamente',
