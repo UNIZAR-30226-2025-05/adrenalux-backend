@@ -230,7 +230,7 @@ export function configureWebSocket(httpServer) {
           position: carta.posicion,
           defensa: carta.defensa,
           control: carta.control,
-          tiro: carta.ataque 
+          ataque: carta.ataque 
         })
         .from(carta_plantilla)
         .innerJoin(carta, eq(carta_plantilla.carta_id, carta.id))
@@ -350,7 +350,7 @@ export function configureWebSocket(httpServer) {
       } else {
         const opponentId = Object.keys(match.players).find(id => id !== userId);
         const opponent = match.players[opponentId];
-        opponent.socket.emit('pause_requested', { userId });
+        opponent.socket.emit('pause_requested', { matchId });
       }
     });
     
@@ -402,6 +402,8 @@ export function configureWebSocket(httpServer) {
           matchId,
           scores,
           usedCards,
+          plantilla1: dbMatch.plantilla1_id,
+          plantilla2: dbMatch.plantilla2_id,
           user1Id: dbMatch.user1_id,
           user2Id: dbMatch.user2_id,
         });
@@ -413,10 +415,26 @@ export function configureWebSocket(httpServer) {
 
         opponentSocket.emit('resume_confirmation', {
           confirmations,
-          userId
+          matchId
         });
       }
     });
+
+    socket.on('cancel_request_resume', () => {
+      const userId = String(socket.data.userID);
+      removeFromPausedMatches(userId);
+    });
+
+    function removeFromPausedMatches(userId) {
+      pausedMatches.forEach((confirmations, matchId) => {
+        if (confirmations[userId]) {
+          confirmations[userId] = false;
+          if (Object.keys(confirmations).length === 0) {
+            pausedMatches.delete(matchId);
+          }
+        }
+      });
+    }
 
     async function rebuildMatchState(dbMatch) {
   
@@ -449,7 +467,7 @@ export function configureWebSocket(httpServer) {
         position: carta.posicion,
         defensa: carta.defensa,
         control: carta.control,
-        tiro: carta.ataque 
+        ataque: carta.ataque 
       })
       .from(carta_plantilla)
       .innerJoin(carta, eq(carta_plantilla.carta_id, carta.id))
