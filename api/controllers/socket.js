@@ -383,13 +383,13 @@ export function configureWebSocket(httpServer) {
           user2: dbMatch.puntuacion2
         };
     
-        const matchState = await rebuildMatchState(matchId, dbMatch);
+        const matchState = await rebuildMatchState(dbMatch);
         
         await db.update(partida)
           .set({ estado: 'activa' })
           .where(eq(partida.id, matchId));
     
-        activeMatches.set(matchId, matchState);
+        activeMatches.set(Number(matchId), matchState);
         pausedMatches.delete(matchId);
 
         Object.values(matchState.players).forEach(player => {
@@ -402,16 +402,16 @@ export function configureWebSocket(httpServer) {
           matchId,
           scores,
           usedCards,
-          plantilla1: matchState.players[dbMatch.user1_id].plantilla,
-          plantilla2: matchState.players[dbMatch.user2_id].plantilla,
+          user1Id: dbMatch.user1_id,
+          user2Id: dbMatch.user2_id,
         });
 
-        startNewRound(matchId);
+        startNewRound(Number(matchId));
       }else {
         const opponentId = Object.keys(confirmations).find(id => id !== userId);
-        const opponent = connectedUsers.get(String(opponentId));
+        const opponentSocket = connectedUsers.get(String(opponentId));
 
-        opponent.socket.emit('resume_confirmation', {
+        opponentSocket.emit('resume_confirmation', {
           confirmations,
           userId
         });
@@ -419,7 +419,6 @@ export function configureWebSocket(httpServer) {
     });
 
     async function rebuildMatchState(dbMatch) {
-      const matchId = dbMatch.id;
   
       const [user1] = await db.select()
           .from(user)
@@ -431,31 +430,50 @@ export function configureWebSocket(httpServer) {
 
       const player1Socket = connectedUsers.get(String(dbMatch.user1_id));
       const player2Socket = connectedUsers.get(String(dbMatch.user2_id));
-  
-      const plantilla1 = await db.select().from(plantilla)
-          .where(eq(plantilla.id, dbMatch.plantilla1_id));
-      const plantilla2 = await db.select().from(plantilla)
-          .where(eq(plantilla.id, dbMatch.plantilla2_id));
-  
+
+      const cartas1 = await db.select({
+        id: carta.id,
+        nombre: carta.nombre,
+        position: carta.posicion,
+        defensa: carta.defensa,
+        control: carta.control,
+        tiro: carta.ataque 
+      })
+      .from(carta_plantilla)
+      .innerJoin(carta, eq(carta_plantilla.carta_id, carta.id))
+      .where(eq(carta_plantilla.plantilla_id, dbMatch.plantilla1_id));
+      
+      const cartas2 = await db.select({
+        id: carta.id,
+        nombre: carta.nombre,
+        position: carta.posicion,
+        defensa: carta.defensa,
+        control: carta.control,
+        tiro: carta.ataque 
+      })
+      .from(carta_plantilla)
+      .innerJoin(carta, eq(carta_plantilla.carta_id, carta.id))
+      .where(eq(carta_plantilla.plantilla_id, dbMatch.plantilla2_id));
+
       const rounds = await db.select()
           .from(ronda)
           .where(eq(ronda.partida_id, dbMatch.id))
           .orderBy(asc(ronda.numero_ronda));
-  
+      
       return {
           matchId: dbMatch.id,
+          user1Id: dbMatch.user1_id, 
+          user2Id: dbMatch.user1_id,  
           players: {
               [dbMatch.user1_id]: {
-                  id: dbMatch.user1_id,
                   socket: player1Socket,
-                  plantilla: plantilla1.cartas,
+                  plantilla: cartas1,
                   puntosIniciales: user1.puntosClasificacion,
                   score: dbMatch.puntuacion1
               },
               [dbMatch.user2_id]: {
-                  id: dbMatch.user2_id,
                   socket: player2Socket,
-                  plantilla: plantilla2.cartas,
+                  plantilla: cartas2,
                   puntosIniciales: user2.puntosClasificacion,
                   score: dbMatch.puntuacion2
               }
@@ -477,28 +495,14 @@ export function configureWebSocket(httpServer) {
 
   async function getUsedCards(matchId) {
     const roundsJ1 = await db.select({
-      carta_j1: {
-        id: carta.id,
-        nombre: carta.nombre,
-        posicion: carta.posicion,
-        defensa: carta.defensa,
-        control: carta.control,
-        ataque: carta.ataque
-      }
+      carta_j1: carta
     })
     .from(ronda)
     .leftJoin(carta, eq(ronda.carta_j1, carta.id))
     .where(eq(ronda.partida_id, matchId));
   
     const roundsJ2 = await db.select({
-      carta_j2: {
-        id: carta.id,
-        nombre: carta.nombre,
-        posicion: carta.posicion,
-        defensa: carta.defensa,
-        control: carta.control,
-        ataque: carta.ataque
-      }
+      carta_j2: carta
     })
     .from(ronda)
     .leftJoin(carta, eq(ronda.carta_j2, carta.id))
@@ -538,16 +542,16 @@ export function configureWebSocket(httpServer) {
 
       const matchState = {
         matchId,
+        user1Id: user1_id, 
+        user2Id: user2_id,
         players: {
           [user1_id]: {
-            id : user1_id,
             socket: player1.socket,
             plantilla: plantilla1.cartas,
             puntosIniciales: player1.puntos,
             score: 0
           },
           [user2_id]: {
-            id : user2_id,
             socket: player2.socket,
             plantilla: plantilla2.cartas,
             puntosIniciales: player2.puntos,
@@ -584,9 +588,11 @@ export function configureWebSocket(httpServer) {
     const startNewRound = (matchId) => {
       const match = activeMatches.get(matchId);
       if (!match) return;
-
+      console.log("Datos de partida: ", match);
       Object.values(match.players).forEach(player => {
-        player.socket.removeAllListeners('select_card');
+        if (player.socket) {
+          player.socket.removeAllListeners('select_card');
+        }
       });
 
       let turnoId = match.turno;
@@ -672,14 +678,31 @@ export function configureWebSocket(httpServer) {
     const resolveRound = async (matchId) => {
       const match = activeMatches.get(matchId);
       const { carta_j1, habilidad_j1, carta_j2, habilidad_j2 } = match.currentRoundData;
+      
+      const user1Id = match.user1Id;
+      const user2Id = match.user2Id;
+
+      let db_carta_j1, db_habilidad_j1, db_carta_j2, db_habilidad_j2;
+
+      if (match.currentRoundData.starter === user1Id) {
+        db_carta_j1 = carta_j1.id;
+        db_habilidad_j1 = habilidad_j1;
+        db_carta_j2 = carta_j2.id;
+        db_habilidad_j2 = habilidad_j2;
+      } else {
+        db_carta_j1 = carta_j2.id; 
+        db_habilidad_j1 = habilidad_j2;
+        db_carta_j2 = carta_j1.id; 
+        db_habilidad_j2 = habilidad_j1;
+      }
 
       await db.insert(ronda).values({
         partida_id: matchId,
         numero_ronda: match.currentRound,
-        carta_j1: carta_j1.id,
-        habilidad_j1,
-        carta_j2: carta_j2.id,
-        habilidad_j2,
+        carta_j1: db_carta_j1,
+        habilidad_j1: db_habilidad_j1,
+        carta_j2: db_carta_j2,
+        habilidad_j2: db_habilidad_j2,
         ganador_id: null 
       });
       
@@ -720,9 +743,6 @@ export function configureWebSocket(httpServer) {
       });
 
       const playerIds = Object.keys(match.players);
-
-      const user1Id = match.currentRoundData.starter;
-      const user2Id = getOpponentId(match.players, user1Id);
 
       const puntuacion1 = match.players[user1Id].score;
       const puntuacion2 = match.players[user2Id].score;
