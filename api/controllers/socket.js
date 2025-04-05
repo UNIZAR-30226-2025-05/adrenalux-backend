@@ -37,6 +37,11 @@ export function configureWebSocket(httpServer) {
 
     console.log(`Usuario conectado: ${socket.data.userID}`);
 
+    /*
+     * Intercambios
+     *
+     */
+
     socket.on('request_exchange', ({ receptorId, solicitanteUsername }) => {
       const solicitanteId = String(socket.data.userID);
       const exchangeId = `${solicitanteId}-${receptorId}`;
@@ -199,6 +204,11 @@ export function configureWebSocket(httpServer) {
       });
     });
 
+    /*
+     * Partidas
+     *
+     */
+
     const getPlantilla = async (userId) => {
       const numericUserId = Number(userId);
       try {
@@ -311,6 +321,187 @@ export function configureWebSocket(httpServer) {
       
       finishMatch(matchId, opponentId);
     });
+
+    socket.on('request_pause', async ({ matchId }) => {
+      const userId = String(socket.data.userID);
+      const match = activeMatches.get(Number(matchId));
+      
+      if (!match || match.status !== 'active') {
+        return socket.emit('error', 'Partida no encontrada');
+      }
+    
+      if (!match.pauseRequests) {
+        match.pauseRequests = {[userId]: true};
+      } else {
+        match.pauseRequests[userId] = true;
+      }
+    
+      if (Object.keys(match.pauseRequests).length === 2) {
+        await db.update(partida)
+          .set({ estado: 'pausada' })
+          .where(eq(partida.id, Number(matchId)));
+    
+        io.to(match.roomId).emit('match_paused', {
+          matchId,
+          scores: {
+            [match.players[0].id]: match.players[0].score,
+            [match.players[1].id]: match.players[1].score
+          }
+        });
+        
+        activeMatches.delete(matchId);
+      } else {
+        io.to(match.roomId).emit('pause_requested', { userId });
+      }
+    });
+    
+    socket.on('request_resume', async ({ matchId }) => {
+      const userId = String(socket.data.userID);
+      
+      const [dbMatch] = await db.select()
+        .from(partida)
+        .where(and(
+          eq(partida.id, matchId),
+          eq(partida.estado, 'pausada')
+        ));
+    
+      if (!dbMatch) return socket.emit('error', 'Partida no encontrada o no está pausada');
+    
+      if (!pausedMatches.has(matchId)) {
+        pausedMatches.set(matchId, {
+          [dbMatch.user1_id]: false,
+          [dbMatch.user2_id]: false
+        });
+      }
+    
+      const confirmations = pausedMatches.get(matchId);
+      confirmations[userId] = true;
+    
+      io.to(`match_${matchId}`).emit('resume_confirmation', {
+        confirmations,
+        userId
+      });
+    
+      if (Object.values(confirmations).every(Boolean)) {
+        const usedCards = await getUsedCards(matchId);
+        const scores = {
+          user1: dbMatch.puntuacion1,
+          user2: dbMatch.puntuacion2
+        };
+    
+        const matchState = await rebuildMatchState(matchId, dbMatch);
+        
+        await db.update(partida)
+          .set({ estado: 'activa' })
+          .where(eq(partida.id, matchId));
+    
+        activeMatches.set(matchId, matchState);
+        pausedMatches.delete(matchId);
+
+        Object.values(matchState.players).forEach(player => {
+          if (player.socket) {
+              player.socket.join(matchState.roomId);
+          }
+        });
+    
+        io.to(`match_${matchId}`).emit('match_resumed', {
+          matchId,
+          scores,
+          usedCards,
+          plantilla1: matchState.players[dbMatch.user1_id].plantilla,
+          plantilla2: matchState.players[dbMatch.user2_id].plantilla,
+        });
+
+        startNewRound(matchId);
+      }
+    });
+
+    async function rebuildMatchState(dbMatch) {
+      const matchId = dbMatch.id;
+  
+      const [user1] = await db.select()
+          .from(user)
+          .where(eq(user.id, dbMatch.user1_id));
+      
+      const [user2] = await db.select()
+          .from(user)
+          .where(eq(user.id, dbMatch.user2_id));
+
+      const player1Socket = connectedUsers.get(String(dbMatch.user1_id));
+      const player2Socket = connectedUsers.get(String(dbMatch.user2_id));
+  
+      const plantilla1 = await db.select().from(plantilla)
+          .where(eq(plantilla.id, dbMatch.plantilla1_id));
+      const plantilla2 = await db.select().from(plantilla)
+          .where(eq(plantilla.id, dbMatch.plantilla2_id));
+  
+      const rounds = await db.select()
+          .from(ronda)
+          .where(eq(ronda.partida_id, dbMatch.id))
+          .orderBy(asc(ronda.numero_ronda));
+  
+      return {
+          matchId: dbMatch.id,
+          players: {
+              [dbMatch.user1_id]: {
+                  id: dbMatch.user1_id,
+                  socket: player1Socket,
+                  plantilla: plantilla1.cartas,
+                  puntosIniciales: user1.puntosClasificacion,
+                  score: dbMatch.puntuacion1
+              },
+              [dbMatch.user2_id]: {
+                  id: dbMatch.user2_id,
+                  socket: player2Socket,
+                  plantilla: plantilla2.cartas,
+                  puntosIniciales: user2.puntosClasificacion,
+                  score: dbMatch.puntuacion2
+              }
+          },
+          turno: dbMatch.turno,
+          currentRound: rounds.length + 1,
+          roomId: `match_${dbMatch.id}`,
+          status: 'active',
+          currentRoundData: {
+              stage: 'selection',
+              starter: dbMatch.turno,
+              carta_j1: null,
+              habilidad_j1: null,
+              carta_j2: null,
+              habilidad_j2: null
+          }
+      };
+  }
+
+    async function getUsedCards(matchId) {
+      const rounds = await db.select({
+        carta_j1: {
+          id: carta.id,
+          nombre: carta.nombre,
+          posicion: carta.posicion,
+          defensa: carta.defensa,
+          control: carta.control,
+          ataque: carta.ataque
+        },
+        carta_j2: {
+          id: carta.id,
+          nombre: carta.nombre,
+          posicion: carta.posicion,
+          defensa: carta.defensa,
+          control: carta.control,
+          ataque: carta.ataque
+        }
+      })
+      .from(ronda)
+      .leftJoin(carta, eq(ronda.carta_j1, carta.id))
+      .leftJoin(carta, eq(ronda.carta_j2, carta.id))
+      .where(eq(ronda.partida_id, matchId));
+    
+      return {
+        user1: rounds.map(r => r.carta_j1),
+        user2: rounds.map(r => r.carta_j2)
+      };
+    }
 
     const createMatch = async (player1, player2) => {
       const user1_id = String(player1.userId);
