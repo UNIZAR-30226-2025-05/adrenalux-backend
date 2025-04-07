@@ -186,4 +186,29 @@ router.post('/iniciarTorneo', authenticate, torneos.empezarTorneo);
  */
 router.post('/finalizarTorneo', authenticate, torneos.finalizarTorneo);
 
+/**
+ * @swagger
+ * /torneos/abandonarTorneo:
+ *   post:
+ *     summary: Abandonar un torneo
+ *     tags: [Torneos]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 description: ID del torneo al que se quiere abandonar
+ *     responses:
+ *       200:
+ *         description: Usuario abandonó el torneo exitosamente
+ */
+
+router.post('/abandonarTorneo', authenticate, torneos.abandonarTorneo);
+
 export default router;

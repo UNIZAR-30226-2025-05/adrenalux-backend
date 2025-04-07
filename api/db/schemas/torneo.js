@@ -13,6 +13,9 @@ export const torneo = pgTable('torneo', {
   descripcion: text('descripcion').notNull(),
   fecha_inicio: text('fecha_inicio').notNull(),
   torneo_en_curso: boolean('torneo_en_curso').notNull().default(false),
+  creador_id: integer('creador_id')
+    .notNull()
+    .references(() => user.id),
 });
 
 // Schemas para validaciones

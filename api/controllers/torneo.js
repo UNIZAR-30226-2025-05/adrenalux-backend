@@ -16,14 +16,15 @@ function validarDatosCreacion({ nombre, premio, descripcion }) {
     }
 }
 
-async function crearTorneoEnDB({ nombre, contrasena, premio, descripcion }) {
+async function crearTorneoEnDB({userId, nombre, contrasena, premio, descripcion }) {
     await db.insert(torneo).values({
         nombre: nombre,
         contrasena: contrasena || null,
         premio : premio,
         descripcion:  descripcion,
         fecha_inicio: new Date(),
-        torneo_en_curso: false
+        torneo_en_curso: false,
+        creador_id: userId,
     });
     
     const [torneoCreado] = await db.select().from(torneo).where(eq(torneo.nombre, nombre));
@@ -64,11 +65,13 @@ function validarContrasena(torneoData, contrasena) {
 }
 
 async function iniciarTorneoSiCompleto(torneoId) {
+    const torneoData = await obtenerTorneoPorId(torneoId);
     const participantes = await contarParticipantes(torneoId);
-    if (participantes.length === MAX_PARTICIPANTES) {
+
+    if (!torneoData.torneo_en_curso && participantes.length === MAX_PARTICIPANTES) {
         await db.update(torneo).set({ torneo_en_curso: true }).where(eq(torneo.id, torneoId));
         // await realizarEmparejamientoInicial(torneoId, participantes);
-        return true;
+        return true;        
     }
     return false;
 }
@@ -111,6 +114,7 @@ async function obtenerDetallesParticipantes(torneoId) {
 async function validarInicioTorneo(userId, torneoId) {
     const torneoData = await obtenerTorneoPorId(torneoId);
     if (torneoData.torneo_en_curso) throw new BadRequest('El torneo ya está en curso');
+    if (torneoData.creador_id !== userId) throw new BadRequest('No tienes permiso para iniciar este torneo');
     
     const participantes = await contarParticipantes(torneoId);
     if (participantes.length < 2) throw new BadRequest('Se necesitan al menos 2 participantes');
@@ -133,39 +137,19 @@ async function asignarGanador(torneoId, userId) {
 
 export async function crearTorneo(req, res, next) {
     try {
-        // Log para ver el inicio de la función
-        console.log("[INFO] Iniciando creación de torneo...");
-
         const token = await getDecodedToken(req);
-        console.log("[INFO] Token decodificado:", token); // Log para verificar el token
 
         const userId = token.id;
         if (!userId) {
-            console.error("[ERROR] Token inválido o usuario no autenticado");
             return next(new Error("Token inválido o usuario no autenticado"));
         }
-
-        // Log para ver el body de la solicitud
         const { nombre, contrasena, premio, descripcion } = req.body;
-        console.log("[INFO] Datos recibidos para el torneo:", { nombre, contrasena, premio, descripcion });
 
-        // Validación de datos (si se realiza alguna)
         validarDatosCreacion(req.body);
-
-        // Log para verificar los datos antes de insertar
-        console.log("[INFO] Insertando torneo en DB...");
-        const torneoCreado = await crearTorneoEnDB({ nombre, contrasena, premio, descripcion });
-        console.log("[INFO] Torneo creado:", torneoCreado);
-
-        // Registro del usuario como participante
+        const torneoCreado = await crearTorneoEnDB({userId, nombre, contrasena, premio, descripcion });
         await registrarParticipante(userId, torneoCreado.id);
-        console.log("[INFO] Participante registrado en el torneo");
-
-        // Respuesta exitosa
         return sendResponse(req, res, { data: objectToJson(torneoCreado) });
     } catch (error) {
-        // Log del error
-        console.error("[ERROR] Error en la creación del torneo:", error);
         return next(error);
     }
 }
@@ -228,7 +212,12 @@ export async function obtenerTorneosJugados(req, res, next) {
         const torneosConInfo = [];
         for (const { torneo_id } of torneosJugados) {
             const info = await obtenerInfoTorneo(torneo_id);
-            if (info) torneosConInfo.push(info);
+            const participantes = await obtenerDetallesParticipantes(torneo_id);
+             const InfoTorneo = {
+                infoTorneo : info,
+                 numParticipantes : participantes.length,
+            }
+            if (InfoTorneo) torneosConInfo.push(InfoTorneo);
         }
 
         return sendResponse(req, res, { data: torneosConInfo });
@@ -239,7 +228,6 @@ export async function obtenerTorneosJugados(req, res, next) {
 
 export async function obtenerDetallesTorneo(req, res, next) {
     try {
-        console.log("[INFO] Iniciando obtenerDetallesTorneo...");
         
         const token = await getDecodedToken(req);
         console.log("[INFO] Token decodificado:", token);
@@ -248,24 +236,14 @@ export async function obtenerDetallesTorneo(req, res, next) {
         const { id } = req.params;
         
         if (!userId) {
-            console.log("[ERROR] Token inválido o usuario no autenticado.");
             return next(new Error("Token inválido o usuario no autenticado"));
         }
         
-        console.log("[INFO] Obteniendo params con ID:", req.params.id);
-        console.log("[INFO] Obteniendo torneo con ID:", id);
-        
         const torneoData = await obtenerTorneoPorId(id);
         if (!torneoData) {
-            console.log("[ERROR] No se encontró torneo con ID:", id);
             return next(new Error("Torneo no encontrado"));
         }
-
-        console.log("[INFO] Torneo encontrado:", torneoData);
-
         const participantes = await obtenerDetallesParticipantes(id);
-        console.log("[INFO] Participantes obtenidos:", participantes);
-
         return sendResponse(req, res, { 
             data: { torneo: torneoData, participantes } 
         });
@@ -285,6 +263,7 @@ export async function empezarTorneo(req, res, next) {
 
         const torneoData = await validarInicioTorneo(userId, torneo_id);
         await marcarTorneoEnCurso(torneo_id);
+        // await realizarEmparejamientoInicial(torneo_id, participantes);
 
         return sendResponse(req, res, { 
             message: 'Torneo iniciado correctamente',
@@ -311,4 +290,22 @@ export async function finalizarTorneo(req, res, next) {
 
 async function realizarEmparejamientoInicial(torneoId, participantes) {
     // Implementación de emparejamiento
+}
+
+export async function abandonarTorneo(req, res, next) {
+    try {
+        const token = await getDecodedToken(req);
+        const userId = token.id;
+        const { torneo_id } = req.body;
+        if (!userId) return next(new Error("Token inválido o usuario no autenticado"));
+
+        await db.delete(participacionTorneo).where(and(
+            eq(participacionTorneo.torneo_id, torneo_id),
+            eq(participacionTorneo.user_id, userId)
+        ));
+
+        return sendResponse(req, res, { message: 'Has abandonado el torneo correctamente' });
+    } catch (error) {
+        return next(error);
+    }
 }
