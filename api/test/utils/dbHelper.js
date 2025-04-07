@@ -89,13 +89,20 @@ export const clearAllTables = async () => {
   });
 };
 
+export function generateDummyFriendCode() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase(); // 6 caracteres
+}
+
 export const seedTestData = async () => {
-  const [ testUser] = await userHelper.create([
+  const [ testUser ] = await userHelper.create([
     {
       username: 'admin',
       email: 'admin@example.com',
       password: 'hashed_password',
-      salt: 'salt123'
+      salt: 'salt123',
+      friend_code: generateDummyFriendCode(),
+      name: 'Admin',
+      lastname: 'User',
     },
   ]);
 
@@ -106,27 +113,27 @@ export const getAuthToken = async () => {
   const testUserData = {
     username: 'testUser',
     email: 'test@example.com',
-    password: 'TestPassword123!'
+    password: 'TestPassword123!',
+    name: 'Test',
+    lastname: 'User',
+    friend_code: generateDummyFriendCode(),
   };
 
-  // Verifica si el usuario ya existe
-  let user = await userHelper.findOne({ email: testUserData.email });
+  let existingUser = await userHelper.findOne({ email: testUserData.email });
 
-  // Si no existe, créalo
-  if (!user) {
-    user = await userHelper.create({
-      ...testUserData, //Copiamos las propiedades del objeto
-      password: 'hashed_password', 
-      salt: 'salt123'
+  if (!existingUser) {
+    await userHelper.create({
+      ...testUserData,
+      password: 'hashed_password',
+      salt: 'salt123',
     });
   }
 
-  // Realiza una solicitud de inicio de sesión para obtener el token
   const response = await request(app)
     .post('/api/v1/auth/login')
     .send({
       email: testUserData.email,
-      password: testUserData.password
+      password: testUserData.password,
     });
 
   return response.body.token;

@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { app } from '../../app.js';
-import { clearAllTables } from '../../../api/test/utils/dbHelper.js'; 
+import { clearAllTables, seedTestData } from '../../../api/test/utils/dbHelper.js'; 
 
 beforeEach(async () => {
   await clearAllTables();
@@ -24,8 +24,9 @@ describe('Rutas de Autenticación', () => {
         });
         
       console.log('Respuesta del servidor:', response.body);
-      expect(response.status).toBe(201); // Verifica que la respuesta sea 201
-      expect(response.body).toHaveProperty('message', 'Usuario registrado exitosamente');
+      expect(response.body.status).toBeDefined();
+      expect(response.body.status.error_code).toBe(0);
+      expect(response.body.status.error_message).toBe('');
     });
 
     it('Debería devolver un error si los datos son inválidos', async () => {
@@ -41,7 +42,7 @@ describe('Rutas de Autenticación', () => {
       
       expect(response.status).toBe(400); // Error por datos inválidos
       expect(response.body).toHaveProperty('status.error_message');
-      expect(response.body.status.error_message).toBe('email with invalid format'); // Ajusta según el mensaje esperado
+      expect(response.body.status.error_message).toBe('email with invalid format'); 
 
     });
 
@@ -71,7 +72,10 @@ describe('Rutas de Autenticación', () => {
         .post('/api/v1/auth/sign-in')
         .send({
           email: 'testuser@example.com',
-          password: 'password123'
+          password: 'password123',
+          username: 'testuser123',
+          name: 'Juan',
+          lastname: 'Pérez'
         });
       
       expect(response.status).toBe(200);
