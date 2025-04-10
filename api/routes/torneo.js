@@ -211,4 +211,5 @@ router.post('/finalizarTorneo', authenticate, torneos.finalizarTorneo);
 
 router.post('/abandonarTorneo', authenticate, torneos.abandonarTorneo);
 
+
 export default router;

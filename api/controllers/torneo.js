@@ -7,6 +7,7 @@ import { getDecodedToken } from '../lib/jwt.js';
 import { objectToJson } from '../lib/toJson.js';
 import { eq, and, isNull } from 'drizzle-orm';
 import { MAX_PARTICIPANTES } from '../config/torneos.config.js';
+import {getPlantilla} from './socket.js';
 
 
 
@@ -289,7 +290,43 @@ export async function finalizarTorneo(req, res, next) {
 }
 
 async function realizarEmparejamientoInicial(torneoId, participantes) {
-    // Implementación de emparejamiento
+    const parejas = realizarEmparejamiento(participantes);
+    for(const pareja of parejas) {
+        insertarPartida(pareja, torneoId);
+    }
+}
+
+async function  realizarEmparejamiento(participantes){
+    const numParticipantes = participantes.length;
+    if (numParticipantes % 2 !== 0) {
+        throw new Error("El número de participantes debe ser par para realizar el emparejamiento");
+    }
+    const participantesMezclados = [...participantes].sort(() => Math.random() - 0.5);
+    const parejas = [];
+    for (let i = 0; i < participantesMezclados.length; i += 2) {
+        const pareja = {
+            jugador1: participantesMezclados[i],
+            jugador2: participantesMezclados[i + 1]
+        };
+        parejas.push(pareja);
+    }
+    return parejas;
+}
+
+async function insertarPartida(parejas, torneoId) {
+    const { jugador1, jugador2 } = parejas;
+      [newMatch] = await db.insert(partida)
+           .values({
+             turno: jugador1,
+             user1_id: jugador1,
+             user2_id: jugador2,
+             plantilla1_id: getPlantilla(jugador1),
+             plantilla2_id: getPlantilla(jugador2),
+             estado: 'activa',
+             torneo_id: torneoId,
+           })
+       
+    
 }
 
 export async function abandonarTorneo(req, res, next) {
