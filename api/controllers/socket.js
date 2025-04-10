@@ -16,6 +16,7 @@ const activeExchanges = new Map();
 const matchmakingQueue = new Map(); 
 const activeMatches = new Map();
 const pausedMatches = new Map();
+const activeMatchRequests = new Map();
 
 export function configureWebSocket(httpServer) {
   const io = new Server(httpServer, {
@@ -278,6 +279,82 @@ export function configureWebSocket(httpServer) {
         }
       }
     }, 5000);
+
+    socket.on('request_match', ({ receptorId, solicitanteUsername }) => {
+      const solicitanteId = String(socket.data.userID);
+      const matchRequestId = `${solicitanteId}-${receptorId}`;
+    
+      if (solicitanteId === receptorId) {
+        return socket.emit('error', 'No puedes jugar contra ti mismo');
+      }
+    
+      const receptorSocket = connectedUsers.get(String(receptorId));
+      if (!receptorSocket) {
+        return socket.emit('error', 'El usuario no está conectado');
+      }
+    
+      activeMatchRequests.set(matchRequestId, {
+        solicitanteId,
+        receptorId,
+        solicitanteUsername,
+        timestamp: Date.now(),
+        status: 'pending'
+      });
+    
+      receptorSocket.emit('request_match_received', {
+        matchRequestId,
+        solicitanteId,
+        solicitanteUsername,
+        timestamp: new Date().toISOString()
+      });
+    });
+
+    socket.on('accept_match', async (matchRequestId) => {
+      const userId = String(socket.data.userID);
+      const request = activeMatchRequests.get(matchRequestId);
+    
+      if (!request || request.receptorId !== userId) {
+        return socket.emit('error', 'Solicitud de partida no válida');
+      }
+    
+      activeMatchRequests.delete(matchRequestId);
+    
+      const [player1Data] = await db.select().from(user).where(eq(user.id, request.solicitanteId));
+      const [player2Data] = await db.select().from(user).where(eq(user.id, request.receptorId));
+    
+      const player1 = {
+        socket: connectedUsers.get(request.solicitanteId),
+        puntos: player1Data.puntosClasificacion,
+        userId: request.solicitanteId
+      };
+    
+      const player2 = {
+        socket: connectedUsers.get(request.receptorId),
+        puntos: player2Data.puntosClasificacion,
+        userId: request.receptorId
+      };
+    
+      createMatch(player1, player2);
+    });
+
+    socket.on('decline_match', (matchRequestId) => {
+      const userId = String(socket.data.userID);
+      const request = activeMatchRequests.get(matchRequestId);
+    
+      if (!request || request.receptorId !== userId) {
+        return socket.emit('error', 'Solicitud de partida no válida');
+      }
+    
+      activeMatchRequests.delete(matchRequestId);
+      
+      const solicitanteSocket = connectedUsers.get(request.solicitanteId);
+      if (solicitanteSocket) {
+        solicitanteSocket.emit('match_declined', {
+          matchRequestId,
+          message: 'La solicitud de partida fue rechazada'
+        });
+      }
+    });
 
     socket.on('join_matchmaking', async () => {
       const userId = String(socket.data.userID);
@@ -881,6 +958,23 @@ export function configureWebSocket(httpServer) {
     socket.on('disconnect', () => {
       socket.rooms.forEach(room => socket.leave(room));
       connectedUsers.delete(String(socket.data.userID));
+
+      activeMatchRequests.forEach((request, key) => {
+        if (request.solicitanteId === socket.data.userID || 
+            request.receptorId === socket.data.userID) {
+          activeMatchRequests.delete(key);
+          const otherUserId = request.solicitanteId === socket.data.userID 
+            ? request.receptorId 
+            : request.solicitanteId;
+          const otherUserSocket = connectedUsers.get(otherUserId);
+          if (otherUserSocket) {
+            otherUserSocket.emit('match_request_cancelled', { 
+              matchRequestId: key 
+            });
+          }
+        }
+      });
+      
       console.log(`Usuario desconectado: ${socket.data.userID}`);
     });    
   });
