@@ -203,6 +203,59 @@ export async function obtenerTorneosActivos(req, res, next) {
     }
 }
 
+export async function obtenerTorneosDeAmigos(req, res, next) {
+    try {
+        const token = await getDecodedToken(req);
+        const userId = token.id;
+        const torneoAmigos = [];
+        const torneosConDetalles = []; 
+        const rawFriends = await db
+                    .select({
+                        id: user.id,
+                    })
+                    .from(user)
+                    .innerJoin(
+                        amistad,
+                        or(
+                            and(
+                                eq(amistad.user1_id, userId),
+                                eq(amistad.user2_id, user.id)
+                            ),
+                            and(
+                                eq(amistad.user2_id, userId),
+                                eq(amistad.user1_id, user.id)
+                            )
+                        )
+                    )
+                    .where(eq(amistad.estado, 'aceptada'));
+
+        for (const amigo of rawFriends) {
+            const torneosAmigo = await db.select()
+                .from(participacionTorneo)
+                .where(eq(participacionTorneo.user_id, amigo.id));
+            torneoAmigos.push(torneosAmigo);
+        }
+        const torneosActivos = await obtenerTorneosSinGanador();
+        const torneosFiltrados = torneosActivos.filter(torneoActivo => 
+            torneoAmigos.some(torneoAmigo => torneoAmigo.torneo_id === torneoActivo.id));
+
+        if (torneosFiltrados.length === 0) {
+            return res.status(204).send();
+        }
+        for (const torneo of torneosFiltrados) {
+            torneosConDetalles.push(obtenerInfoTorneo(torneo.id));
+            torneosConDetalles.push(obtenerDetallesParticipantes(torneo.id));
+        }
+        return sendResponse(req, res, { 
+         data: torneosConDetalles.map(objectToJson) });
+     
+ } catch (error) {
+     console.error("[ERROR] Error en obtenerTorneosDeAmigos:", error);
+     return next(error);
+  }
+}
+
+
 export async function obtenerTorneosJugados(req, res, next) {
     try {
         const token = await getDecodedToken(req);
@@ -336,6 +389,14 @@ export async function abandonarTorneo(req, res, next) {
         const { torneo_id } = req.body;
         if (!userId) return next(new Error("Token inválido o usuario no autenticado"));
 
+        const [Inscrito] = await db.select()
+        .from(participacionTorneo)
+        .where(and(
+            eq(participacionTorneo.torneo_id, torneoId),
+            eq(participacionTorneo.user_id, userId)
+        ));
+        if (!Inscrito) throw new BadRequest('No estás inscrito en este torneo');
+        
         await db.delete(participacionTorneo).where(and(
             eq(participacionTorneo.torneo_id, torneo_id),
             eq(participacionTorneo.user_id, userId)
