@@ -18,6 +18,40 @@ const activeMatches = new Map();
 const pausedMatches = new Map();
 const activeMatchRequests = new Map();
 
+export const getPlantilla = async (userId) => {
+  const numericUserId = Number(userId);
+  try {
+    const [usuario] = await db.select()
+      .from(user)
+      .where(eq(user.id, numericUserId));
+
+    if (!usuario || usuario.plantilla_activa_id === null) {
+      console.log("Usuario sin plantilla activa");
+      return { plantillaId: null, cartas: [] }; 
+    }
+
+    const plantillaId = usuario.plantilla_activa_id;
+
+    const cartas = await db.select({
+      id: carta.id,
+      nombre: carta.nombre,
+      position: carta.posicion,
+      defensa: carta.defensa,
+      control: carta.control,
+      ataque: carta.ataque 
+    })
+    .from(carta_plantilla)
+    .innerJoin(carta, eq(carta_plantilla.carta_id, carta.id))
+    .where(eq(carta_plantilla.plantilla_id, plantillaId));
+
+    return { plantillaId, cartas }; 
+    
+  } catch (error) {
+    console.error('Error obteniendo plantilla:', error);
+    return { plantillaId: null, cartas: [] }; 
+  }
+};
+
 export function configureWebSocket(httpServer) {
   const io = new Server(httpServer, {
     cors: {
@@ -210,41 +244,6 @@ export function configureWebSocket(httpServer) {
      * Partidas
      *
      */
-
-    const getPlantilla = async (userId) => {
-      const numericUserId = Number(userId);
-      try {
-        const [usuario] = await db.select()
-          .from(user)
-          .where(eq(user.id, numericUserId));
-    
-        if (!usuario || usuario.plantilla_activa_id === null) {
-          console.log("Usuario sin plantilla activa");
-          return { plantillaId: null, cartas: [] }; 
-        }
-    
-        const plantillaId = usuario.plantilla_activa_id;
-    
-        const cartas = await db.select({
-          id: carta.id,
-          nombre: carta.nombre,
-          position: carta.posicion,
-          defensa: carta.defensa,
-          control: carta.control,
-          ataque: carta.ataque 
-        })
-        .from(carta_plantilla)
-        .innerJoin(carta, eq(carta_plantilla.carta_id, carta.id))
-        .where(eq(carta_plantilla.plantilla_id, plantillaId));
-    
-        return { plantillaId, cartas }; 
-        
-      } catch (error) {
-        console.error('Error obteniendo plantilla:', error);
-        return { plantillaId: null, cartas: [] }; 
-      }
-    };
-
     
     function getMaxRatingDifference(queueTime) {
       const baseDifference = 100;

@@ -23,7 +23,7 @@ async function crearTorneoEnDB({userId, nombre, contrasena, premio, descripcion 
         contrasena: contrasena || null,
         premio : premio,
         descripcion:  descripcion,
-        fecha_inicio: new Date(),
+        fecha_inicio: null,
         torneo_en_curso: false,
         creador_id: userId,
     });
@@ -387,22 +387,42 @@ export async function abandonarTorneo(req, res, next) {
         const token = await getDecodedToken(req);
         const userId = token.id;
         const { torneo_id } = req.body;
+        
         if (!userId) return next(new Error("Token inválido o usuario no autenticado"));
 
-        const [Inscrito] = await db.select()
-        .from(participacionTorneo)
-        .where(and(
-            eq(participacionTorneo.torneo_id, torneoId),
-            eq(participacionTorneo.user_id, userId)
-        ));
-        if (!Inscrito) throw new BadRequest('No estás inscrito en este torneo');
+        const [inscripcion] = await db.select()
+            .from(participacionTorneo)
+            .where(and(
+                eq(participacionTorneo.torneo_id, torneo_id),
+                eq(participacionTorneo.user_id, userId)
+            ));
         
-        await db.delete(participacionTorneo).where(and(
-            eq(participacionTorneo.torneo_id, torneo_id),
-            eq(participacionTorneo.user_id, userId)
-        ));
+        if (!inscripcion) throw new BadRequest('No estás inscrito en este torneo');
 
-        return sendResponse(req, res, { message: 'Has abandonado el torneo correctamente' });
+        const [torneoData] = await db.select()
+            .from(torneo)
+            .where(eq(torneo.id, torneo_id));
+
+        if (!torneoData) throw new BadRequest('El torneo no existe');
+
+        if (torneoData.creador_id === userId) {
+            await db.delete(torneo)
+                .where(eq(torneo.id, torneo_id));
+            
+            return sendResponse(req, res, { 
+                message: 'Torneo eliminado correctamente al abandonar' 
+            });
+        } else {
+            await db.delete(participacionTorneo)
+                .where(and(
+                    eq(participacionTorneo.torneo_id, torneo_id),
+                    eq(participacionTorneo.user_id, userId)
+                ));
+            
+            return sendResponse(req, res, { 
+                message: 'Has abandonado el torneo correctamente' 
+            });
+        }
     } catch (error) {
         return next(error);
     }

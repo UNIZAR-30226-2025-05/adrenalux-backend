@@ -6,14 +6,14 @@ import { user } from './user.js';
 export const participacionTorneo = pgTable('participacionTorneo', {
   user_id: integer('user_id')
     .notNull()
-    .references(() => user.id),
+    .references(() => user.id, { onDelete: 'cascade' }),
   torneo_id: integer('torneo_id')
     .notNull()
-    .references(() => torneo.id),
+    .references(() => torneo.id, { onDelete: 'cascade' }),
 }, (table) => [
   primaryKey({
-    columns : [table.user_id, table.torneo_id],
-  }) 
+    columns: [table.user_id, table.torneo_id],
+  })
 ]);
 
 export const participacionTorneoSelectSchema = createSelectSchema(participacionTorneo).partial();
