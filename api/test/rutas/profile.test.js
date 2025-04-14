@@ -3,18 +3,18 @@ import { app } from '../../app.js';
 import { getAuthToken } from '../utils/dbHelper.js';
 
 describe('Perfil de Usuario - Rutas', () => {
-  let token;
-
+  let token; 
   // Antes de cada test, obtener un token válido para el usuario autenticado
-  beforeAll(() => {
-    token = getAuthToken(); 
+  beforeEach(async () => {
+    token = await getAuthToken(); 
   });
 
   // Test para obtener el perfil
   it('Debería obtener el perfil del usuario', async () => {
     const response = await request(app)
       .get('/profile')
-      .set('Authorization', `Bearer ${token}`);
+      .set('Authorization', `Bearer ${token}`)
+      .set('x-api-key', process.env.CURRENT_API_KEY);
 
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveProperty('id');
@@ -64,7 +64,7 @@ describe('Perfil de Usuario - Rutas', () => {
   // Test para cambiar la contraseña
   it('Debería cambiar la contraseña del usuario', async () => {
     const passwordData = {
-      oldPassword: 'oldpassword123',
+      oldPassword: 'TestPassword123!',
       newPassword: 'newpassword123',
     };
 

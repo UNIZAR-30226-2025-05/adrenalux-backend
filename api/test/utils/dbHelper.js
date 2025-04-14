@@ -14,6 +14,7 @@ import { carta_plantilla } from '../../db/schemas/carta_plantilla.js';
 import { mercadoCartas } from '../../db/schemas/mercado.js';
 import { mercadoDiario } from '../../db/schemas/mercado.js';
 import { plantilla } from '../../db/schemas/plantilla.js';
+import bcrypt from 'bcrypt';
 
 /**
  * Helper genérico para operaciones CRUD en cualquier tabla
@@ -119,18 +120,29 @@ export const getAuthToken = async () => {
     friend_code: generateDummyFriendCode(),
   };
 
-  let existingUser = await userHelper.findOne({ email: testUserData.email });
+  // Buscar usuario por email
+  const existingUser = await db
+    .select()
+    .from(user)
+    .where(eq(user.email, testUserData.email))
+    .limit(1);
 
-  if (!existingUser) {
-    await userHelper.create({
+  // Si no existe, lo creamos
+  if (existingUser.length === 0) {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(testUserData.password, salt);
+
+    await db.insert(user).values({
       ...testUserData,
-      password: 'hashed_password',
-      salt: 'salt123',
+      password: hashedPassword,
+      salt: salt,
     });
   }
 
+  // Login para obtener el token
   const response = await request(app)
     .post('/api/v1/auth/login')
+    .set('x-api-key', process.env.CURRENT_API_KEY)
     .send({
       email: testUserData.email,
       password: testUserData.password,

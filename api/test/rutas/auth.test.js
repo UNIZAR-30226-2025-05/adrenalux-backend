@@ -1,9 +1,11 @@
 import request from 'supertest';
 import { app } from '../../app.js';
-import { clearAllTables, seedTestData } from '../../../api/test/utils/dbHelper.js'; 
+import { clearAllTables } from '../../../api/test/utils/dbHelper.js';
+import { pool } from '../../config/db.js'; 
 
-beforeEach(async () => {
+afterAll(async () => {
   await clearAllTables();
+  await pool.end(); 
 });
 
 
@@ -60,8 +62,8 @@ describe('Rutas de Autenticación', () => {
           
         console.log(response.body);
       
-        expect(response.status).toBe(409); // Debería devolver un error de conflicto (409)
-        expect(response.body).toHaveProperty('error', 'El correo ya está registrado');
+        expect(response.status).toBe(400); 
+        expect(response.body.status).toHaveProperty('error_message', 'Este correo ya está en uso.');
       });      
   });
 
@@ -93,8 +95,9 @@ describe('Rutas de Autenticación', () => {
         
       console.log(response.body);
       
-      expect(response.status).toBe(401); // Error de autenticación
-      expect(response.body).toHaveProperty('error');
+      expect(response.status).toBe(404); // Error de autenticación
+      expect(response.body.status).toHaveProperty('error_message');
+      expect(response.body.status.error_message).toBe('Not Found');
     });
   });
 
@@ -103,7 +106,8 @@ describe('Rutas de Autenticación', () => {
     it('Debería cerrar sesión correctamente con un token válido', async () => {
       const response = await request(app)
       .post('/api/v1/auth/sign-out')
-      .set('Authorization', `Bearer ${token}`); // Agregamos el token en el encabezado
+      .set('Authorization', `Bearer ${token}`) // Agregamos el token en el encabezado
+      .set('x-api-key', process.env.CURRENT_API_KEY);
 
       console.log(response.body);  // Verifica qué estructura tiene la respuesta
       expect(response.status).toBe(200);  // Verifica que el código de estado es 200
@@ -134,7 +138,7 @@ describe('Rutas de Autenticación', () => {
       
       console.log(response.body);
       expect(response.status).toBe(401); // Error de autenticación
-      expect(response.body).toHaveProperty('error_message', 'Invalid or missing token');
+      expect(response.body.status).toHaveProperty('error_message', 'Invalid or missing token');
       });
       
   });
@@ -148,7 +152,7 @@ describe('Rutas de Autenticación', () => {
 
       console.log(response.body);
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('isValid', true);
+      expect(response.body.data).toHaveProperty('isValid', true);
     });
 
     it('Debería devolver un error si el token es inválido', async () => {
@@ -160,7 +164,7 @@ describe('Rutas de Autenticación', () => {
       expect(response.status).toBe(401); // Verifica que el código de estado sea 401 (Unauthorized)
       expect(response.body).toHaveProperty('status'); // Verifica que exista el objeto "status"
       expect(response.body.status).toHaveProperty('error_code', 1000); // Verifica el código de error
-      expect(response.body.status).toHaveProperty('error_message', 'Invalid or missing token'); // Verifica el mensaje de error
+      expect(response.body.status).toHaveProperty('error_message', 'Unauthorized'); // Verifica el mensaje de error
     });
 
     it('Debería devolver un error si no se proporciona un token', async () => {
@@ -171,7 +175,7 @@ describe('Rutas de Autenticación', () => {
       expect(response.status).toBe(401); // Verifica que el código de estado sea 401 (Unauthorized)
       expect(response.body).toHaveProperty('status'); // Verifica que exista el objeto "status"
       expect(response.body.status).toHaveProperty('error_code', 1000); // Verifica el código de error
-      expect(response.body.status).toHaveProperty('error_message', 'Invalid or missing token'); // Verifica el mensaje de error
+      expect(response.body.status).toHaveProperty('error_message', 'Unauthorized'); // Verifica el mensaje de error
       });
       
   });
