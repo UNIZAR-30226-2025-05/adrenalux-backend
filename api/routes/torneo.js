@@ -213,23 +213,23 @@ router.post('/abandonarTorneo', authenticate, torneos.abandonarTorneo);
 
 
 /**
- * @swagger
- * /torneos/getTorneosAmigos:
- *   get:
- *     summary: Obtener torneos de amigos
- *     tags: [Torneos]
- *     security:
- *       - BearerAuth: []
- *     responses:
- *       200:
- *         description: Lista de torneos de amigos
- *        content:
- *          application/json:
- *           schema:
- *            type: array
- *           items:
- *            type: object
- */
+* @swagger
+* /torneos/getTorneosAmigos:
+*   get:
+*     summary: Obtener torneos de amigos
+*     tags: [Torneos]
+*     security:
+*       - BearerAuth: []
+*     responses:
+*       200:
+*         description: Lista de torneos de amigos
+*         content:
+*           application/json:
+*             schema:
+*               type: array
+*               items:
+*                 type: object
+*/
 router.get('/getTorneosAmigos', authenticate, torneos.obtenerTorneosDeAmigos);
 
 

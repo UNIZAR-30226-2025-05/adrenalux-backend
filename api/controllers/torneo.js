@@ -6,6 +6,7 @@ import { sendResponse, NotFound, BadRequest } from '../lib/http.js';
 import { getDecodedToken } from '../lib/jwt.js';
 import { objectToJson } from '../lib/toJson.js';
 import { eq, and, isNull } from 'drizzle-orm';
+import { amistad } from '../db/schemas/amistad.js';
 import { MAX_PARTICIPANTES } from '../config/torneos.config.js';
 import {getPlantilla} from './socket.js';
 
