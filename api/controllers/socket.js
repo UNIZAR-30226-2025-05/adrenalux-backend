@@ -1,7 +1,7 @@
 import { Server } from 'socket.io';
 import {socketAuth} from '../middlewares/socket_auth.js';
 import { db } from '../config/db.js'; 
-import { eq, and, asc } from 'drizzle-orm';
+import { eq, and, asc, or, lte } from 'drizzle-orm';
 import { objectToJson } from '../lib/toJson.js';
 import { carta } from '../db/schemas/carta.js';
 import { coleccion } from '../db/schemas/coleccion.js';
@@ -10,6 +10,7 @@ import { carta_plantilla } from '../db/schemas/carta_plantilla.js';
 import { plantilla } from '../db/schemas/plantilla.js';
 import { partida } from '../db/schemas/partida.js';
 import { ronda } from '../db/schemas/ronda.js';
+import { torneo } from '../db/schemas/torneo.js';
 
 const connectedUsers = new Map();
 const activeExchanges = new Map();
@@ -239,6 +240,63 @@ export function configureWebSocket(httpServer) {
         connectedUsers.get(participantId)?.leave(exchange.roomId);
       });
     });
+
+    /*
+     * Torneos
+     *
+     */
+    
+    setInterval(async () => {
+        try {
+            const now = new Date();
+            const matches = await db.select()
+                .from(partida)
+                .where(and(
+                    eq(partida.estado, 'scheduled'),
+                    lte(partida.fecha, now)
+                ));
+
+            for (const match of matches) {
+                const user1Id = String(match.user1_id);
+                const user2Id = String(match.user2_id);
+
+                const player1Socket = connectedUsers.get(user1Id);
+                const player2Socket = connectedUsers.get(user2Id);
+
+                if (player1Socket && player2Socket) {
+                    const [user1] = await db.select().from(user).where(eq(user.id, user1Id));
+                    const [user2] = await db.select().from(user).where(eq(user.id, user2Id));
+
+                    const player1 = {
+                        socket: player1Socket,
+                        puntos: user1.puntosClasificacion,
+                        userId: user1Id
+                    };
+                    const player2 = {
+                        socket: player2Socket,
+                        puntos: user2.puntosClasificacion,
+                        userId: user2Id
+                    };
+
+                    await db.update(partida)
+                        .set({ estado: 'activa' })
+                        .where(eq(partida.id, match.id));
+
+                    createMatch(player1, player2, match.torneo_id);  
+                } else {
+                    const winnerId = !player1Socket ? user2Id : user1Id;
+                    await db.update(partida)
+                        .set({
+                            estado: 'finalizada',
+                            ganador_id: winnerId
+                        })
+                        .where(eq(partida.id, match.id));
+                }
+            }
+        } catch (error) {
+            console.error('Error al procesar partidas programadas:', error);
+        }
+    }, 60000); 
 
     /*
      * Partidas
@@ -608,9 +666,10 @@ export function configureWebSocket(httpServer) {
     };
   }
 
-    const createMatch = async (player1, player2) => {
+    const createMatch = async (player1, player2, torneo_id) => {
       const user1_id = String(player1.userId);
       const user2_id = String(player2.userId);
+      var matchId;
 
       console.log(`Match creado entre ${player1.userId} y ${player2.userId}.`);
 
@@ -619,9 +678,26 @@ export function configureWebSocket(httpServer) {
         getPlantilla(user2_id)
       ]);
 
-      console.log("Plantilla1: ", plantilla1.plantillaId, " Plantilla2: ", plantilla2.plantillaId);
+      if(torneo_id != null) {
+        const [match] = await db.select()
+        .from(partida)
+        .where(and(
+            eq(partida.torneo_id, torneo_id),
+            and(
+              or(
+                eq(partida.user1_id, user1_id), 
+                eq(partida.user2_id, user1_id)
+              ),
+              or(
+                eq(partida.user1_id, user2_id), 
+                eq(partida.user2_id, user2_id)
+              )
+            )
+        ));
 
-      const [newMatch] = await db.insert(partida)
+        matchId = match.id;
+      } else {
+        const [newMatch] = await db.insert(partida)
         .values({
           turno: user1_id,
           user1_id: user1_id,
@@ -630,8 +706,10 @@ export function configureWebSocket(httpServer) {
           plantilla2_id: plantilla2.plantillaId,
           estado: 'activa'
         }).returning();
-    
-      const matchId = newMatch.id;
+        
+        matchId = newMatch.id;
+      }
+     
       const roomId = `match_${matchId}`;
 
       const matchState = {

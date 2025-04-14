@@ -7,6 +7,7 @@ import { getDecodedToken } from '../lib/jwt.js';
 import { objectToJson } from '../lib/toJson.js';
 import { eq, and, isNull, or } from 'drizzle-orm';
 import { amistad } from '../db/schemas/amistad.js';
+import { partida } from '../db/schemas/partida.js';
 import { MAX_PARTICIPANTES } from '../config/torneos.config.js';
 import {getPlantilla} from './socket.js';
 
@@ -341,8 +342,9 @@ export async function empezarTorneo(req, res, next) {
         if (!userId) return next(new Error("Token inválido o usuario no autenticado"));
 
         const torneoData = await validarInicioTorneo(userId, torneo_id);
+        const participantes = await obtenerDetallesParticipantes(id);
         await marcarTorneoEnCurso(torneo_id);
-        // await realizarEmparejamientoInicial(torneo_id, participantes);
+        await realizarEmparejamientoInicial(torneo_id, participantes);
 
         return sendResponse(req, res, { 
             message: 'Torneo iniciado correctamente',
@@ -399,7 +401,8 @@ async function insertarPartida(parejas, torneoId) {
         user2_id: jugador2,
         plantilla1_id: getPlantilla(jugador1),
         plantilla2_id: getPlantilla(jugador2),
-        estado: 'activa',
+        estado: 'programada',
+        fecha: new Date(Date.now() + 5 * 60 * 1000), 
         torneo_id: torneoId,
     });
 }
