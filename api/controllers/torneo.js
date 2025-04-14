@@ -5,7 +5,7 @@ import { db } from '../config/db.js';
 import { sendResponse, NotFound, BadRequest } from '../lib/http.js';
 import { getDecodedToken } from '../lib/jwt.js';
 import { objectToJson } from '../lib/toJson.js';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, isNull, or } from 'drizzle-orm';
 import { amistad } from '../db/schemas/amistad.js';
 import { MAX_PARTICIPANTES } from '../config/torneos.config.js';
 import {getPlantilla} from './socket.js';
@@ -204,56 +204,80 @@ export async function obtenerTorneosActivos(req, res, next) {
     }
 }
 
+
 export async function obtenerTorneosDeAmigos(req, res, next) {
     try {
+        console.log("Obteniendo token...");
         const token = await getDecodedToken(req);
         const userId = token.id;
+        console.log("User ID:", userId);
+
         const torneoAmigos = [];
         const torneosConDetalles = []; 
+
+        console.log("Buscando amigos aceptados...");
         const rawFriends = await db
-                    .select({
-                        id: user.id,
-                    })
-                    .from(user)
-                    .innerJoin(
-                        amistad,
-                        or(
-                            and(
-                                eq(amistad.user1_id, userId),
-                                eq(amistad.user2_id, user.id)
-                            ),
-                            and(
-                                eq(amistad.user2_id, userId),
-                                eq(amistad.user1_id, user.id)
-                            )
-                        )
+            .select({
+                id: user.id,
+            })
+            .from(user)
+            .innerJoin(
+                amistad,
+                or(
+                    and(
+                        eq(amistad.user1_id, userId),
+                        eq(amistad.user2_id, user.id)
+                    ),
+                    and(
+                        eq(amistad.user2_id, userId),
+                        eq(amistad.user1_id, user.id)
                     )
-                    .where(eq(amistad.estado, 'aceptada'));
+                )
+            )
+            .where(eq(amistad.estado, 'aceptada'));
+
+        console.log("Amigos encontrados:", rawFriends);
 
         for (const amigo of rawFriends) {
+            console.log(`Buscando torneos para amigo ID: ${amigo.id}`);
             const torneosAmigo = await db.select()
                 .from(participacionTorneo)
                 .where(eq(participacionTorneo.user_id, amigo.id));
-            torneoAmigos.push(torneosAmigo);
+            console.log(`Torneos encontrados para ${amigo.id}:`, torneosAmigo);
+            torneoAmigos.push(...torneosAmigo); 
         }
+
+        console.log("Obteniendo torneos activos...");
         const torneosActivos = await obtenerTorneosSinGanador();
+        console.log("Torneos activos:", torneosActivos);
+
+        console.log("Filtrando torneos de amigos...");
         const torneosFiltrados = torneosActivos.filter(torneoActivo => 
             torneoAmigos.some(torneoAmigo => torneoAmigo.torneo_id === torneoActivo.id));
+        console.log("Torneos filtrados:", torneosFiltrados);
 
         if (torneosFiltrados.length === 0) {
+            console.log("No se encontraron torneos de amigos.");
             return res.status(204).send();
         }
+
         for (const torneo of torneosFiltrados) {
-            torneosConDetalles.push(obtenerInfoTorneo(torneo.id));
-            torneosConDetalles.push(obtenerDetallesParticipantes(torneo.id));
+            console.log(`Obteniendo detalles para torneo ID: ${torneo.id}`);
+            const info = await obtenerInfoTorneo(torneo.id);
+            const detalles = await obtenerDetallesParticipantes(torneo.id);
+            torneosConDetalles.push(info, detalles);
         }
+
+        console.log("Torneos con detalles:", torneosConDetalles);
+
         return sendResponse(req, res, { 
-         data: torneosConDetalles.map(objectToJson) });
-     
- } catch (error) {
-     console.error("[ERROR] Error en obtenerTorneosDeAmigos:", error);
-     return next(error);
-  }
+            data: torneosConDetalles.map(objectToJson) 
+        });
+
+    } catch (error) {
+        console.error("[ERROR] Error en obtenerTorneosDeAmigos:", error);
+        return next(error);
+    }
 }
 
 
