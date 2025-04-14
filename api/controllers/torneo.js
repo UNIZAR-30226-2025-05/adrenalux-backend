@@ -168,7 +168,7 @@ export async function unirseTorneo(req, res, next) {
         const torneoData = await obtenerTorneoPorId(torneo_id);
         if (torneoData.torneo_en_curso) throw new BadRequest('El torneo ya está en curso');
 
-        await verificarUsuarioInscrito(contrasena, userId);
+        await verificarUsuarioInscrito(torneo_id, userId);
         const participantes = await contarParticipantes(torneo_id);
         if (participantes.length == MAX_PARTICIPANTES) throw new BadRequest('Capacidad máxima alcanzada');
 
@@ -393,18 +393,15 @@ async function  realizarEmparejamiento(participantes){
 
 async function insertarPartida(parejas, torneoId) {
     const { jugador1, jugador2 } = parejas;
-      [newMatch] = await db.insert(partida)
-           .values({
-             turno: jugador1,
-             user1_id: jugador1,
-             user2_id: jugador2,
-             plantilla1_id: getPlantilla(jugador1),
-             plantilla2_id: getPlantilla(jugador2),
-             estado: 'activa',
-             torneo_id: torneoId,
-           })
-       
-    
+    await db.insert(partida).values({
+        turno: jugador1,
+        user1_id: jugador1,
+        user2_id: jugador2,
+        plantilla1_id: getPlantilla(jugador1),
+        plantilla2_id: getPlantilla(jugador2),
+        estado: 'activa',
+        torneo_id: torneoId,
+    });
 }
 
 export async function abandonarTorneo(req, res, next) {
