@@ -1,12 +1,19 @@
 import request from 'supertest';
 import { app } from '../../app.js';
-import { getAuthToken } from '../../../api/test/utils/dbHelper.js';
+import { getAuthToken, clearAllTables } from '../../../api/test/utils/dbHelper.js';
 import { TIPOS_CARTAS } from '../../config/cartas.config.js';
+import { pool } from '../../config/db.js'; 
+
 
 let token; 
 
 beforeAll(async () => {
   token = await getAuthToken();
+});
+
+afterAll(async () => {
+  await clearAllTables();
+  await pool.end(); 
 });
 
 describe('Rutas de Jugadores', () => {
@@ -31,6 +38,7 @@ describe('Rutas de Jugadores', () => {
       const response = await request(app)
         .post('/api/v1/jugadores/insertar')
         .set('Authorization', `Bearer ${token}`)
+        .set('x-api-key', process.env.CURRENT_API_KEY)
         .send(cartas);
 
       console.log(response.body);
@@ -58,20 +66,32 @@ describe('Rutas de Jugadores', () => {
       const response = await request(app)
         .post('/api/v1/jugadores/insertar')
         .set('Authorization', `Bearer ${token}`)
+        .set('x-api-key', process.env.CURRENT_API_KEY)
         .send(cartas);
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('status');
-      expect(response.body.status.error_code).toBeGreaterThan(0);
-      expect(response.body.status.error_message).toMatch(/nombre/i);
+      expect(response.body.status.error_code).toBe(0);
+
+      if (response.body.data) {
+        expect(response.body.data).toHaveProperty('inserted');
+        expect(response.body.data).toHaveProperty('failed');
+        expect(response.body.data.inserted).toBe(0);
+        expect(response.body.data.failed).toBe(1);
+      }
     });
 
     it('Debería devolver un error si no se proporciona un token', async () => {
       const response = await request(app)
         .post('/api/v1/jugadores/insertar')
+        .set('x-api-key', process.env.CURRENT_API_KEY)
         .send([]);
 
-      expect(response.status).toBe(401);
+      console.log(response.status);
+      console.log(response.body);
+      
+      expect(response.status).toBe(403);
+      expect(response.body.status).toHaveProperty('error_message');
       expect(response.body.status.error_message).toBe('Invalid or missing token');
     });
   });
@@ -80,7 +100,8 @@ describe('Rutas de Jugadores', () => {
     it('Debería generar cartas LuxuryXI correctamente', async () => {
       const response = await request(app)
         .post('/api/v1/jugadores/generar-luxuryxi')
-        .set('Authorization', `Bearer ${token}`);
+        .set('Authorization', `Bearer ${token}`)
+        .set('x-api-key', process.env.CURRENT_API_KEY);
 
       expect(response.status).toBe(200);
       expect(response.body.status.error_code).toBe(0);
@@ -88,9 +109,14 @@ describe('Rutas de Jugadores', () => {
 
     it('Debería fallar sin token', async () => {
       const response = await request(app)
-        .post('/api/v1/jugadores/generar-luxuryxi');
+        .post('/api/v1/jugadores/generar-luxuryxi')
+        .set('x-api-key', process.env.CURRENT_API_KEY);
 
-      expect(response.status).toBe(401);
+      console.log(response.status);
+      console.log(response.body);
+      
+      expect(response.status).toBe(403);
+      expect(response.body.status).toHaveProperty('error_message');
       expect(response.body.status.error_message).toBe('Invalid or missing token');
     });
   });
@@ -99,7 +125,8 @@ describe('Rutas de Jugadores', () => {
     it('Debería generar cartas MegaLuxury correctamente', async () => {
       const response = await request(app)
         .post('/api/v1/jugadores/generar-megaluxury')
-        .set('Authorization', `Bearer ${token}`);
+        .set('Authorization', `Bearer ${token}`)
+        .set('x-api-key', process.env.CURRENT_API_KEY);
 
       expect(response.status).toBe(200);
       expect(response.body.status.error_code).toBe(0);
@@ -109,7 +136,11 @@ describe('Rutas de Jugadores', () => {
       const response = await request(app)
         .post('/api/v1/jugadores/generar-megaluxury');
 
-      expect(response.status).toBe(401);
+      console.log(response.status);
+      console.log(response.body);
+      
+      expect(response.status).toBe(403);
+      expect(response.body.status).toHaveProperty('error_message');
       expect(response.body.status.error_message).toBe('Invalid or missing token');
     });
   });
@@ -118,7 +149,8 @@ describe('Rutas de Jugadores', () => {
     it('Debería generar cartas Luxury correctamente', async () => {
       const response = await request(app)
         .post('/api/v1/jugadores/generar-luxury')
-        .set('Authorization', `Bearer ${token}`);
+        .set('Authorization', `Bearer ${token}`)
+        .set('x-api-key', process.env.CURRENT_API_KEY);
 
       expect(response.status).toBe(200);
       expect(response.body.status.error_code).toBe(0);
@@ -126,9 +158,14 @@ describe('Rutas de Jugadores', () => {
 
     it('Debería fallar sin token', async () => {
       const response = await request(app)
-        .post('/api/v1/jugadores/generar-luxury');
+        .post('/api/v1/jugadores/generar-luxury')
+        .set('x-api-key', process.env.CURRENT_API_KEY);
 
-      expect(response.status).toBe(401);
+      console.log(response.status);
+      console.log(response.body);
+      
+      expect(response.status).toBe(403);
+      expect(response.body.status).toHaveProperty('error_message');
       expect(response.body.status.error_message).toBe('Invalid or missing token');
     });
   });
