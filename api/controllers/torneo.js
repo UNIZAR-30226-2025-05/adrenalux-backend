@@ -369,6 +369,36 @@ export async function finalizarTorneo(req, res, next) {
     }
 }
 
+export async function obtenerPartidasTorneo(req, res, next) {
+    try {
+        const token = await getDecodedToken(req);
+        const userId = token.id;
+        const { torneoId } = req.params;
+
+        const [participacion] = await db.select()
+            .from(participacionTorneo)
+            .where(and(
+                eq(participacionTorneo.user_id, userId),
+                eq(participacionTorneo.torneo_id, torneoId)
+            ));
+
+        if (!participacion) {
+            return next(new Forbidden('No estás participando en este torneo'));
+        }
+
+        const allMatches = await db.select()
+        .from(partida)
+        .where(eq(partida.torneo_id, torneoId))
+        .orderBy(asc(partida.fecha));
+
+        return sendResponse(req, res, { 
+            data: allMatches.map(objectToJson)
+        });
+    } catch (error) {
+        return next(error);
+    }
+}
+
 async function realizarEmparejamientoInicial(torneoId, participantes) {
     const parejas = realizarEmparejamiento(participantes);
     for(const pareja of parejas) {

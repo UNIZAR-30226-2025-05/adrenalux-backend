@@ -232,5 +232,7 @@ router.post('/abandonarTorneo', authenticate, torneos.abandonarTorneo);
 */
 router.get('/getTorneosAmigos', authenticate, torneos.obtenerTorneosDeAmigos);
 
+router.get('/getPartidasTorneo/:torneoId', authenticate, torneos.obtenerPartidasTorneo);
+
 
 export default router;
