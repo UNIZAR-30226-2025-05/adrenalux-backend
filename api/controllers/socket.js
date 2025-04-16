@@ -281,15 +281,20 @@ export function configureWebSocket(httpServer) {
     
       if (allCompleted) {
         const winners = currentRound.map(m => m.ganador_id).filter(Boolean);
-        
+        console.log("Ganadores de la ronda: ", winners);
         if (winners.length === 1) { 
           const [torneoData] = await db.select().from(torneo).where(eq(torneo.id, torneoId));
           await db.update(torneo)
             .set({ ganador_id: winners[0] })
             .where(eq(torneo.id, torneoId));
+
+          const [usuario] = await db.select().from(user).where(eq(user.id, winners[0]));
           
+          const premio = Number(torneoData.premio);
+          if (isNaN(premio)) throw new Error("Invalid premio value");
+
           await db.update(user)
-            .set({ monedas: user.monedas + torneoData.premio })
+            .set({ adrenacoins: usuario.adrenacoins + premio})
             .where(eq(user.id, winners[0]));
         } else { 
           const nextRoundFecha = new Date(Date.now() + 5 * 60 * 1000);
@@ -324,14 +329,14 @@ export function configureWebSocket(httpServer) {
     
     setInterval(async () => {
         try {
-            const now = new Date();
+            const nowUTC = new Date(new Date().toISOString());
             const matches = await db.select()
-                .from(partida)
-                .where(and(
-                    eq(partida.estado, 'scheduled'),
-                    lte(partida.fecha, now)
-                ));
-
+              .from(partida)
+              .where(and(
+                eq(partida.estado, 'programada'),
+                lte(partida.fecha, nowUTC)
+              ));
+            console.log("Partidas programadas: ", matches);
             for (const match of matches) {
                 const user1Id = String(match.user1_id);
                 const user2Id = String(match.user2_id);

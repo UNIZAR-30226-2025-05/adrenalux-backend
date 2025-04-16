@@ -21,3 +21,4 @@ const pool = new Pool({
 
 // Crea la instancia de Drizzle ORM
 export const db = drizzle(pool);
+export { pool };
