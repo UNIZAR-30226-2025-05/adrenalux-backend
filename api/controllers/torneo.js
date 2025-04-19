@@ -447,7 +447,7 @@ async function insertarPartida(parejas, torneoId) {
         plantilla1_id: plantilla1.plantillaId,
         plantilla2_id: plantilla2.plantillaId,
         estado: 'programada',
-        fecha: new Date(Date.now() + 5 * 60 * 1000), 
+        fecha: new Date(Date.now() + 1 * 60 * 1000), 
         torneo_id: torneoId,
     });
 }

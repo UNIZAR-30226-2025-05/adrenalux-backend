@@ -252,7 +252,8 @@ export function configureWebSocket(httpServer) {
       let currentDate = null;
     
       for (const match of matches) {
-        const matchDate =new Date(match.fecha).getTime();
+        const date =new Date(match.fecha);
+        const matchDate = Math.floor(date.getTime() / 60000);
 
         if (currentDate === null || matchDate === currentDate) {
           currentGroup.push(match);
@@ -297,7 +298,7 @@ export function configureWebSocket(httpServer) {
             .set({ adrenacoins: usuario.adrenacoins + premio})
             .where(eq(user.id, winners[0]));
         } else { 
-          const nextRoundFecha = new Date(Date.now() + 5 * 60 * 1000);
+          const nextRoundFecha = new Date(Date.now() + 1 * 60 * 1000);
           for (let i = 0; i < winners.length; i += 2) {
             const jugador1 = winners[i];
             const jugador2 = winners[i + 1];
@@ -307,6 +308,7 @@ export function configureWebSocket(httpServer) {
               await db.insert(partida).values({
                 user1_id: jugador1,
                 user2_id: jugador2,
+                turno: jugador1,
                 plantilla1_id: plantilla1.plantillaId,
                 plantilla2_id: plantilla2.plantillaId,
                 estado: 'programada',
@@ -964,21 +966,22 @@ export function configureWebSocket(httpServer) {
       
       let ganador;
       if (valor_j1 === valor_j2) {
-          ganador = 'draw';
+          ganador = null;
       } else if (valor_j1 > valor_j2) {
           ganador = match.currentRoundData.starter;
       } else {
           ganador = Object.keys(match.players).find(id => id !== match.currentRoundData.starter);
       }
-
-      match.players[ganador].score++;  
-    
-      await db.update(ronda)
-      .set({ ganador_id : ganador })
-      .where(and(
-        eq(ronda.partida_id, matchId),
-        eq(ronda.numero_ronda, match.currentRound)
-      ));
+      
+      if(ganador != null) {
+        match.players[ganador].score++;  
+        await db.update(ronda)
+        .set({ ganador_id : ganador })
+        .where(and(
+          eq(ronda.partida_id, matchId),
+          eq(ronda.numero_ronda, match.currentRound)
+        ));
+      }  
     
       io.to(match.roomId).emit('round_result', {
         ganador,
@@ -1005,10 +1008,16 @@ export function configureWebSocket(httpServer) {
         .where(eq(partida.id, matchId));
   
       if (playerIds.some(id => match.players[id].score >= 6) || match.currentRound >= 11) {
-        const ganadorId = playerIds.reduce((maxId, id) =>
-          match.players[id].score > match.players[maxId].score ? id : maxId,
-          playerIds[0]
+        const maxScore = Math.max(
+          ...playerIds.map(id => match.players[id].score)
         );
+
+        const topIds = playerIds.filter(
+          id => match.players[id].score === maxScore
+        );
+
+        const ganadorId = topIds.length === 1 ? topIds[0] : null;
+
         finishMatch(match.matchId, ganadorId);
       } else {
         match.currentRound++;
@@ -1039,7 +1048,7 @@ export function configureWebSocket(httpServer) {
             estado: 'finalizada',
             puntuacion1: puntuacion1,
             puntuacion2: puntuacion2,
-            ganador_id: winnerId === 'draw' ? null : Number(winnerId)
+            ganador_id: winnerId === null ? null : Number(winnerId)
         })
         .where(eq(partida.id, matchId));
 
@@ -1047,7 +1056,7 @@ export function configureWebSocket(httpServer) {
           await handleTournamentMatchCompletion(dbMatch.torneo_id, matchId);
         }
     
-        const isDraw = winnerId === 'draw';
+        const isDraw = winnerId === null;
         const puntosChange = calculateRatingChange(
           player1Id,
           player2Id,
