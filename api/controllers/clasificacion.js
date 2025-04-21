@@ -4,38 +4,23 @@ import { db } from '../config/db.js';
 import { user } from '../db/schemas/user.js';
 import { partida } from '../db/schemas/partida.js';
 import { amistad } from '../db/schemas/amistad.js';
-import { objectToJson } from '../lib/toJson.js';
 import { eq, or, and } from 'drizzle-orm';
+
 
 export async function obtenerClasificacionTotal(req, res, next) {
     try {
-        const token = await getDecodedToken(req);
-        const userId = token.id;
+        const userId = await getUserIdFromToken(req);
 
-        const usuario = await db.select().from(user).where(eq(user.id, userId));
-
+        const usuario = await findUserById(userId);
         if (!usuario) {
             return next(new NotFound('Usuario no encontrado'));
         }
 
-        const usuariosTotales = await db.select().from(user).orderBy(user.puntosClasificacion, 'desc');
+        const usuariosTotales = await getUsuariosOrdenadosPorClasificacion();
 
-        const usuariosConPartidas = await Promise.all(usuariosTotales.map(async (usuario) => {
-            const estadisticas = await getEstadisticasPartidas(usuario.id);
-
-            return {
-                userid: usuario.id,
-                username: usuario.username,
-                name: usuario.name,
-                lastname: usuario.lastname,
-                avatar: usuario.avatar,
-                friend_code: usuario.friend_code,
-                level: usuario.level,
-                experience: usuario.experience,
-                clasificacion: usuario.puntosClasificacion,
-                estadisticas: estadisticas
-            };
-        }));
+        const usuariosConPartidas = await Promise.all(
+            usuariosTotales.map(agregarEstadisticasUsuario)
+        );
 
         return sendResponse(req, res, { data: usuariosConPartidas });
     } catch (error) {
@@ -43,48 +28,18 @@ export async function obtenerClasificacionTotal(req, res, next) {
         return next(error);
     }
 }
+
 export async function obtenerClasificacionAmigos(req, res, next) {
     try {
-        const token = await getDecodedToken(req);
-        const userId = token.id;
+        const userId = await getUserIdFromToken(req);
 
-        const miUser = await db.select().from(user).where(eq(user.id, userId));
-
-        const miUsuario = {
-            userid: miUser[0].id,
-            username: miUser[0].username,
-            name: miUser[0].name,
-            lastname: miUser[0].lastname,
-            avatar: miUser[0].avatar,
-            friend_code: miUser[0].friend_code,
-            level: miUser[0].level,
-            experience: miUser[0].experience,
-            clasificacion: miUser[0].puntosClasificacion
-        }
+        const miUsuario = await construirPerfilUsuarioConId(userId);
 
         const amigos = await getFriends(userId);
-        const clasificacionAmigos = [];
+        const clasificacionAmigos = await Promise.all(
+            amigos.map(amigo => construirPerfilUsuarioConId(amigo.id))
+        );
 
-        for (const amigo of amigos) {
-            const usuarioArray = await db.select().from(user).where(eq(user.id, amigo.id));
-            const usuario = usuarioArray[0];
-
-            if (usuario) {
-                const estadisticas = await getEstadisticasPartidas(usuario.id);
-                clasificacionAmigos.push({
-                    userid: usuario.id,
-                    username: usuario.username,
-                    name: usuario.name,
-                    lastname: usuario.lastname,
-                    avatar: usuario.avatar,
-                    friend_code: usuario.friend_code,
-                    level: usuario.level,
-                    experience: usuario.experience,
-                    clasificacion: usuario.puntosClasificacion,
-                    estadisticas: estadisticas
-                });
-            }
-        }
         clasificacionAmigos.push(miUsuario);
         clasificacionAmigos.sort((a, b) => b.clasificacion - a.clasificacion);
 
@@ -95,6 +50,55 @@ export async function obtenerClasificacionAmigos(req, res, next) {
     }
 }
 
+
+async function getUserIdFromToken(req) {
+    const token = await getDecodedToken(req);
+    return token.id;
+}
+
+async function findUserById(userId) {
+    const result = await db.select().from(user).where(eq(user.id, userId));
+    return result[0];
+}
+
+async function getUsuariosOrdenadosPorClasificacion() {
+    return await db.select().from(user).orderBy(user.puntosClasificacion, 'desc');
+}
+
+async function agregarEstadisticasUsuario(usuario) {
+    const estadisticas = await getEstadisticasPartidas(usuario.id);
+
+    return {
+        userid: usuario.id,
+        username: usuario.username,
+        name: usuario.name,
+        lastname: usuario.lastname,
+        avatar: usuario.avatar,
+        friend_code: usuario.friend_code,
+        level: usuario.level,
+        experience: usuario.experience,
+        clasificacion: usuario.puntosClasificacion,
+        estadisticas: estadisticas
+    };
+}
+
+async function construirPerfilUsuarioConId(userId) {
+    const usuario = await findUserById(userId);
+    const estadisticas = await getEstadisticasPartidas(userId);
+
+    return {
+        userid: usuario.id,
+        username: usuario.username,
+        name: usuario.name,
+        lastname: usuario.lastname,
+        avatar: usuario.avatar,
+        friend_code: usuario.friend_code,
+        level: usuario.level,
+        experience: usuario.experience,
+        clasificacion: usuario.puntosClasificacion,
+        estadisticas: estadisticas
+    };
+}
 
 async function getEstadisticasPartidas(userId) {
     const partidasJugadas = await db
@@ -149,11 +153,7 @@ export async function getFriends(userId) {
             )
             .where(eq(amistad.estado, 'aceptada'));
 
-        const friends = rawFriends.map(friend => ({
-            ...friend,
-        }));
-
-        return friends;
+        return rawFriends.map(friend => ({ ...friend }));
     } catch (error) {
         console.error('Error getting friends:', error);
         throw error;

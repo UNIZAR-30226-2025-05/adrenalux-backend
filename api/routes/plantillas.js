@@ -30,7 +30,7 @@ const router = express.Router();
  *                 type: string
  *                 description: Nombre de la plantilla
  *     responses:
- *       200:
+ *       201:
  *         description: Plantilla creada exitosamente
  *       400:
  *         description: Nombre de plantilla inválido
@@ -147,11 +147,9 @@ router.delete('/', authenticate, plantilla.eliminarPlantilla);
  */
 router.post('/agregarCartasPlantilla', authenticate, plantilla.agregarCartasPlantilla);
 
-
-
 /**
  * @swagger
- * /getCartasPorPlantilla:
+ * /getCartasPorPlantilla/{plantillaId}:
  *   get:
  *     summary: Obtener todas las cartas de una plantilla
  *     tags: [Plantillas]
@@ -174,32 +172,56 @@ router.post('/agregarCartasPlantilla', authenticate, plantilla.agregarCartasPlan
  */
 router.get('/getCartasporPlantilla/:id', authenticate, plantilla.obtenerCartasDePlantilla);
 
+/**
+ * @swagger
+ * /activarPlantilla:
+ *   post:
+ *     summary: Activar una plantilla para el usuario
+ *     tags: [Plantillas]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               plantillaId:
+ *                 type: integer
+ *                 description: ID de la plantilla a activar
+ *     responses:
+ *       200:
+ *         description: Plantilla activada exitosamente
+ *       400:
+ *         description: Plantilla ID inválido
+ */
 router.post('/activarPlantilla', authenticate, plantilla.activarPlantilla);
 
 /**
  * @swagger
  * /actualizarCarta:
  *   put:
- *     summary: Eliminar una carta de una plantilla
+ *     summary: Actualizar una carta en una plantilla
  *     tags: [Plantillas]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: plantillaId
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID de la plantilla
- *       - in: path
- *         name: cartaId
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID de la carta
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               plantillaId:
+ *                 type: integer
+ *               cartaidActual:
+ *                 type: integer
+ *               cartaidNueva:
+ *                 type: integer
  *     responses:
  *       200:
- *         description: Carta eliminada exitosamente
+ *         description: Carta actualizada exitosamente
  *       400:
  *         description: Carta no encontrada en la plantilla
  *       401:

@@ -6,17 +6,19 @@ const router = express.Router();
 
 /**
  * @swagger
- * /getColeccion/{userId}:
+ * tags:
+ *   name: Carta
+ *   description: Endpoints relacionados con la colección de cartas
+ */
+
+/**
+ * @swagger
+ * /getColeccion:
  *   get:
- *     summary: Obtener la colección de un usuario
+ *     summary: Obtener la colección del usuario autenticado
  *     tags: [Carta]
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *         description: ID del usuario
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Colección obtenida exitosamente
@@ -55,19 +57,27 @@ const router = express.Router();
  *                         type: string
  *                       disponible:
  *                         type: boolean
+ *                       enVenta:
+ *                         type: boolean
  *                       cantidad:
  *                         type: integer
+ *       401:
+ *         description: No autorizado. Token no válido o ausente
  *       400:
  *         description: Usuario no válido
+ *       500:
+ *         description: Error interno del servidor
  */
-router.get('/getColeccion', coleccion.obtenerColeccion);
+router.get('/getColeccion', authenticate, coleccion.obtenerColeccion);
 
 /**
  * @swagger
  * /filtrarCartas:
  *   get:
- *     summary: Filtrar cartas según parámetros
+ *     summary: Filtrar cartas del usuario según criterios
  *     tags: [Carta]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: posicion
@@ -95,56 +105,32 @@ router.get('/getColeccion', coleccion.obtenerColeccion);
  *                 data:
  *                   type: array
  *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: string
- *                       nombreCompleto:
- *                         type: string
- *                       club:
- *                         type: string
- *                       posicion:
- *                         type: string
- *                       nacionalidad:
- *                         type: string
- *                       stats:
- *                         type: object
- *                         properties:
- *                           defensa:
- *                             type: integer
- *                           medio:
- *                             type: integer
- *                           ataque:
- *                             type: integer
- *                       rareza:
- *                         type: string
- *                       foto:
- *                         type: string
- *                       disponible:
- *                         type: boolean
- *                       cantidad:
- *                         type: integer
- *       400:
- *         description: Parámetros no válidos
+ *                     $ref: '#/components/schemas/Carta'
+ *       401:
+ *         description: No autorizado. Token no válido o ausente
+ *       500:
+ *         description: Error al filtrar cartas
  */
-router.get('/filtrarCartas', coleccion.filtrarCartas);
+router.get('/filtrarCartas', authenticate, coleccion.filtrarCartas);
 
 /**
  * @swagger
  * /filtrarPorEquipo/{equipo}:
  *   get:
- *     summary: Filtrar cartas por equipo
+ *     summary: Filtrar cartas por nombre de equipo
  *     tags: [Carta]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: equipo
  *         required: true
  *         schema:
  *           type: string
- *         description: Nombre del equipo por el que filtrar
+ *         description: Nombre (parcial o completo) del equipo
  *     responses:
  *       200:
- *         description: Cartas filtradas por equipo exitosamente
+ *         description: Cartas encontradas para el equipo indicado
  *         content:
  *           application/json:
  *             schema:
@@ -153,41 +139,52 @@ router.get('/filtrarCartas', coleccion.filtrarCartas);
  *                 data:
  *                   type: array
  *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: string
- *                       nombreCompleto:
- *                         type: string
- *                       club:
- *                         type: string
- *                       posicion:
- *                         type: string
- *                       nacionalidad:
- *                         type: string
- *                       stats:
- *                         type: object
- *                         properties:
- *                           defensa:
- *                             type: integer
- *                           medio:
- *                             type: integer
- *                           ataque:
- *                             type: integer
- *                       rareza:
- *                         type: string
- *                       foto:
- *                         type: string
- *                       disponible:
- *                         type: boolean
- *                       cantidad:
- *                         type: integer
+ *                     $ref: '#/components/schemas/Carta'
  *       400:
- *         description: Equipo no válido
+ *         description: No se encontraron cartas para el equipo
+ *       401:
+ *         description: No autorizado. Token no válido o ausente
+ *       500:
+ *         description: Error interno del servidor
  */
-router.get('/filtrarPorEquipo/:equipo', coleccion.filtrarPorEquipo);
+router.get('/filtrarPorEquipo/:equipo', authenticate, coleccion.filtrarPorEquipo);
 
-
-
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Carta:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *         nombreCompleto:
+ *           type: string
+ *         club:
+ *           type: string
+ *         posicion:
+ *           type: string
+ *         nacionalidad:
+ *           type: string
+ *         stats:
+ *           type: object
+ *           properties:
+ *             defensa:
+ *               type: integer
+ *             medio:
+ *               type: integer
+ *             ataque:
+ *               type: integer
+ *         rareza:
+ *           type: string
+ *         foto:
+ *           type: string
+ *         disponible:
+ *           type: boolean
+ *         enVenta:
+ *           type: boolean
+ *         cantidad:
+ *           type: integer
+ */
 
 export default router;

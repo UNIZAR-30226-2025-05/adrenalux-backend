@@ -6,6 +6,13 @@ const router = express.Router();
 
 /**
  * @swagger
+ * tags:
+ *   name: MercadoDiario
+ *   description: Endpoints del mercado diario
+ */
+
+/**
+ * @swagger
  * /mercadoDiario/obtenerCartasEspeciales:
  *   get:
  *     summary: Obtener las cartas especiales del día en el mercado
@@ -38,6 +45,13 @@ router.post('/mercadoDiario/comprarCartaEspecial/:id', authenticate, mercado.com
 
 /**
  * @swagger
+ * tags:
+ *   name: MercadoCartas
+ *   description: Endpoints del mercado de cartas
+ */
+
+/**
+ * @swagger
  * /mercadoCartas/obtenerCartasMercado:
  *   get:
  *     summary: Obtener todas las cartas en venta en el mercado de jugadores
@@ -47,7 +61,6 @@ router.post('/mercadoDiario/comprarCartaEspecial/:id', authenticate, mercado.com
  *         description: Lista de cartas en venta
  */
 router.get('/mercadoCartas/obtenerCartasMercado', mercado.obtenerCartasEnVenta);
-
 
 /**
  * @swagger
@@ -114,7 +127,25 @@ router.post('/mercadoCartas/comprarCarta/:id', authenticate, mercado.comprarCart
  */
 router.delete('/mercadoCartas/retirarCarta/:id', authenticate, mercado.retirarCarta);
 
-router.post('/generarCartasMercado', apiKeyAuth, mercado.generarCartasMercado);
+/**
+ * @swagger
+ * tags:
+ *   name: Administración de Mercado
+ *   description: Endpoints de administración del mercado
+ */
 
+/**
+ * @swagger
+ * /generarCartasMercado:
+ *   post:
+ *     summary: Generar las cartas diarias (requiere API Key)
+ *     tags: [Administración]
+ *     security:
+ *       - apiKeyAuth: []
+ *     responses:
+ *       200:
+ *         description: Cartas generadas exitosamente
+ */
+router.post('/generarCartasMercado', apiKeyAuth, mercado.generarCartasMercado);
 
 export default router;

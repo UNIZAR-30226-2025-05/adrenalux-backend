@@ -1,33 +1,53 @@
-import { db } from '../config/db.js';
-import { getDecodedToken } from '../lib/jwt.js';
-import { partida } from '../db/schemas/partida.js';
-import { eq,and,or } from 'drizzle-orm';
-import { sendResponse } from '../lib/http.js';
+import express from 'express';
+import { authenticate } from '../middlewares/auth.js';
+import * as partidas from '../controllers/partidas.js';
 
-// cuando se termine una partida siempre se debe actualizar el nivel de experiencia del usuario
-// se debe actualizar la cantidad de partidas jugadas por el usuario
-// se debe actualizar la cantidad de partidas ganadas por el usuario
-// se debe actualizar los puntos del usuario 
-// si es partida de torneo dar premios 
+const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Partidas
+ *   description: Endpoints relacionados con las partidas
+ */
 
-export async function getPartidasPausadas(req, res, next) {
-  try {
-      const token = await getDecodedToken(req);
-      const userId = token.id;
+/**
+ * @swagger
+ * /partidas/pausadas:
+ *   get:
+ *     summary: Obtener las partidas pausadas de un usuario
+ *     tags: [Partidas]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de partidas pausadas para el usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 pausedMatches:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       estado:
+ *                         type: string
+ *                       user1_id:
+ *                         type: integer
+ *                       user2_id:
+ *                         type: integer
+ *                       fecha_creacion:
+ *                         type: string
+ *                         format: date-time
+ *       401:
+ *         description: No autorizado, falta de token válido
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.get('/pausadas', authenticate, partidas.getPartidasPausadas);
 
-      const pausedMatches = await db.select()
-          .from(partida)
-          .where(and(
-              eq(partida.estado, 'pausada'),
-              or(
-                  eq(partida.user1_id, userId),
-                  eq(partida.user2_id, userId)
-              )
-          ));
-
-      return sendResponse(req, res, { data: {pausedMatches: pausedMatches ?? []} });
-  } catch (error) {
-      return next(error);
-  }
-}
+export default router;

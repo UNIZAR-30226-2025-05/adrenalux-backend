@@ -60,3 +60,24 @@ export const CARTA_CONSTANTS = {
     LUXURY: 50
   }
 };
+
+export const DISTRIBUCION_POSICIONES = {
+  LUXURYXI: {
+    POR: 1,
+    DEF: 4,
+    MED: 3,
+    DEL: 3
+  },
+  MEGALUXURY: {
+    POR: 2,
+    DEF: 8,
+    MED: 7,
+    DEL: 8
+  },
+  LUXURY: {
+    POR: 4,
+    DEF: 15,
+    MED: 15,
+    DEL: 16
+  }
+};

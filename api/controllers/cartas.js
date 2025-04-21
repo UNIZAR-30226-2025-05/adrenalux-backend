@@ -263,7 +263,6 @@ async function restarSobre(usuario) {
     .where(eq(user.id, usuario.id));
 }
 
-
 export async function getEquipos(req, res, next) {
   const decodedToken = await getDecodedToken(req);
   const userId = decodedToken.id;
@@ -298,7 +297,6 @@ async function getEquipoUnicos() {
 
   for (const carta of cartas) {
     if (carta.equipo && carta.escudo) {
-      // Usamos JSON.stringify para convertir el objeto en una cadena única
       equiposSet.add(JSON.stringify({
         equipo: carta.equipo,
         escudo: carta.escudo  
@@ -306,7 +304,6 @@ async function getEquipoUnicos() {
     }
   }
 
-  // Convertimos el Set a un array de objetos de nuevo
   return Array.from(equiposSet).map(item => JSON.parse(item));
 }
 

@@ -4,7 +4,6 @@ import { authenticate } from '../middlewares/auth.js';
 
 const router = express.Router();
 
-
 /**
  * @swagger
  * /abrirSobre/{tipo}:
@@ -62,7 +61,7 @@ const router = express.Router();
  *       401:
  *         description: Monedas insuficientes
  */
-router.get('/abrirSobre/:tipo', cartas.abrirSobre);
+router.get('/abrirSobre/:tipo', authenticate, cartas.abrirSobre);
 
 
 /**
@@ -117,7 +116,7 @@ router.get('/abrirSobre/:tipo', cartas.abrirSobre);
  *       401:
  *         description: No tienes sobres gratis disponibles
  */
-router.get('/abrirSobreRandom', cartas.abrirSobreRandom);
+router.get('/abrirSobreRandom', authenticate, cartas.abrirSobreRandom);
 
 
 /**
@@ -147,13 +146,13 @@ router.get('/abrirSobreRandom', cartas.abrirSobreRandom);
  */
 router.get('/getEquipos', authenticate, cartas.getEquipos);
 
+
 /**
  * @swagger
  * /getInfoSobres:
  *   get:
  *     summary: Coger información de los sobres
- *     tags: 
- *       - Carta
+ *     tags: [Carta]
  *     responses:
  *       200:
  *         description: Información detallada de los sobres, incluyendo precios y probabilidades.
@@ -214,7 +213,6 @@ router.get('/getEquipos', authenticate, cartas.getEquipos);
  *                         NORMAL:
  *                           type: number
  *                           format: float
- *                           description: Probabilidad (%) de obtener una carta NORMAL
  *                         LUXURY:
  *                           type: number
  *                         MEGALUXURY:
@@ -267,7 +265,8 @@ router.get('/getInfoSobres', authenticate, cartas.getInfoSobres);
  *       401:
  *         description: No autorizado
  */
-router.get('/getPosiciones', authenticate ,cartas.getPosiciones);
+router.get('/getPosiciones', authenticate, cartas.getPosiciones);
+
 
 /**
  * @swagger
@@ -295,8 +294,6 @@ router.get('/getPosiciones', authenticate ,cartas.getPosiciones);
  *       401:
  *         description: No autorizado
  */
-
-
 router.get('/sobres', authenticate, cartas.sobresDisponibles);
 
 

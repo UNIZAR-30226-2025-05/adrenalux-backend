@@ -25,13 +25,6 @@ const router = Router();
 
 /**
  * @swagger
- * tags:
- *   name: Auth
- *   description: Endpoints de autenticación
- */
-
-/**
- * @swagger
  * /auth/sign-up:
  *   post:
  *     summary: Registra un nuevo usuario
@@ -42,6 +35,12 @@ const router = Router();
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - username
+ *               - name
+ *               - lastname
  *             properties:
  *               email:
  *                 type: string
@@ -65,7 +64,7 @@ const router = Router();
  *       201:
  *         description: Usuario registrado exitosamente
  *       400:
- *         description: Error en la validación de datos
+ *         description: El correo o nombre de usuario ya están en uso
  */
 router.post('/sign-up', validateRequest(signUpSchema), authCtrl.signUp);
 
@@ -81,6 +80,9 @@ router.post('/sign-up', validateRequest(signUpSchema), authCtrl.signUp);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
+ *               - password
  *             properties:
  *               email:
  *                 type: string
@@ -93,8 +95,15 @@ router.post('/sign-up', validateRequest(signUpSchema), authCtrl.signUp);
  *     responses:
  *       200:
  *         description: Usuario autenticado correctamente
+ *         content:
+ *           application/json:
+ *             example:
+ *               data:
+ *                 token: "jwt.token.aquí"
  *       401:
  *         description: Credenciales inválidas
+ *       404:
+ *         description: Usuario no encontrado
  */
 router.post('/sign-in', validateRequest(signInSchema), authCtrl.signIn);
 
@@ -120,7 +129,6 @@ router.post('/sign-out', authenticate, authCtrl.signOut);
  *   get:
  *     summary: Valida la autenticidad del token JWT
  *     tags: [Auth]
- *     description: Verifica si el token de autenticación es válido y está activo
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -137,13 +145,11 @@ router.post('/sign-out', authenticate, authCtrl.signOut);
  *         content:
  *           application/json:
  *             example:
- *               isValid: true
+ *               data:
+ *                 isValid: true
+ *                 authMethod: "email"
  *       401:
- *         description: |
- *           Error de autenticación. Posibles causas:
- *           - Token expirado
- *           - Formato de token inválido
- *           - Token no proporcionado
+ *         description: Token inválido, expirado o no proporcionado
  *         content:
  *           application/json:
  *             examples:
@@ -162,6 +168,41 @@ router.post('/sign-out', authenticate, authCtrl.signOut);
  */
 router.post('/validate-token', authCtrl.validateToken);
 
+/**
+ * @swagger
+ * /auth/google:
+ *   post:
+ *     summary: Inicia sesión con Google OAuth2
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - tokenId
+ *             properties:
+ *               tokenId:
+ *                 type: string
+ *                 description: ID Token de Google OAuth2
+ *                 example: "ya29.a0ARrdaM..."
+ *     responses:
+ *       200:
+ *         description: Usuario autenticado correctamente (nuevo o existente)
+ *         content:
+ *           application/json:
+ *             example:
+ *               data:
+ *                 token: "jwt.token.aquí"
+ *                 isNewUser: false
+ *       401:
+ *         description: Token de Google inválido o expirado
+ *         content:
+ *           application/json:
+ *             example:
+ *               error: "Error en autenticación con Google"
+ */
 router.post('/google', authCtrl.googleSignIn);
 
 export default router;

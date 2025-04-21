@@ -37,14 +37,28 @@ const Torneoschema = z.object({
  *             properties:
  *               nombre:
  *                 type: string
- *               fechaInicio:
+ *               contrasena:
  *                 type: string
- *                 format: date
- *               maxParticipantes:
- *                 type: integer
+ *                 description: Contraseña del torneo
+ *               premio:
+ *                 type: string
+ *               descripcion:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Torneo creado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Torneo creado exitosamente"
+ *                 data:
+ *                   $ref: '#/components/schemas/Torneo'
+ *       400:
+ *         description: Error al crear el torneo
  */
 router.post('/crear', authenticate, validateRequest(Torneoschema), torneos.crearTorneo);
 
@@ -63,14 +77,27 @@ router.post('/crear', authenticate, validateRequest(Torneoschema), torneos.crear
  *           schema:
  *             type: object
  *             properties:
- *               id:
- *                 type: string
+ *               torneo_id:
+ *                 type: integer
  *                 description: ID del torneo al que se quiere unir
+ *               contrasena:
+ *                 type: string
+ *                 description: Contraseña del torneo (opcional)
  *     responses:
  *       200:
  *         description: Usuario unido al torneo exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Te has unido al torneo correctamente"
  *       400:
- *         description: Error en la solicitud
+ *         description: Error al unirse al torneo
+ *       404:
+ *         description: Torneo no encontrado
  */
 router.post('/unirse', authenticate, torneos.unirseTorneo);
 
@@ -83,6 +110,12 @@ router.post('/unirse', authenticate, torneos.unirseTorneo);
  *     responses:
  *       200:
  *         description: Lista de torneos activos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Torneo'
  */
 router.get('/getTorneosActivos', torneos.obtenerTorneosActivos);
 
@@ -104,28 +137,42 @@ router.get('/getTorneosActivos', torneos.obtenerTorneosActivos);
  *     responses:
  *       200:
  *         description: Lista de torneos en los que ha participado el jugador
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Torneo'
  */
 router.get('/getTorneosJugador', authenticate, torneos.obtenerTorneosJugados);
 
 /**
  * @swagger
- * /torneos/getTorneo:
+ * /torneos/getTorneo/{id}:
  *   get:
  *     summary: Obtener detalles de un torneo
  *     tags: [Torneos]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               id:
- *                 type: string
- *                 description: ID del torneo del cual obtener la información
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del torneo
  *     responses:
  *       200:
  *         description: Detalles del torneo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 torneo:
+ *                   $ref: '#/components/schemas/Torneo'
+ *                 participantes:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Participante'
  */
 router.get('/getTorneo/:id', torneos.obtenerDetallesTorneo);
 
@@ -142,7 +189,10 @@ router.get('/getTorneo/:id', torneos.obtenerDetallesTorneo);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/IniciarTorneo'
+ *             type: object
+ *             properties:
+ *               torneo_id:
+ *                 type: integer
  *     responses:
  *       200:
  *         description: Torneo iniciado correctamente
@@ -153,6 +203,7 @@ router.get('/getTorneo/:id', torneos.obtenerDetallesTorneo);
  *               properties:
  *                 message:
  *                   type: string
+ *                   example: "Torneo iniciado correctamente"
  *                 data:
  *                   $ref: '#/components/schemas/Torneo'
  *       400:
@@ -164,7 +215,7 @@ router.post('/iniciarTorneo', authenticate, torneos.empezarTorneo);
 
 /**
  * @swagger
- * /torneos/FinalizarTorneo:
+ * /torneos/finalizarTorneo:
  *   post:
  *     summary: Finalizar un torneo y declarar ganador (solo creador)
  *     tags: [Torneos]
@@ -175,12 +226,17 @@ router.post('/iniciarTorneo', authenticate, torneos.empezarTorneo);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/FinalizarTorneo'
+ *             type: object
+ *             properties:
+ *               torneo_id:
+ *                 type: integer
+ *               ganador_id:
+ *                 type: integer
  *     responses:
  *       200:
  *         description: Torneo finalizado correctamente
  *       400:
- *         description: Torneo ya tiene ganador o no es creador
+ *         description: El torneo ya tiene un ganador o no es el creador
  *       404:
  *         description: Torneo no encontrado
  */
@@ -201,35 +257,32 @@ router.post('/finalizarTorneo', authenticate, torneos.finalizarTorneo);
  *           schema:
  *             type: object
  *             properties:
- *               id:
- *                 type: string
- *                 description: ID del torneo al que se quiere abandonar
+ *               torneo_id:
+ *                 type: integer
  *     responses:
  *       200:
  *         description: Usuario abandonó el torneo exitosamente
  */
-
 router.post('/abandonarTorneo', authenticate, torneos.abandonarTorneo);
 
-
 /**
-* @swagger
-* /torneos/getTorneosAmigos:
-*   get:
-*     summary: Obtener torneos de amigos
-*     tags: [Torneos]
-*     security:
-*       - BearerAuth: []
-*     responses:
-*       200:
-*         description: Lista de torneos de amigos
-*         content:
-*           application/json:
-*             schema:
-*               type: array
-*               items:
-*                 type: object
-*/
+ * @swagger
+ * /torneos/getTorneosAmigos:
+ *   get:
+ *     summary: Obtener torneos de amigos
+ *     tags: [Torneos]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de torneos de amigos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ */
 router.get('/getTorneosAmigos', authenticate, torneos.obtenerTorneosDeAmigos);
 
 

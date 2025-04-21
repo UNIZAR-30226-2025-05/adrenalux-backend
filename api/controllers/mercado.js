@@ -8,13 +8,6 @@ import { eq, like, and, gte, lte, inArray, not } from 'drizzle-orm';
 import {carta} from '../db/schemas/carta.js';
 import { TIPOS_CARTAS } from '../config/cartas.config.js';
 
-/** 
- * 📌 MERCADO DIARIO 
- */
-
-/**
- * Obtener las cartas especiales del día en el mercado
- */
 
 export const obtenerCartasDiarias = async (req, res) => {
   try {
@@ -63,9 +56,7 @@ export const obtenerCartasDiarias = async (req, res) => {
   }
 };
 
-/**
- * Comprar una carta especial del mercado diario
- */
+
 export const comprarCartaDiaria = async (req, res) => {
   try {
     const { id } = req.params;
@@ -86,7 +77,6 @@ export const comprarCartaDiaria = async (req, res) => {
     const mercadoEntry = mercadoEntries[0];
     const { precio, cartaId } = mercadoEntry;
 
-    // Verificar saldo del comprador
     const [comprador] = await db
       .select()
       .from(user)
@@ -106,19 +96,15 @@ export const comprarCartaDiaria = async (req, res) => {
       });
     }
 
-    // Transacción para compra
     await db.transaction(async (trx) => {
-      // Actualizar monedas del comprador
       await trx.update(user)
         .set({ adrenacoins: comprador.adrenacoins - precio })
         .where(eq(user.id, compradorId));
 
-      // Marcar carta como vendida
       await trx.update(mercadoDiario)
         .set({ vendida: true })
         .where(eq(mercadoDiario.id, id));
 
-      // Añadir a colección
       const [coleccionExistente] = await trx
         .select()
         .from(coleccion)
@@ -147,26 +133,18 @@ export const comprarCartaDiaria = async (req, res) => {
   }
 };
 
-/** 
- * 📌 MERCADO DE CARTAS (PUJAS)
- */
-
-/**
- * Obtener todas las cartas en venta en el mercado de jugadores
- */
 export const obtenerCartasEnVenta = async (req, res) => {
   const decodedToken = await getDecodedToken(req);
   const userId = decodedToken.id;
 
   try {
-    // Obtener todas las cartas en venta que no han sido puestas por el usuario actual
     const cartasEnVenta = await db
       .select()
       .from(mercadoCartas)
       .where(
         and(
           eq(mercadoCartas.estado, cartaState.EN_VENTA),
-          not(eq(mercadoCartas.vendedorId, userId)) // Excluir cartas del usuario
+          not(eq(mercadoCartas.vendedorId, userId)) 
         )
       );
 
@@ -176,19 +154,16 @@ export const obtenerCartasEnVenta = async (req, res) => {
 
     const cartaIds = [...new Set(cartasEnVenta.map(item => item.cartaId))]; // Obtener IDs de cartas únicas
 
-    // Obtener las cartas correspondientes
     const cartas = await db
       .select()
       .from(carta)
       .where(inArray(carta.id, cartaIds));
       
-    // Crear un objeto de búsqueda para las cartas en venta
     const cartasEnVentaMap = cartasEnVenta.reduce((acc, marketRecord) => {
       acc[marketRecord.cartaId] = marketRecord;
       return acc;
     }, {});
 
-    // Mapear las cartas con los detalles del mercado
     const cartasJson = cartas.map(card => {
       const marketRecord = cartasEnVentaMap[card.id];
       return {
@@ -205,9 +180,7 @@ export const obtenerCartasEnVenta = async (req, res) => {
 };
 
 
-/**
- * Obtener una carta específica en venta por su nombre
- */
+
 export const obtenerCartaPorNombre = async (req, res) => {
   try {
     const { nombre } = req.params;
@@ -223,9 +196,7 @@ export const obtenerCartaPorNombre = async (req, res) => {
   }
 };
 
-/**
- * Publicar una carta en venta
- */
+
 export const publicarCarta = async (req, res) => {
   try {
     const { cartaId, precio } = req.body;
@@ -246,9 +217,7 @@ export const publicarCarta = async (req, res) => {
   }
 };
 
-/**
- * Comprar una carta en el mercado
- */
+
 export const comprarCarta = async (req, res) => {
   try {
     const { id } = req.params;
@@ -324,9 +293,6 @@ export const comprarCarta = async (req, res) => {
 
 
 
-/**
- * Retirar una carta del mercado (solo el vendedor puede hacerlo)
- */
 export const retirarCarta = async (req, res) => {
   try {
     const { id } = req.params;
@@ -371,7 +337,7 @@ export const generarCartasMercado = async (req, res) =>  {
       await db.insert(mercadoDiario).values({
         cartaId: carta.id,
         fechaDisponible: new Date(), 
-        precio: 999999, 
+        precio: Math.floor(Math.random() * (50000 - 20000 + 1)) + 30000, 
       });
     }
     res.status(200).json({ message: "Cartas generadas exitosamente" });
