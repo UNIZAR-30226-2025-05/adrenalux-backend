@@ -1,12 +1,18 @@
 import request from 'supertest';
 import { app } from '../../app.js';
-import { getAuthToken } from '../utils/dbHelper.js';
+import { getAuthToken, clearAllTables } from '../utils/dbHelper.js';
+import { pool } from '../../config/db.js'; 
 
 describe('Perfil de Usuario - Rutas', () => {
   let token; 
   // Antes de cada test, obtener un token válido para el usuario autenticado
   beforeEach(async () => {
     token = await getAuthToken(); 
+  });
+
+  afterAll(async () => {
+    await clearAllTables();
+    await pool.end(); 
   });
 
   // Test para obtener el perfil
