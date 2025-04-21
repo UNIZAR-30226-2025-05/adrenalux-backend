@@ -139,7 +139,7 @@ router.delete('/mercadoCartas/retirarCarta/:id', authenticate, mercado.retirarCa
  * /generarCartasMercado:
  *   post:
  *     summary: Generar las cartas diarias (requiere API Key)
- *     tags: [Administración]
+ *     tags: [Administración de Mercado]
  *     security:
  *       - apiKeyAuth: []
  *     responses:
