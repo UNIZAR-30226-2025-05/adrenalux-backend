@@ -245,17 +245,100 @@ export function configureWebSocket(httpServer) {
      * Torneos
      *
      */
+
+    function groupMatchesIntoRounds(matches) {
+      const groups = [];
+      let currentGroup = [];
+      let currentDate = null;
+    
+      for (const match of matches) {
+        const date =new Date(match.fecha);
+        const matchDate = Math.floor(date.getTime() / 60000);
+
+        if (currentDate === null || matchDate === currentDate) {
+          currentGroup.push(match);
+          currentDate = matchDate;
+        } else {
+          groups.push(currentGroup);
+          currentGroup = [match];
+          currentDate = matchDate;
+        }
+      }
+      if (currentGroup.length > 0) groups.push(currentGroup);
+      return groups;
+    }
+
+    async function handleTournamentMatchCompletion(torneoId, matchId) {
+      const allMatches = await db.select()
+        .from(partida)
+        .where(eq(partida.torneo_id, torneoId))
+        .orderBy(asc(partida.fecha));
+    
+      const groups = groupMatchesIntoRounds(allMatches);
+      if (groups.length === 0) return;
+    
+      const currentRound = groups[groups.length - 1];
+      const allCompleted = currentRound.every(m => m.estado === 'finalizada');
+    
+      if (allCompleted) {
+        const winners = currentRound.map(m => m.ganador_id).filter(Boolean);
+        console.log("Ganadores de la ronda: ", winners);
+        if (winners.length === 1) { 
+          const [torneoData] = await db.select().from(torneo).where(eq(torneo.id, torneoId));
+          await db.update(torneo)
+            .set({ ganador_id: winners[0] })
+            .where(eq(torneo.id, torneoId));
+
+          const [usuario] = await db.select().from(user).where(eq(user.id, winners[0]));
+          
+          const premio = Number(torneoData.premio);
+          if (isNaN(premio)) throw new Error("Invalid premio value");
+
+          await db.update(user)
+            .set({ adrenacoins: usuario.adrenacoins + premio})
+            .where(eq(user.id, winners[0]));
+        } else { 
+          const nextRoundFecha = new Date(Date.now() + 1 * 60 * 1000);
+          for (let i = 0; i < winners.length; i += 2) {
+            const jugador1 = winners[i];
+            const jugador2 = winners[i + 1];
+            if (jugador1 && jugador2) {
+              const plantilla1 = await getPlantilla(jugador1);
+              const plantilla2 = await getPlantilla(jugador2);
+              await db.insert(partida).values({
+                user1_id: jugador1,
+                user2_id: jugador2,
+                turno: jugador1,
+                plantilla1_id: plantilla1.plantillaId,
+                plantilla2_id: plantilla2.plantillaId,
+                estado: 'programada',
+                fecha: nextRoundFecha,
+                torneo_id: torneoId,
+              });
+            } else if (jugador1) { 
+              await db.insert(partida).values({
+                user1_id: jugador1,
+                estado: 'finalizada',
+                ganador_id: jugador1,
+                fecha: nextRoundFecha,
+                torneo_id: torneoId,
+              });
+            }
+          }
+        }
+      }
+    }
     
     setInterval(async () => {
         try {
-            const now = new Date();
+            const nowUTC = new Date(new Date().toISOString());
             const matches = await db.select()
-                .from(partida)
-                .where(and(
-                    eq(partida.estado, 'scheduled'),
-                    lte(partida.fecha, now)
-                ));
-
+              .from(partida)
+              .where(and(
+                eq(partida.estado, 'programada'),
+                lte(partida.fecha, nowUTC)
+              ));
+            console.log("Partidas programadas: ", matches);
             for (const match of matches) {
                 const user1Id = String(match.user1_id);
                 const user2Id = String(match.user2_id);
@@ -883,21 +966,22 @@ export function configureWebSocket(httpServer) {
       
       let ganador;
       if (valor_j1 === valor_j2) {
-          ganador = 'draw';
+          ganador = null;
       } else if (valor_j1 > valor_j2) {
           ganador = match.currentRoundData.starter;
       } else {
           ganador = Object.keys(match.players).find(id => id !== match.currentRoundData.starter);
       }
-
-      match.players[ganador].score++;  
-    
-      await db.update(ronda)
-      .set({ ganador_id : ganador })
-      .where(and(
-        eq(ronda.partida_id, matchId),
-        eq(ronda.numero_ronda, match.currentRound)
-      ));
+      
+      if(ganador != null) {
+        match.players[ganador].score++;  
+        await db.update(ronda)
+        .set({ ganador_id : ganador })
+        .where(and(
+          eq(ronda.partida_id, matchId),
+          eq(ronda.numero_ronda, match.currentRound)
+        ));
+      }  
     
       io.to(match.roomId).emit('round_result', {
         ganador,
@@ -924,10 +1008,16 @@ export function configureWebSocket(httpServer) {
         .where(eq(partida.id, matchId));
   
       if (playerIds.some(id => match.players[id].score >= 6) || match.currentRound >= 11) {
-        const ganadorId = playerIds.reduce((maxId, id) =>
-          match.players[id].score > match.players[maxId].score ? id : maxId,
-          playerIds[0]
+        const maxScore = Math.max(
+          ...playerIds.map(id => match.players[id].score)
         );
+
+        const topIds = playerIds.filter(
+          id => match.players[id].score === maxScore
+        );
+
+        const ganadorId = topIds.length === 1 ? topIds[0] : null;
+
         finishMatch(match.matchId, ganadorId);
       } else {
         match.currentRound++;
@@ -958,11 +1048,15 @@ export function configureWebSocket(httpServer) {
             estado: 'finalizada',
             puntuacion1: puntuacion1,
             puntuacion2: puntuacion2,
-            ganador_id: winnerId === 'draw' ? null : Number(winnerId)
+            ganador_id: winnerId === null ? null : Number(winnerId)
         })
         .where(eq(partida.id, matchId));
+
+        if (dbMatch.torneo_id) {
+          await handleTournamentMatchCompletion(dbMatch.torneo_id, matchId);
+        }
     
-        const isDraw = winnerId === 'draw';
+        const isDraw = winnerId === null;
         const puntosChange = calculateRatingChange(
           player1Id,
           player2Id,

@@ -342,9 +342,12 @@ export async function empezarTorneo(req, res, next) {
         if (!userId) return next(new Error("Token inválido o usuario no autenticado"));
 
         const torneoData = await validarInicioTorneo(userId, torneo_id);
-        const participantes = await obtenerDetallesParticipantes(id);
+        const participantesRaw = await contarParticipantes(torneo_id);
+        const participantesIds = participantesRaw.map(p => p.user_id);
         await marcarTorneoEnCurso(torneo_id);
-        await realizarEmparejamientoInicial(torneo_id, participantes);
+        await realizarEmparejamientoInicial(torneo_id, participantesIds);
+
+        console.log("Torneo iniciado con éxito:", torneoData);
 
         return sendResponse(req, res, { 
             message: 'Torneo iniciado correctamente',
@@ -369,40 +372,82 @@ export async function finalizarTorneo(req, res, next) {
     }
 }
 
-async function realizarEmparejamientoInicial(torneoId, participantes) {
-    const parejas = realizarEmparejamiento(participantes);
-    for(const pareja of parejas) {
-        insertarPartida(pareja, torneoId);
+export async function obtenerPartidasTorneo(req, res, next) {
+    try {
+        const token = await getDecodedToken(req);
+        const userId = token.id;
+        const { id } = req.params;
+
+        const torneoIdNumber = Number(id);
+        if (isNaN(torneoIdNumber)) {
+            return next(new BadRequest('ID de torneo inválido'));
+        }
+
+        const [torneoExistente] = await db.select()
+            .from(torneo)
+            .where(eq(torneo.id, torneoIdNumber));
+        
+        if (!torneoExistente) {
+            return next(new NotFound('Torneo no encontrado'));
+        }
+
+        const [participacion] = await db.select()
+            .from(participacionTorneo)
+            .where(and(
+                eq(participacionTorneo.user_id, Number(userId)), 
+                eq(participacionTorneo.torneo_id, torneoIdNumber)
+            ));
+
+        if (!participacion) {
+            return next(new Forbidden('No estás participando en este torneo'));
+        }
+
+        const allMatches = await db.select()
+            .from(partida)
+            .where(eq(partida.torneo_id, torneoIdNumber));
+
+        return sendResponse(req, res, { 
+            data: allMatches.map(objectToJson)
+        });
+    } catch (error) {
+        return next(error);
     }
 }
 
-async function  realizarEmparejamiento(participantes){
-    const numParticipantes = participantes.length;
+async function realizarEmparejamientoInicial(torneoId, participantes) {
+    const parejas = await realizarEmparejamiento(participantes);
+    for(const pareja of parejas) {
+        await insertarPartida(pareja, torneoId);
+        console.log(`Partida creada entre ${pareja[0]} y ${pareja[1]}`);
+    }
+}
+
+async function realizarEmparejamiento(participantesIds) {
+    const numParticipantes = participantesIds.length;
     if (numParticipantes % 2 !== 0) {
-        throw new Error("El número de participantes debe ser par para realizar el emparejamiento");
+        throw new BadRequest('Número de participantes debe ser par');
     }
-    const participantesMezclados = [...participantes].sort(() => Math.random() - 0.5);
-    const parejas = [];
-    for (let i = 0; i < participantesMezclados.length; i += 2) {
-        const pareja = {
-            jugador1: participantesMezclados[i],
-            jugador2: participantesMezclados[i + 1]
-        };
-        parejas.push(pareja);
-    }
-    return parejas;
+    
+    const participantesMezclados = [...participantesIds].sort(() => Math.random() - 0.5);
+    return participantesMezclados.reduce((acc, _, i, arr) => {
+        if (i % 2 === 0) acc.push(arr.slice(i, i + 2));
+        return acc;
+    }, []);
 }
 
 async function insertarPartida(parejas, torneoId) {
-    const { jugador1, jugador2 } = parejas;
+    const [jugador1, jugador2] = parejas.map(Number);
+    const plantilla1 = await getPlantilla(jugador1);
+    const plantilla2 = await getPlantilla(jugador2);
+    
     await db.insert(partida).values({
         turno: jugador1,
         user1_id: jugador1,
         user2_id: jugador2,
-        plantilla1_id: getPlantilla(jugador1),
-        plantilla2_id: getPlantilla(jugador2),
+        plantilla1_id: plantilla1.plantillaId,
+        plantilla2_id: plantilla2.plantillaId,
         estado: 'programada',
-        fecha: new Date(Date.now() + 5 * 60 * 1000), 
+        fecha: new Date(Date.now() + 1 * 60 * 1000), 
         torneo_id: torneoId,
     });
 }
