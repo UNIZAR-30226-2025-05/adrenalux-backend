@@ -1,4 +1,12 @@
 asyncapi: 2.6.0
+id: 'urn:adrenalux:ws-api'
+defaultContentType: application/json
+tags:
+  - name: intercambio
+    description: Operaciones de intercambio de cartas
+  - name: partida
+    description: Operaciones de partidas y matchmaking
+
 info:
   title: Adrenalux WebSocket API
   version: 1.0.0
@@ -14,321 +22,176 @@ info:
 servers:
   production:
     url: wss://adrenalux.duckdns.org/socket.io
+    protocol: wss
     description: Servidor WebSocket de producción.
   local:
     url: ws://localhost/socket.io
+    protocol: ws
     description: Servidor WebSocket local.
 
 channels:
   /request_match:
     description: Canal para solicitud de partida
     subscribe:
+      operationId: requestMatchSubscribe
       message:
         $ref: '#/components/messages/RequestMatch'
     publish:
+      operationId: requestMatchResponsePublish
       message:
         $ref: '#/components/messages/RequestMatchResponse'
 
   /accept_match:
     description: Canal para aceptación de partida
     subscribe:
+      operationId: acceptMatchSubscribe
       message:
         $ref: '#/components/messages/AcceptMatch'
     publish:
+      operationId: acceptMatchResponsePublish
       message:
         $ref: '#/components/messages/AcceptMatchResponse'
 
   /decline_match:
     description: Canal para rechazo de partida
     subscribe:
+      operationId: declineMatchSubscribe
       message:
         $ref: '#/components/messages/DeclineMatch'
     publish:
+      operationId: declineMatchResponsePublish
       message:
         $ref: '#/components/messages/DeclineMatchResponse'
 
   /join_matchmaking:
     description: Canal para unirse al matchmaking
     subscribe:
+      operationId: joinMatchmakingSubscribe
       message:
         $ref: '#/components/messages/JoinMatchmaking'
     publish:
+      operationId: joinMatchmakingResponsePublish
       message:
         $ref: '#/components/messages/JoinMatchmakingResponse'
 
   /leave_matchmaking:
     description: Canal para salir del matchmaking
     subscribe:
+      operationId: leaveMatchmakingSubscribe
       message:
         $ref: '#/components/messages/LeaveMatchmaking'
     publish:
+      operationId: leaveMatchmakingResponsePublish
       message:
         $ref: '#/components/messages/LeaveMatchmakingResponse'
 
   /match_found:
     description: Canal para notificación de partida encontrada
     publish:
+      operationId: matchFoundPublish
       message:
         $ref: '#/components/messages/MatchFound'
 
   /round_start:
     description: Canal para inicio de ronda
     publish:
+      operationId: roundStartPublish
       message:
         $ref: '#/components/messages/RoundStart'
 
   /select_card:
     description: Canal para selección de carta en partida
     subscribe:
+      operationId: selectCardSubscribe
       message:
         $ref: '#/components/messages/SelectCard'
 
   /opponent_selection:
     description: Canal para notificación de selección del oponente
     publish:
+      operationId: opponentSelectionPublish
       message:
         $ref: '#/components/messages/OpponentSelection'
 
   /select_response:
     description: Canal para selección de respuesta en partida
     subscribe:
+      operationId: selectResponseSubscribe
       message:
         $ref: '#/components/messages/SelectResponse'
 
   /round_result:
     description: Canal para resultado de ronda
     publish:
+      operationId: roundResultPublish
       message:
         $ref: '#/components/messages/RoundResult'
 
   /match_ended:
     description: Canal para finalización de partida
     publish:
+      operationId: matchEndedPublish
       message:
         $ref: '#/components/messages/MatchEnded'
 
   /request_pause:
     description: Canal para solicitar pausa de partida
     subscribe:
+      operationId: requestPauseSubscribe
       message:
         $ref: '#/components/messages/RequestPause'
     publish:
+      operationId: requestPauseResponsePublish
       message:
         $ref: '#/components/messages/RequestPauseResponse'
 
   /match_paused:
     description: Canal para notificación de partida pausada
     publish:
+      operationId: matchPausedPublish
       message:
         $ref: '#/components/messages/MatchPaused'
 
   /request_resume:
     description: Canal para solicitar reanudación de partida
     subscribe:
+      operationId: requestResumeSubscribe
       message:
         $ref: '#/components/messages/RequestResume'
     publish:
+      operationId: requestResumeResponsePublish
       message:
         $ref: '#/components/messages/RequestResumeResponse'
 
   /match_resumed:
     description: Canal para notificación de partida reanudada
     publish:
+      operationId: matchResumedPublish
       message:
         $ref: '#/components/messages/MatchResumed'
 
   /surrender:
     description: Canal para rendición en partida
     subscribe:
+      operationId: surrenderSubscribe
       message:
         $ref: '#/components/messages/Surrender'
     publish:
+      operationId: surrenderResponsePublish
       message:
         $ref: '#/components/messages/SurrenderResponse'
 
   /notification:
     description: Canal para notificaciones generales
     publish:
+      operationId: notificationPublish
       message:
         $ref: '#/components/messages/Notification'
-
+        
 components:
   messages:
-    RequestExchange:
-      name: RequestExchange
-      title: Solicitud de intercambio
-      summary: Mensaje para solicitar un intercambio de cartas
-      payload:
-        type: object
-        properties:
-          receptorId:
-            type: string
-            description: ID del usuario receptor
-          solicitanteUsername:
-            type: string
-            description: Nombre de usuario del solicitante
-        required: [receptorId, solicitanteUsername]
-
-  RequestExchangeResponse:
-      name: RequestExchangeResponse
-      title: Respuesta de solicitud de intercambio
-      summary: Mensaje de respuesta a solicitud de intercambio
-      payload:
-        type: object
-        properties:
-          exchangeId:
-            type: string
-            description: ID único del intercambio
-          solicitanteId:
-            type: string
-            description: ID del solicitante
-          solicitanteUsername:
-            type: string
-            description: Nombre de usuario del solicitante
-          timestamp:
-            type: string
-            format: date-time
-            description: Marca de tiempo del evento
-
-  AcceptExchange:
-      name: AcceptExchange
-      title: Aceptación de intercambio
-      summary: Mensaje para aceptar un intercambio
-      payload:
-        type: object
-        properties:
-          exchangeId:
-            type: string
-            description: ID único del intercambio
-        required: [exchangeId]
-
-  AcceptExchangeResponse:
-      name: AcceptExchangeResponse
-      title: Respuesta de aceptación de intercambio
-      summary: Mensaje de respuesta a aceptación de intercambio
-      payload:
-        type: object
-        properties:
-          exchangeId:
-            type: string
-            description: ID único del intercambio
-          roomId:
-            type: string
-            description: ID de la sala de intercambio
-          solicitanteUsername:
-            type: string
-            description: Nombre de usuario del solicitante
-          receptorUsername:
-            type: string
-            description: Nombre de usuario del receptor
-
-  SelectCards:
-      name: SelectCards
-      title: Selección de cartas
-      summary: Mensaje para seleccionar cartas en un intercambio
-      payload:
-        type: object
-        properties:
-          exchangeId:
-            type: string
-            description: ID único del intercambio
-          cardId:
-            type: string
-            description: ID de la carta seleccionada
-        required: [exchangeId, cardId]
-
-  SelectCardsResponse:
-      name: SelectCardsResponse
-      title: Respuesta de selección de cartas
-      summary: Mensaje de respuesta a selección de cartas
-      payload:
-        type: object
-        properties:
-          exchangeId:
-            type: string
-            description: ID único del intercambio
-          userId:
-            type: string
-            description: ID del usuario que seleccionó la carta
-          card:
-            type: object
-            description: Detalles de la carta seleccionada
-
-  ConfirmExchange:
-      name: ConfirmExchange
-      title: Confirmación de intercambio
-      summary: Mensaje para confirmar un intercambio
-      payload:
-        type: object
-        properties:
-          exchangeId:
-            type: string
-            description: ID único del intercambio
-        required: [exchangeId]
-
-  ConfirmExchangeResponse:
-      name: ConfirmExchangeResponse
-      title: Respuesta de confirmación de intercambio
-      summary: Mensaje de respuesta a confirmación de intercambio
-      payload:
-        type: object
-        properties:
-          exchangeId:
-            type: string
-            description: ID único del intercambio
-          confirmations:
-            type: object
-            additionalProperties:
-              type: boolean
-            description: Estado de las confirmaciones de los participantes
-
-  ExchangeCompleted:
-      name: ExchangeCompleted
-      title: Intercambio completado
-      summary: Mensaje de notificación de intercambio completado
-      payload:
-        type: object
-        properties:
-          exchangeId:
-            type: string
-            description: ID único del intercambio
-          message:
-            type: string
-            description: Mensaje de confirmación
-          user1Card:
-            type: string
-            description: ID de la carta del usuario 1
-          user2Card:
-            type: string
-            description: ID de la carta del usuario 2
-
-  CancelExchange:
-      name: CancelExchange
-      title: Cancelación de intercambio
-      summary: Mensaje para cancelar un intercambio
-      payload:
-        type: object
-        properties:
-          exchangeId:
-            type: string
-            description: ID único del intercambio
-        required: [exchangeId]
-
-  CancelExchangeResponse:
-      name: CancelExchangeResponse
-      title: Respuesta de cancelación de intercambio
-      summary: Mensaje de respuesta a cancelación de intercambio
-      payload:
-        type: object
-        properties:
-          exchangeId:
-            type: string
-            description: ID único del intercambio
-          message:
-            type: string
-            description: Mensaje de confirmación
-
-  RequestMatch:
+    RequestMatch:
+      messageId: requestMatch
       name: RequestMatch
       title: Solicitud de partida
       summary: Mensaje para solicitar una partida
@@ -337,13 +200,12 @@ components:
         properties:
           receptorId:
             type: string
-            description: ID del usuario receptor
           solicitanteUsername:
             type: string
-            description: Nombre de usuario del solicitante
         required: [receptorId, solicitanteUsername]
 
-  RequestMatchResponse:
+    RequestMatchResponse:
+      messageId: requestMatchResponse
       name: RequestMatchResponse
       title: Respuesta de solicitud de partida
       summary: Mensaje de respuesta a solicitud de partida
@@ -352,19 +214,16 @@ components:
         properties:
           matchRequestId:
             type: string
-            description: ID único de la solicitud de partida
           solicitanteId:
             type: string
-            description: ID del solicitante
           solicitanteUsername:
             type: string
-            description: Nombre de usuario del solicitante
           timestamp:
             type: string
             format: date-time
-            description: Marca de tiempo del evento
 
-  AcceptMatch:
+    AcceptMatch:
+      messageId: acceptMatch
       name: AcceptMatch
       title: Aceptación de partida
       summary: Mensaje para aceptar una partida
@@ -373,10 +232,10 @@ components:
         properties:
           matchRequestId:
             type: string
-            description: ID único de la solicitud de partida
         required: [matchRequestId]
 
-  AcceptMatchResponse:
+    AcceptMatchResponse:
+      messageId: acceptMatchResponse
       name: AcceptMatchResponse
       title: Respuesta de aceptación de partida
       summary: Mensaje de respuesta a aceptación de partida
@@ -385,9 +244,9 @@ components:
         properties:
           matchId:
             type: string
-            description: ID único de la partida creada
 
-  DeclineMatch:
+    DeclineMatch:
+      messageId: declineMatch
       name: DeclineMatch
       title: Rechazo de partida
       summary: Mensaje para rechazar una partida
@@ -396,10 +255,10 @@ components:
         properties:
           matchRequestId:
             type: string
-            description: ID único de la solicitud de partida
         required: [matchRequestId]
 
-  DeclineMatchResponse:
+    DeclineMatchResponse:
+      messageId: declineMatchResponse
       name: DeclineMatchResponse
       title: Respuesta de rechazo de partida
       summary: Mensaje de respuesta a rechazo de partida
@@ -408,12 +267,11 @@ components:
         properties:
           matchRequestId:
             type: string
-            description: ID único de la solicitud de partida
           message:
             type: string
-            description: Mensaje de confirmación
 
-  JoinMatchmaking:
+    JoinMatchmaking:
+      messageId: joinMatchmaking
       name: JoinMatchmaking
       title: Unirse al matchmaking
       summary: Mensaje para unirse al sistema de matchmaking
@@ -421,7 +279,8 @@ components:
         type: object
         properties: {}
 
-  JoinMatchmakingResponse:
+    JoinMatchmakingResponse:
+      messageId: joinMatchmakingResponse
       name: JoinMatchmakingResponse
       title: Respuesta de unión al matchmaking
       summary: Mensaje de respuesta a unión al matchmaking
@@ -430,9 +289,9 @@ components:
         properties:
           inQueue:
             type: boolean
-            description: Indica si el usuario está en cola
 
-  LeaveMatchmaking:
+    LeaveMatchmaking:
+      messageId: leaveMatchmaking
       name: LeaveMatchmaking
       title: Salir del matchmaking
       summary: Mensaje para salir del sistema de matchmaking
@@ -440,7 +299,8 @@ components:
         type: object
         properties: {}
 
-  LeaveMatchmakingResponse:
+    LeaveMatchmakingResponse:
+      messageId: leaveMatchmakingResponse
       name: LeaveMatchmakingResponse
       title: Respuesta de salida del matchmaking
       summary: Mensaje de respuesta a salida del matchmaking
@@ -449,9 +309,9 @@ components:
         properties:
           inQueue:
             type: boolean
-            description: Indica si el usuario está en cola
 
-  MatchFound:
+    MatchFound:
+      messageId: matchFound
       name: MatchFound
       title: Partida encontrada
       summary: Mensaje de notificación de partida encontrada
@@ -460,14 +320,13 @@ components:
         properties:
           matchId:
             type: string
-            description: ID único de la partida
           opponentPuntos:
             type: object
             additionalProperties:
               type: number
-            description: Puntos de clasificación de los oponentes
 
-  RoundStart:
+    RoundStart:
+      messageId: roundStart
       name: RoundStart
       title: Inicio de ronda
       summary: Mensaje de notificación de inicio de ronda
@@ -476,16 +335,14 @@ components:
         properties:
           roundNumber:
             type: integer
-            description: Número de la ronda
           starter:
             type: string
-            description: ID del jugador que inicia la ronda
           phase:
             type: string
-            enum: ['selection', 'response']
-            description: Fase de la ronda
+            enum: [selection, response]
 
-  SelectCard:
+    SelectCard:
+      messageId: selectCard
       name: SelectCard
       title: Selección de carta
       summary: Mensaje para seleccionar una carta en partida
@@ -494,14 +351,13 @@ components:
         properties:
           cartaId:
             type: string
-            description: ID de la carta seleccionada
           skill:
             type: string
-            enum: ['ataque', 'control', 'defensa']
-            description: Habilidad seleccionada
+            enum: [ataque, control, defensa]
         required: [cartaId, skill]
 
-  OpponentSelection:
+    OpponentSelection:
+      messageId: opponentSelection
       name: OpponentSelection
       title: Selección del oponente
       summary: Mensaje de notificación de selección del oponente
@@ -510,16 +366,14 @@ components:
         properties:
           skill:
             type: string
-            enum: ['ataque', 'control', 'defensa']
-            description: Habilidad seleccionada por el oponente
+            enum: [ataque, control, defensa]
           carta:
             type: object
-            description: Carta seleccionada por el oponente
           timer:
             type: integer
-            description: Tiempo restante para responder
 
-  SelectResponse:
+    SelectResponse:
+      messageId: selectResponse
       name: SelectResponse
       title: Selección de respuesta
       summary: Mensaje para seleccionar respuesta en partida
@@ -528,14 +382,13 @@ components:
         properties:
           cartaId:
             type: string
-            description: ID de la carta seleccionada
           skill:
             type: string
-            enum: ['ataque', 'control', 'defensa']
-            description: Habilidad seleccionada
+            enum: [ataque, control, defensa]
         required: [cartaId, skill]
 
-  RoundResult:
+    RoundResult:
+      messageId: roundResult
       name: RoundResult
       title: Resultado de ronda
       summary: Mensaje de notificación de resultado de ronda
@@ -544,32 +397,26 @@ components:
         properties:
           ganador:
             type: string
-            description: ID del ganador de la ronda (null si empate)
           scores:
             type: object
             additionalProperties:
               type: integer
-            description: Puntuación actual de los jugadores
           detalles:
             type: object
             properties:
               jugador1:
                 type: string
-                description: ID del jugador 1
               carta_j1:
                 type: object
-                description: Carta del jugador 1
               skill_j1:
                 type: string
-                description: Habilidad usada por el jugador 1
               carta_j2:
                 type: object
-                description: Carta del jugador 2
               skill_j2:
                 type: string
-                description: Habilidad usada por el jugador 2
 
-  MatchEnded:
+    MatchEnded:
+      messageId: matchEnded
       name: MatchEnded
       title: Partida finalizada
       summary: Mensaje de notificación de finalización de partida
@@ -578,22 +425,19 @@ components:
         properties:
           winnerId:
             type: string
-            description: ID del ganador (null si empate)
           isDraw:
             type: boolean
-            description: Indica si la partida terminó en empate
           scores:
             type: object
             additionalProperties:
               type: integer
-            description: Puntuación final de los jugadores
           puntosChange:
             type: object
             additionalProperties:
               type: integer
-            description: Cambio en los puntos de clasificación
 
-  RequestPause:
+    RequestPause:
+      messageId: requestPause
       name: RequestPause
       title: Solicitud de pausa
       summary: Mensaje para solicitar pausar una partida
@@ -602,10 +446,10 @@ components:
         properties:
           matchId:
             type: string
-            description: ID de la partida
         required: [matchId]
 
-  RequestPauseResponse:
+    RequestPauseResponse:
+      messageId: requestPauseResponse
       name: RequestPauseResponse
       title: Respuesta de solicitud de pausa
       summary: Mensaje de respuesta a solicitud de pausa
@@ -614,9 +458,9 @@ components:
         properties:
           matchId:
             type: string
-            description: ID de la partida
 
-  MatchPaused:
+    MatchPaused:
+      messageId: matchPaused
       name: MatchPaused
       title: Partida pausada
       summary: Mensaje de notificación de partida pausada
@@ -625,9 +469,9 @@ components:
         properties:
           matchId:
             type: string
-            description: ID de la partida
 
-  RequestResume:
+    RequestResume:
+      messageId: requestResume
       name: RequestResume
       title: Solicitud de reanudación
       summary: Mensaje para solicitar reanudar una partida
@@ -636,10 +480,10 @@ components:
         properties:
           matchId:
             type: string
-            description: ID de la partida
         required: [matchId]
 
-  RequestResumeResponse:
+    RequestResumeResponse:
+      messageId: requestResumeResponse
       name: RequestResumeResponse
       title: Respuesta de solicitud de reanudación
       summary: Mensaje de respuesta a solicitud de reanudación
@@ -648,14 +492,13 @@ components:
         properties:
           matchId:
             type: string
-            description: ID de la partida
           confirmations:
             type: object
             additionalProperties:
               type: boolean
-            description: Estado de las confirmaciones
 
-  MatchResumed:
+    MatchResumed:
+      messageId: matchResumed
       name: MatchResumed
       title: Partida reanudada
       summary: Mensaje de notificación de partida reanudada
@@ -664,12 +507,10 @@ components:
         properties:
           matchId:
             type: string
-            description: ID de la partida
           scores:
             type: object
             additionalProperties:
               type: integer
-            description: Puntuación actual
           usedCards:
             type: object
             properties:
@@ -677,26 +518,21 @@ components:
                 type: array
                 items:
                   type: object
-                  description: Cartas usadas por el jugador 1
               user2:
                 type: array
                 items:
                   type: object
-                  description: Cartas usadas por el jugador 2
           plantilla1:
             type: string
-            description: ID de la plantilla del jugador 1
           plantilla2:
             type: string
-            description: ID de la plantilla del jugador 2
           user1Id:
             type: string
-            description: ID del jugador 1
           user2Id:
             type: string
-            description: ID del jugador 2
 
-  Surrender:
+    Surrender:
+      messageId: surrender
       name: Surrender
       title: Rendición
       summary: Mensaje para rendirse en una partida
@@ -705,10 +541,10 @@ components:
         properties:
           matchId:
             type: string
-            description: ID de la partida
         required: [matchId]
 
-  SurrenderResponse:
+    SurrenderResponse:
+      messageId: surrenderResponse
       name: SurrenderResponse
       title: Respuesta de rendición
       summary: Mensaje de respuesta a rendición
@@ -717,9 +553,9 @@ components:
         properties:
           matchId:
             type: string
-            description: ID de la partida
 
-Notification:
+    Notification:
+      messageId: notification
       name: Notification
       title: Notificación
       summary: Mensaje de notificación general
@@ -728,17 +564,13 @@ Notification:
         properties:
           message:
             type: string
-            description: Mensaje de la notificación
           data:
             type: object
             properties:
               requestId:
                 type: string
-                description: ID de la solicitud
               type:
                 type: string
-                description: Tipo de notificación
               timestamp:
                 type: string
                 format: date-time
-                description: Marca de tiempo
