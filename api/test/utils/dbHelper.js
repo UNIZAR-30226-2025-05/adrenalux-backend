@@ -128,22 +128,49 @@ export const seedTestData = async () => {
     },
   ]);
 
+  await plantillaHelper.create([
+    {
+      id: 1,
+      user_id: user1.id,
+      nombre: 'Plantilla 1',
+    },
+    {
+      id: 2,
+      user_id: user2.id,
+      nombre: 'Plantilla 2',
+    },
+    {
+      id: 3,
+      user_id: user3.id,
+      nombre: 'Plantilla 3',
+    },
+  ]);
+
   // Creamos partidas ficticias para que tengan stats
   await partidaHelper.create([
     {
-      id_jugador_1: user1.id,
-      id_jugador_2: user2.id,
+      turno: 1,
+      user1_id: user1.id,
+      user2_id: user2.id,
       ganador_id: user1.id,
+      plantilla1_id: 1,
+      plantilla2_id: 2,
     },
     {
-      id_jugador_1: user2.id,
-      id_jugador_2: user3.id,
+      turno: 2,
+      user1_id: user2.id,
+      user2_id: user3.id,
       ganador_id: user2.id,
+      plantilla1_id: 2,
+      plantilla2_id: 3,
     },
     {
-      id_jugador_1: user1.id,
-      id_jugador_2: user3.id,
+      turno: 3,
+      user1_id: user1.id,
+      user2_id: user3.id,
       ganador_id: user1.id,
+      plantilla1_id: 1,
+      plantilla2_id: 3,
     },
   ]);
 

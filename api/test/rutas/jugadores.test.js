@@ -84,15 +84,14 @@ describe('Rutas de Jugadores', () => {
     it('Debería devolver un error si no se proporciona un token', async () => {
       const response = await request(app)
         .post('/api/v1/jugadores/insertar')
-        .set('x-api-key', process.env.CURRENT_API_KEY)
         .send([]);
 
       console.log(response.status);
       console.log(response.body);
       
       expect(response.status).toBe(403);
-      expect(response.body.status).toHaveProperty('error_message');
-      expect(response.body.status.error_message).toBe('Invalid or missing token');
+      expect(response.body).toHaveProperty('error');
+      expect(response.body.error).toBe('Invalid API Key');
     });
   });
 

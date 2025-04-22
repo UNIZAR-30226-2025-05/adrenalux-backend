@@ -20,7 +20,7 @@ export const partida = pgTable('partida', {
     .references(() => user.id),
   user2_id: integer('usuario2')
     .notNull()
-    .references(() => plantilla.id),
+    .references(() => user.id),
   plantilla1_id: integer('plantilla1')
     .notNull()
     .references(() => plantilla.id),
