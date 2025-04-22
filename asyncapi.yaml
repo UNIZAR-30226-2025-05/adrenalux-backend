@@ -20,190 +20,130 @@ servers:
     description: Servidor WebSocket local.
 
 channels:
-  /request_exchange:
-    description: Canal para solicitud de intercambio de cartas
-    subscribe:
-      message:
-        $ref: '#/components/messages/RequestExchange'
-    publish:
-      message:
-        $ref: '#/components/messages/RequestExchangeResponse'
-
-  /accept_exchange:
-    description: Canal para aceptación de intercambio
-    subscribe:
-      message:
-        $ref: '#/components/messages/AcceptExchange'
-    publish:
-      message:
-        $ref: '#/components/messages/AcceptExchangeResponse'
-
-  /select_cards:
-    description: Canal para selección de cartas
-    subscribe:
-      message:
-        $ref: '#/components/messages/SelectCards'
-    publish:
-      message:
-        $ref: '#/components/messages/SelectCardsResponse'
-
-  /confirm_exchange:
-    description: Canal para confirmación de intercambio
-    subscribe:
-      message:
-        $ref: '#/components/messages/ConfirmExchange'
-    publish:
-      message:
-        $ref: '#/components/messages/ConfirmExchangeResponse'
-
-  /exchange_completed:
-    description: Canal para notificación de intercambio completado
-    publish:
-      message:
-        $ref: '#/components/messages/ExchangeCompleted'
-
-  /cancel_exchange:
-    description: Canal para cancelación de intercambio
-    subscribe:
-      message:
-        $ref: '#/components/messages/CancelExchange'
-    publish:
-      message:
-        $ref: '#/components/messages/CancelExchangeResponse'
-
   /request_match:
-    address: /request_match
     description: Canal para solicitud de partida
-    messages:
-      RequestMatch:
+    subscribe:
+      message:
         $ref: '#/components/messages/RequestMatch'
-      RequestMatchResponse:
+    publish:
+      message:
         $ref: '#/components/messages/RequestMatchResponse'
 
   /accept_match:
-    address: /accept_match
     description: Canal para aceptación de partida
-    messages:
-      AcceptMatch:
+    subscribe:
+      message:
         $ref: '#/components/messages/AcceptMatch'
-      AcceptMatchResponse:
+    publish:
+      message:
         $ref: '#/components/messages/AcceptMatchResponse'
 
   /decline_match:
-    address: /decline_match
     description: Canal para rechazo de partida
-    messages:
-      DeclineMatch:
+    subscribe:
+      message:
         $ref: '#/components/messages/DeclineMatch'
-      DeclineMatchResponse:
+    publish:
+      message:
         $ref: '#/components/messages/DeclineMatchResponse'
 
   /join_matchmaking:
-    address: /join_matchmaking
     description: Canal para unirse al matchmaking
-    messages:
-      JoinMatchmaking:
+    subscribe:
+      message:
         $ref: '#/components/messages/JoinMatchmaking'
-      JoinMatchmakingResponse:
+    publish:
+      message:
         $ref: '#/components/messages/JoinMatchmakingResponse'
 
   /leave_matchmaking:
-    address: /leave_matchmaking
     description: Canal para salir del matchmaking
-    messages:
-      LeaveMatchmaking:
+    subscribe:
+      message:
         $ref: '#/components/messages/LeaveMatchmaking'
-      LeaveMatchmakingResponse:
+    publish:
+      message:
         $ref: '#/components/messages/LeaveMatchmakingResponse'
 
   /match_found:
-    address: /match_found
     description: Canal para notificación de partida encontrada
-    messages:
-      MatchFound:
+    publish:
+      message:
         $ref: '#/components/messages/MatchFound'
 
   /round_start:
-    address: /round_start
     description: Canal para inicio de ronda
-    messages:
-      RoundStart:
+    publish:
+      message:
         $ref: '#/components/messages/RoundStart'
 
   /select_card:
-    address: /select_card
     description: Canal para selección de carta en partida
-    messages:
-      SelectCard:
+    subscribe:
+      message:
         $ref: '#/components/messages/SelectCard'
 
   /opponent_selection:
-    address: /opponent_selection
     description: Canal para notificación de selección del oponente
-    messages:
-      OpponentSelection:
+    publish:
+      message:
         $ref: '#/components/messages/OpponentSelection'
 
   /select_response:
-    address: /select_response
     description: Canal para selección de respuesta en partida
-    messages:
-      SelectResponse:
+    subscribe:
+      message:
         $ref: '#/components/messages/SelectResponse'
 
   /round_result:
-    address: /round_result
     description: Canal para resultado de ronda
-    messages:
-      RoundResult:
+    publish:
+      message:
         $ref: '#/components/messages/RoundResult'
 
   /match_ended:
-    address: /match_ended
     description: Canal para finalización de partida
-    messages:
-      MatchEnded:
+    publish:
+      message:
         $ref: '#/components/messages/MatchEnded'
 
   /request_pause:
-    address: /request_pause
     description: Canal para solicitar pausa de partida
-    messages:
-      RequestPause:
+    subscribe:
+      message:
         $ref: '#/components/messages/RequestPause'
-      RequestPauseResponse:
+    publish:
+      message:
         $ref: '#/components/messages/RequestPauseResponse'
 
   /match_paused:
-    address: /match_paused
     description: Canal para notificación de partida pausada
-    messages:
-      MatchPaused:
+    publish:
+      message:
         $ref: '#/components/messages/MatchPaused'
 
   /request_resume:
-    address: /request_resume
     description: Canal para solicitar reanudación de partida
-    messages:
-      RequestResume:
+    subscribe:
+      message:
         $ref: '#/components/messages/RequestResume'
-      RequestResumeResponse:
+    publish:
+      message:
         $ref: '#/components/messages/RequestResumeResponse'
 
   /match_resumed:
-    address: /match_resumed
     description: Canal para notificación de partida reanudada
-    messages:
-      MatchResumed:
+    publish:
+      message:
         $ref: '#/components/messages/MatchResumed'
 
   /surrender:
-    address: /surrender
     description: Canal para rendición en partida
-    messages:
-      Surrender:
+    subscribe:
+      message:
         $ref: '#/components/messages/Surrender'
-      SurrenderResponse:
+    publish:
+      message:
         $ref: '#/components/messages/SurrenderResponse'
 
   /notification:
@@ -211,7 +151,6 @@ channels:
     publish:
       message:
         $ref: '#/components/messages/Notification'
-
 
 components:
   messages:
