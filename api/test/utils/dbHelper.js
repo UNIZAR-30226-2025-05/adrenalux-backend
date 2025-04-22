@@ -95,7 +95,7 @@ export function generateDummyFriendCode() {
 }
 
 export const seedTestData = async () => {
-  const [ testUser ] = await userHelper.create([
+  const [user1, user2, user3] = await userHelper.create([
     {
       username: 'admin',
       email: 'admin@example.com',
@@ -104,11 +104,90 @@ export const seedTestData = async () => {
       friend_code: generateDummyFriendCode(),
       name: 'Admin',
       lastname: 'User',
+      puntosClasificacion: 100,
+    },
+    {
+      username: 'test1',
+      email: 'test1@example.com',
+      password: 'hashed_password',
+      salt: 'salt123',
+      friend_code: generateDummyFriendCode(),
+      name: 'Test',
+      lastname: 'One',
+      puntosClasificacion: 150,
+    },
+    {
+      username: 'test2',
+      email: 'test2@example.com',
+      password: 'hashed_password',
+      salt: 'salt123',
+      friend_code: generateDummyFriendCode(),
+      name: 'Test',
+      lastname: 'Two',
+      puntosClasificacion: 50,
     },
   ]);
 
-  return { testUser };
+  // Creamos partidas ficticias para que tengan stats
+  await partidaHelper.create([
+    {
+      id_jugador_1: user1.id,
+      id_jugador_2: user2.id,
+      ganador_id: user1.id,
+    },
+    {
+      id_jugador_1: user2.id,
+      id_jugador_2: user3.id,
+      ganador_id: user2.id,
+    },
+    {
+      id_jugador_1: user1.id,
+      id_jugador_2: user3.id,
+      ganador_id: user1.id,
+    },
+  ]);
+
+  await amistadHelper.create([
+    {
+      id_usuario: user1.id,
+      id_amigo: user2.id,
+      estado: 'ACEPTADA',
+    },
+    {
+      id_usuario: user2.id,
+      id_amigo: user1.id,
+      estado: 'ACEPTADA',
+    },
+  ]);
+
+  await cartaHelper.create([
+    {
+      usuario_id: user1.id,
+      posicion: 'Delantero',
+      rareza: 'Normal',
+      equipo: 'FC Barcelona',
+      atributos: { ataque: 80, control: 60, defensa: 50 },
+    },
+    {
+      usuario_id: user1.id,
+      posicion: 'Defensa',
+      rareza: 'Luxury',
+      equipo: 'Real Madrid',
+      atributos: { ataque: 40, control: 70, defensa: 90 },
+    },
+    {
+      usuario_id: user2.id,
+      posicion: 'Centrocampista',
+      rareza: 'Megaluxury',
+      equipo: 'Real Madrid',
+      atributos: { ataque: 70, control: 85, defensa: 60 },
+    },
+  ]);
+
+
+  return { user1, user2, user3 };
 };
+
 
 export const getAuthToken = async () => {
   const testUserData = {
@@ -137,6 +216,16 @@ export const getAuthToken = async () => {
       password: hashedPassword,
       salt: salt,
     });
+  }
+
+  const checkUser = await db
+    .select()
+    .from(user)
+    .where(eq(user.email, testUserData.email))
+    .limit(1);
+
+  if (checkUser.length === 0) {
+    throw new Error('No se pudo insertar el usuario de test');
   }
 
   // Login para obtener el token

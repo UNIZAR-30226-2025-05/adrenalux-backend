@@ -1,12 +1,12 @@
 import request from 'supertest';  // Supertest para hacer las solicitudes HTTP
-import { app } from '../app.js'; // Tu instancia de Express
-import { db } from '../config/db.js';
-import { user } from '../db/schemas/user.js';
-import { carta } from '../db/schemas/carta.js';
+import { app } from '../../../app.js';
+import { db } from '../../../config/db.js';
+import { user } from '../../../db/schemas/user.js';
+import { carta } from '../../../db/schemas/carta.js';
 import { eq } from 'drizzle-orm';
-import { coleccion } from '../db/schemas/coleccion.js';
+import { coleccion } from '../../../db/schemas/coleccion.js';
 import { pbkdf2Sync } from 'crypto';
-import { getDecodedToken, verifyToken } from '../lib/jwt.js';
+import { getDecodedToken, verifyToken } from '../../../lib/jwt.js';
 
 const HASH_CONFIG = {
   iterations: 10000,
