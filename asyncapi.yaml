@@ -67,6 +67,157 @@ channels:
       ExchangeCompleted:
         $ref: '#/components/messages/ExchangeCompleted'
 
+  /cancel_exchange:
+    address: /cancel_exchange
+    description: Canal para cancelación de intercambio
+    messages:
+      CancelExchange:
+        $ref: '#/components/messages/CancelExchange'
+      CancelExchangeResponse:
+        $ref: '#/components/messages/CancelExchangeResponse'
+
+  /request_match:
+    address: /request_match
+    description: Canal para solicitud de partida
+    messages:
+      RequestMatch:
+        $ref: '#/components/messages/RequestMatch'
+      RequestMatchResponse:
+        $ref: '#/components/messages/RequestMatchResponse'
+
+  /accept_match:
+    address: /accept_match
+    description: Canal para aceptación de partida
+    messages:
+      AcceptMatch:
+        $ref: '#/components/messages/AcceptMatch'
+      AcceptMatchResponse:
+        $ref: '#/components/messages/AcceptMatchResponse'
+
+  /decline_match:
+    address: /decline_match
+    description: Canal para rechazo de partida
+    messages:
+      DeclineMatch:
+        $ref: '#/components/messages/DeclineMatch'
+      DeclineMatchResponse:
+        $ref: '#/components/messages/DeclineMatchResponse'
+
+  /join_matchmaking:
+    address: /join_matchmaking
+    description: Canal para unirse al matchmaking
+    messages:
+      JoinMatchmaking:
+        $ref: '#/components/messages/JoinMatchmaking'
+      JoinMatchmakingResponse:
+        $ref: '#/components/messages/JoinMatchmakingResponse'
+
+  /leave_matchmaking:
+    address: /leave_matchmaking
+    description: Canal para salir del matchmaking
+    messages:
+      LeaveMatchmaking:
+        $ref: '#/components/messages/LeaveMatchmaking'
+      LeaveMatchmakingResponse:
+        $ref: '#/components/messages/LeaveMatchmakingResponse'
+
+  /match_found:
+    address: /match_found
+    description: Canal para notificación de partida encontrada
+    messages:
+      MatchFound:
+        $ref: '#/components/messages/MatchFound'
+
+  /round_start:
+    address: /round_start
+    description: Canal para inicio de ronda
+    messages:
+      RoundStart:
+        $ref: '#/components/messages/RoundStart'
+
+  /select_card:
+    address: /select_card
+    description: Canal para selección de carta en partida
+    messages:
+      SelectCard:
+        $ref: '#/components/messages/SelectCard'
+
+  /opponent_selection:
+    address: /opponent_selection
+    description: Canal para notificación de selección del oponente
+    messages:
+      OpponentSelection:
+        $ref: '#/components/messages/OpponentSelection'
+
+  /select_response:
+    address: /select_response
+    description: Canal para selección de respuesta en partida
+    messages:
+      SelectResponse:
+        $ref: '#/components/messages/SelectResponse'
+
+  /round_result:
+    address: /round_result
+    description: Canal para resultado de ronda
+    messages:
+      RoundResult:
+        $ref: '#/components/messages/RoundResult'
+
+  /match_ended:
+    address: /match_ended
+    description: Canal para finalización de partida
+    messages:
+      MatchEnded:
+        $ref: '#/components/messages/MatchEnded'
+
+  /request_pause:
+    address: /request_pause
+    description: Canal para solicitar pausa de partida
+    messages:
+      RequestPause:
+        $ref: '#/components/messages/RequestPause'
+      RequestPauseResponse:
+        $ref: '#/components/messages/RequestPauseResponse'
+
+  /match_paused:
+    address: /match_paused
+    description: Canal para notificación de partida pausada
+    messages:
+      MatchPaused:
+        $ref: '#/components/messages/MatchPaused'
+
+  /request_resume:
+    address: /request_resume
+    description: Canal para solicitar reanudación de partida
+    messages:
+      RequestResume:
+        $ref: '#/components/messages/RequestResume'
+      RequestResumeResponse:
+        $ref: '#/components/messages/RequestResumeResponse'
+
+  /match_resumed:
+    address: /match_resumed
+    description: Canal para notificación de partida reanudada
+    messages:
+      MatchResumed:
+        $ref: '#/components/messages/MatchResumed'
+
+  /surrender:
+    address: /surrender
+    description: Canal para rendición en partida
+    messages:
+      Surrender:
+        $ref: '#/components/messages/Surrender'
+      SurrenderResponse:
+        $ref: '#/components/messages/SurrenderResponse'
+
+  /notification:
+    address: /notification
+    description: Canal para notificaciones generales
+    messages:
+      Notification:
+        $ref: '#/components/messages/Notification'
+
 components:
   messages:
     RequestExchange:
@@ -216,3 +367,444 @@ components:
           user2Card:
             type: string
             description: ID de la carta del usuario 2
+
+    CancelExchange:
+      name: CancelExchange
+      title: Cancelación de intercambio
+      summary: Mensaje para cancelar un intercambio
+      payload:
+        type: object
+        properties:
+          exchangeId:
+            type: string
+            description: ID único del intercambio
+        required: [exchangeId]
+
+    CancelExchangeResponse:
+      name: CancelExchangeResponse
+      title: Respuesta de cancelación de intercambio
+      summary: Mensaje de respuesta a cancelación de intercambio
+      payload:
+        type: object
+        properties:
+          exchangeId:
+            type: string
+            description: ID único del intercambio
+          message:
+            type: string
+            description: Mensaje de confirmación
+
+    RequestMatch:
+      name: RequestMatch
+      title: Solicitud de partida
+      summary: Mensaje para solicitar una partida
+      payload:
+        type: object
+        properties:
+          receptorId:
+            type: string
+            description: ID del usuario receptor
+          solicitanteUsername:
+            type: string
+            description: Nombre de usuario del solicitante
+        required: [receptorId, solicitanteUsername]
+
+    RequestMatchResponse:
+      name: RequestMatchResponse
+      title: Respuesta de solicitud de partida
+      summary: Mensaje de respuesta a solicitud de partida
+      payload:
+        type: object
+        properties:
+          matchRequestId:
+            type: string
+            description: ID único de la solicitud de partida
+          solicitanteId:
+            type: string
+            description: ID del solicitante
+          solicitanteUsername:
+            type: string
+            description: Nombre de usuario del solicitante
+          timestamp:
+            type: string
+            format: date-time
+            description: Marca de tiempo del evento
+
+    AcceptMatch:
+      name: AcceptMatch
+      title: Aceptación de partida
+      summary: Mensaje para aceptar una partida
+      payload:
+        type: object
+        properties:
+          matchRequestId:
+            type: string
+            description: ID único de la solicitud de partida
+        required: [matchRequestId]
+
+    AcceptMatchResponse:
+      name: AcceptMatchResponse
+      title: Respuesta de aceptación de partida
+      summary: Mensaje de respuesta a aceptación de partida
+      payload:
+        type: object
+        properties:
+          matchId:
+            type: string
+            description: ID único de la partida creada
+
+    DeclineMatch:
+      name: DeclineMatch
+      title: Rechazo de partida
+      summary: Mensaje para rechazar una partida
+      payload:
+        type: object
+        properties:
+          matchRequestId:
+            type: string
+            description: ID único de la solicitud de partida
+        required: [matchRequestId]
+
+    DeclineMatchResponse:
+      name: DeclineMatchResponse
+      title: Respuesta de rechazo de partida
+      summary: Mensaje de respuesta a rechazo de partida
+      payload:
+        type: object
+        properties:
+          matchRequestId:
+            type: string
+            description: ID único de la solicitud de partida
+          message:
+            type: string
+            description: Mensaje de confirmación
+
+    JoinMatchmaking:
+      name: JoinMatchmaking
+      title: Unirse al matchmaking
+      summary: Mensaje para unirse al sistema de matchmaking
+      payload:
+        type: object
+        properties: {}
+
+    JoinMatchmakingResponse:
+      name: JoinMatchmakingResponse
+      title: Respuesta de unión al matchmaking
+      summary: Mensaje de respuesta a unión al matchmaking
+      payload:
+        type: object
+        properties:
+          inQueue:
+            type: boolean
+            description: Indica si el usuario está en cola
+
+    LeaveMatchmaking:
+      name: LeaveMatchmaking
+      title: Salir del matchmaking
+      summary: Mensaje para salir del sistema de matchmaking
+      payload:
+        type: object
+        properties: {}
+
+    LeaveMatchmakingResponse:
+      name: LeaveMatchmakingResponse
+      title: Respuesta de salida del matchmaking
+      summary: Mensaje de respuesta a salida del matchmaking
+      payload:
+        type: object
+        properties:
+          inQueue:
+            type: boolean
+            description: Indica si el usuario está en cola
+
+    MatchFound:
+      name: MatchFound
+      title: Partida encontrada
+      summary: Mensaje de notificación de partida encontrada
+      payload:
+        type: object
+        properties:
+          matchId:
+            type: string
+            description: ID único de la partida
+          opponentPuntos:
+            type: object
+            additionalProperties:
+              type: number
+            description: Puntos de clasificación de los oponentes
+
+    RoundStart:
+      name: RoundStart
+      title: Inicio de ronda
+      summary: Mensaje de notificación de inicio de ronda
+      payload:
+        type: object
+        properties:
+          roundNumber:
+            type: integer
+            description: Número de la ronda
+          starter:
+            type: string
+            description: ID del jugador que inicia la ronda
+          phase:
+            type: string
+            enum: ['selection', 'response']
+            description: Fase de la ronda
+
+    SelectCard:
+      name: SelectCard
+      title: Selección de carta
+      summary: Mensaje para seleccionar una carta en partida
+      payload:
+        type: object
+        properties:
+          cartaId:
+            type: string
+            description: ID de la carta seleccionada
+          skill:
+            type: string
+            enum: ['ataque', 'control', 'defensa']
+            description: Habilidad seleccionada
+        required: [cartaId, skill]
+
+    OpponentSelection:
+      name: OpponentSelection
+      title: Selección del oponente
+      summary: Mensaje de notificación de selección del oponente
+      payload:
+        type: object
+        properties:
+          skill:
+            type: string
+            enum: ['ataque', 'control', 'defensa']
+            description: Habilidad seleccionada por el oponente
+          carta:
+            type: object
+            description: Carta seleccionada por el oponente
+          timer:
+            type: integer
+            description: Tiempo restante para responder
+
+    SelectResponse:
+      name: SelectResponse
+      title: Selección de respuesta
+      summary: Mensaje para seleccionar respuesta en partida
+      payload:
+        type: object
+        properties:
+          cartaId:
+            type: string
+            description: ID de la carta seleccionada
+          skill:
+            type: string
+            enum: ['ataque', 'control', 'defensa']
+            description: Habilidad seleccionada
+        required: [cartaId, skill]
+
+    RoundResult:
+      name: RoundResult
+      title: Resultado de ronda
+      summary: Mensaje de notificación de resultado de ronda
+      payload:
+        type: object
+        properties:
+          ganador:
+            type: string
+            description: ID del ganador de la ronda (null si empate)
+          scores:
+            type: object
+            additionalProperties:
+              type: integer
+            description: Puntuación actual de los jugadores
+          detalles:
+            type: object
+            properties:
+              jugador1:
+                type: string
+                description: ID del jugador 1
+              carta_j1:
+                type: object
+                description: Carta del jugador 1
+              skill_j1:
+                type: string
+                description: Habilidad usada por el jugador 1
+              carta_j2:
+                type: object
+                description: Carta del jugador 2
+              skill_j2:
+                type: string
+                description: Habilidad usada por el jugador 2
+
+    MatchEnded:
+      name: MatchEnded
+      title: Partida finalizada
+      summary: Mensaje de notificación de finalización de partida
+      payload:
+        type: object
+        properties:
+          winnerId:
+            type: string
+            description: ID del ganador (null si empate)
+          isDraw:
+            type: boolean
+            description: Indica si la partida terminó en empate
+          scores:
+            type: object
+            additionalProperties:
+              type: integer
+            description: Puntuación final de los jugadores
+          puntosChange:
+            type: object
+            additionalProperties:
+              type: integer
+            description: Cambio en los puntos de clasificación
+
+    RequestPause:
+      name: RequestPause
+      title: Solicitud de pausa
+      summary: Mensaje para solicitar pausar una partida
+      payload:
+        type: object
+        properties:
+          matchId:
+            type: string
+            description: ID de la partida
+        required: [matchId]
+
+    RequestPauseResponse:
+      name: RequestPauseResponse
+      title: Respuesta de solicitud de pausa
+      summary: Mensaje de respuesta a solicitud de pausa
+      payload:
+        type: object
+        properties:
+          matchId:
+            type: string
+            description: ID de la partida
+
+    MatchPaused:
+      name: MatchPaused
+      title: Partida pausada
+      summary: Mensaje de notificación de partida pausada
+      payload:
+        type: object
+        properties:
+          matchId:
+            type: string
+            description: ID de la partida
+
+    RequestResume:
+      name: RequestResume
+      title: Solicitud de reanudación
+      summary: Mensaje para solicitar reanudar una partida
+      payload:
+        type: object
+        properties:
+          matchId:
+            type: string
+            description: ID de la partida
+        required: [matchId]
+
+    RequestResumeResponse:
+      name: RequestResumeResponse
+      title: Respuesta de solicitud de reanudación
+      summary: Mensaje de respuesta a solicitud de reanudación
+      payload:
+        type: object
+        properties:
+          matchId:
+            type: string
+            description: ID de la partida
+          confirmations:
+            type: object
+            additionalProperties:
+              type: boolean
+            description: Estado de las confirmaciones
+
+    MatchResumed:
+      name: MatchResumed
+      title: Partida reanudada
+      summary: Mensaje de notificación de partida reanudada
+      payload:
+        type: object
+        properties:
+          matchId:
+            type: string
+            description: ID de la partida
+          scores:
+            type: object
+            additionalProperties:
+              type: integer
+            description: Puntuación actual
+          usedCards:
+            type: object
+            properties:
+              user1:
+                type: array
+                items:
+                  type: object
+                  description: Cartas usadas por el jugador 1
+              user2:
+                type: array
+                items:
+                  type: object
+                  description: Cartas usadas por el jugador 2
+          plantilla1:
+            type: string
+            description: ID de la plantilla del jugador 1
+          plantilla2:
+            type: string
+            description: ID de la plantilla del jugador 2
+          user1Id:
+            type: string
+            description: ID del jugador 1
+          user2Id:
+            type: string
+            description: ID del jugador 2
+
+    Surrender:
+      name: Surrender
+      title: Rendición
+      summary: Mensaje para rendirse en una partida
+      payload:
+        type: object
+        properties:
+          matchId:
+            type: string
+            description: ID de la partida
+        required: [matchId]
+
+    SurrenderResponse:
+      name: SurrenderResponse
+      title: Respuesta de rendición
+      summary: Mensaje de respuesta a rendición
+      payload:
+        type: object
+        properties:
+          matchId:
+            type: string
+            description: ID de la partida
+
+    Notification:
+      name: Notification
+      title: Notificación
+      summary: Mensaje de notificación general
+      payload:
+        type: object
+        properties:
+          message:
+            type: string
+            description: Mensaje de la notificación
+          data:
+            type: object
+            properties:
+              requestId:
+                type: string
+                description: ID de la solicitud
+              type:
+                type: string
+                description: Tipo de notificación
+              timestamp:
+                type: string
+                format: date-time
+                description: Marca de tiempo
