@@ -9,6 +9,7 @@ describe('Rutas de Cartas', () => {
   let user;
 
   beforeAll(async () => {
+    await clearAllTables(); 
     const data = await seedTestData();
     user = data.user1;
     token = await getAuthToken(); 

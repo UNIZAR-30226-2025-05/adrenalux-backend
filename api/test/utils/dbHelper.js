@@ -24,6 +24,13 @@ import bcrypt from 'bcrypt';
 const createDBHelper = (table) => ({
   create: async (data) => {
     const dataArray = Array.isArray(data) ? data : [data];
+    
+    for (const row of dataArray) {
+      if ('plantilla2_id' in row && (row.plantilla2_id === undefined || row.plantilla2_id === null)) {
+        console.error('❌ Error: plantilla2_id inválido en partida:', row);
+        throw new Error('plantilla2_id inválido');
+      }
+    }
     return await db.insert(table).values(dataArray).returning();
   },
 
@@ -75,16 +82,16 @@ export const plantillaHelper = createDBHelper(plantilla);
 
 export const clearAllTables = async () => {
   await db.transaction(async (tx) => {
-    await tx.delete(plantilla);
     await tx.delete(carta_plantilla);
     await tx.delete(mercadoCartas);
     await tx.delete(mercadoDiario);
     await tx.delete(coleccion);
     await tx.delete(logro);
     await tx.delete(participacionTorneo);
-    await tx.delete(partida);
+    await tx.delete(partida); 
     await tx.delete(amistad);
     await tx.delete(torneo);
+    await tx.delete(plantilla); 
     await tx.delete(carta);
     await tx.delete(user);
   });
@@ -128,23 +135,65 @@ export const seedTestData = async () => {
     },
   ]);
 
-  await plantillaHelper.create([
+  const plantillas = await plantillaHelper.create([
     {
-      id: 1,
       user_id: user1.id,
       nombre: 'Plantilla 1',
     },
     {
-      id: 2,
       user_id: user2.id,
       nombre: 'Plantilla 2',
     },
     {
-      id: 3,
       user_id: user3.id,
       nombre: 'Plantilla 3',
     },
   ]);
+
+  const checkPlantillas = await db.select().from(plantilla);
+  console.log('Plantillas en la base de datos:', checkPlantillas);
+  
+  const updateData = { plantilla_activa_id: plantillas[0].id };
+  console.log("Actualizando usuario con datos:", updateData);
+  
+  await userHelper.update(user1.id, { plantilla_activa_id: plantillas[0].id });
+  await userHelper.update(user2.id, { plantilla_activa_id: plantillas[1].id });
+  await userHelper.update(user3.id, { plantilla_activa_id: plantillas[2].id });
+
+  console.log('Plantillas creadas:', plantillas);
+  console.log('Creando partida con:', {
+    user1: user1.id,
+    user2: user2.id,
+    plantilla1: plantillas[0].id,
+    plantilla2: plantillas[1].id,
+  });
+  
+  console.log("Insertando partidas:", [
+  {
+    turno: 1,
+    user1_id: user1.id,
+    user2_id: user2.id,
+    ganador_id: user1.id,
+    plantilla1_id: plantillas[0]?.id,
+    plantilla2_id: plantillas[1]?.id,
+  },
+  {
+    turno: 2,
+    user1_id: user2.id,
+    user2_id: user3.id,
+    ganador_id: user2.id,
+    plantilla1_id: plantillas[1]?.id,
+    plantilla2_id: plantillas[2]?.id,
+  },
+  {
+    turno: 3,
+    user1_id: user1.id,
+    user2_id: user3.id,
+    ganador_id: user1.id,
+    plantilla1_id: plantillas[0]?.id,
+    plantilla2_id: plantillas[2]?.id,
+  },
+]);
 
   // Creamos partidas ficticias para que tengan stats
   await partidaHelper.create([
@@ -153,24 +202,24 @@ export const seedTestData = async () => {
       user1_id: user1.id,
       user2_id: user2.id,
       ganador_id: user1.id,
-      plantilla1_id: 1,
-      plantilla2_id: 2,
+      plantilla1_id: plantillas[0].id,
+      plantilla2_id: plantillas[1].id,
     },
     {
       turno: 2,
       user1_id: user2.id,
       user2_id: user3.id,
       ganador_id: user2.id,
-      plantilla1_id: 2,
-      plantilla2_id: 3,
+      plantilla1_id: plantillas[1].id,
+      plantilla2_id: plantillas[2].id,
     },
     {
       turno: 3,
       user1_id: user1.id,
       user2_id: user3.id,
       ganador_id: user1.id,
-      plantilla1_id: 1,
-      plantilla2_id: 3,
+      plantilla1_id: plantillas[0].id,
+      plantilla2_id: plantillas[2].id,
     },
   ]);
 
