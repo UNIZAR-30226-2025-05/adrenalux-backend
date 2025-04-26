@@ -156,7 +156,7 @@ export const seedTestData = async () => {
   const updateData = { plantilla_activa_id: plantillas[0].id };
   console.log("Actualizando usuario con datos:", updateData);
   
-  await userHelper.update(user1.id, { plantilla_activa_id: plantillas[0].id });
+  await userHelper.update(user1.id == '1', { plantilla_activa_id: plantillas[0].id });
   await userHelper.update(user2.id, { plantilla_activa_id: plantillas[1].id });
   await userHelper.update(user3.id, { plantilla_activa_id: plantillas[2].id });
 

@@ -829,7 +829,8 @@ export function configureWebSocket(httpServer) {
         opponentPuntos: {
           [user1_id]: player1.puntos,
           [user2_id]: player2.puntos
-        }
+        },
+        tournamentMatch: torneo_id != null ? true : false
       });
 
       startNewRound(matchId);
