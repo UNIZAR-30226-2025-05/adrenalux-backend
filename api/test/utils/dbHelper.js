@@ -15,57 +15,103 @@ import { mercadoCartas } from '../../db/schemas/mercado.js';
 import { mercadoDiario } from '../../db/schemas/mercado.js';
 import { plantilla } from '../../db/schemas/plantilla.js';
 import bcrypt from 'bcrypt';
+import { TIPOS_CARTAS } from '../../config/cartas.config.js';
+import { pbkdf2Sync, randomBytes } from 'crypto';
 
 /**
  * Helper genérico para operaciones CRUD en cualquier tabla
  * @param {import('drizzle-orm').PgTable} table - Esquema de la tabla
  * @returns {Object} Funciones CRUD para la tabla
  */
-const createDBHelper = (table) => ({
+const createDBHelper = (table, { validateRow } = {}) => ({
   create: async (data) => {
-    const dataArray = Array.isArray(data) ? data : [data];
-    
-    for (const row of dataArray) {
-      if ('plantilla2_id' in row && (row.plantilla2_id === undefined || row.plantilla2_id === null)) {
-        console.error('❌ Error: plantilla2_id inválido en partida:', row);
-        throw new Error('plantilla2_id inválido');
+    try {
+      const dataArray = Array.isArray(data) ? data : [data];
+
+      for (const row of dataArray) {
+        if (validateRow) validateRow(row);
       }
+
+      return await db.insert(table).values(dataArray).returning();
+    } catch (error) {
+      console.error(`❌ Error creando datos en ${table.tableName}:`, error);
+      throw error;
     }
-    return await db.insert(table).values(dataArray).returning();
   },
 
   delete: async (where) => {
-    await db.delete(table).where(where);
+    try {
+      return await db.delete(table).where(where);
+    } catch (error) {
+      console.error(`❌ Error eliminando datos de ${table.tableName}:`, error);
+      throw error;
+    }
   },
 
   update: async (where, data) => {
-    return await db.update(table).set(data).where(where).returning();
+    try {
+      return await db.update(table).set(data).where(where).returning();
+    } catch (error) {
+      console.error(`❌ Error actualizando datos en ${table.tableName}:`, error);
+      throw error;
+    }
   },
 
-  find: async (where) => {
-    return await db.select().from(table).where(where);
+  find: async (where = {}) => {
+    try {
+      return await db.select().from(table).where(where);
+    } catch (error) {
+      console.error(`❌ Error buscando datos en ${table.tableName}:`, error);
+      throw error;
+    }
   },
 
-  findOne: async (where) => {
-    const results = await db.select().from(table).where(where).limit(1);
-    return results[0];
+  findOne: async (where = {}) => {
+    try {
+      const results = await db.select().from(table).where(where).limit(1);
+      return results[0];
+    } catch (error) {
+      console.error(`❌ Error buscando un dato en ${table.tableName}:`, error);
+      throw error;
+    }
   },
 
   clear: async () => {
-    await db.delete(table);
+    try {
+      await db.delete(table);
+    } catch (error) {
+      console.error(`❌ Error limpiando tabla ${table.tableName}:`, error);
+      throw error;
+    }
   },
 
-  // Función especial para transacciones
+  count: async () => {
+    const result = await db.select({ count: sql`COUNT(*)` }).from(table);
+    return parseInt(result[0].count);
+  },
+
+  exists: async (where) => {
+    const result = await db.select().from(table).where(where).limit(1);
+    return result.length > 0;
+  },
+
+
   withTransaction: async (callback) => {
-    return await db.transaction(async (tx) => {
-      const txHelper = {
-        ...createDBHelper(table),
-        db: tx // Sobreescribimos db para usar la transacción
-      };
-      return await callback(txHelper);
-    });
+    try {
+      return await db.transaction(async (tx) => {
+        const txHelper = {
+          ...createDBHelper(table, { validateRow }),
+          db: tx
+        };
+        return await callback(txHelper);
+      });
+    } catch (error) {
+      console.error(`❌ Error durante transacción en ${table.tableName}:`, error);
+      throw error;
+    }
   }
 });
+
 
 export const userHelper = createDBHelper(user);
 export const amistadHelper = createDBHelper(amistad);
@@ -91,51 +137,61 @@ export const clearAllTables = async () => {
     await tx.delete(partida); 
     await tx.delete(amistad);
     await tx.delete(torneo);
+    await tx.update(user).set({ plantilla_activa_id: null });
     await tx.delete(plantilla); 
     await tx.delete(carta);
     await tx.delete(user);
   });
 };
 
-export function generateDummyFriendCode() {
-  return Math.random().toString(36).substring(2, 8).toUpperCase(); // 6 caracteres
-}
-
+const HASH_CONFIG = {
+  iterations: 100000,
+  keyLength: 64,
+  digest: 'sha512'
+};
 export const seedTestData = async () => {
+  const passwordPlano = '123456';
+  const salt = randomBytes(16).toString('hex');
+  const hashedPassword = pbkdf2Sync(passwordPlano, salt, HASH_CONFIG.iterations, HASH_CONFIG.keyLength, HASH_CONFIG.digest).toString('hex');
+
   const [user1, user2, user3] = await userHelper.create([
     {
       username: 'admin',
       email: 'admin@example.com',
-      password: 'hashed_password',
-      salt: 'salt123',
-      friend_code: generateDummyFriendCode(),
+      password: hashedPassword,
+      salt: salt,
+      friend_code: 'ABC123',
+      adrenacoins: 10700,
       name: 'Admin',
       lastname: 'User',
       puntosClasificacion: 100,
+      ultimo_sobre_gratis: null,
     },
     {
       username: 'test1',
       email: 'test1@example.com',
-      password: 'hashed_password',
-      salt: 'salt123',
-      friend_code: generateDummyFriendCode(),
+      password: hashedPassword,
+      salt: salt,
+      friend_code: 'DEF456',
       name: 'Test',
       lastname: 'One',
       puntosClasificacion: 150,
+      ultimo_sobre_gratis: null,
     },
     {
       username: 'test2',
       email: 'test2@example.com',
-      password: 'hashed_password',
-      salt: 'salt123',
-      friend_code: generateDummyFriendCode(),
+      password: hashedPassword,
+      salt: salt,
+      friend_code: 'GHI789',
       name: 'Test',
       lastname: 'Two',
       puntosClasificacion: 50,
+      ultimo_sobre_gratis: null,
     },
   ]);
 
-  const plantillas = await plantillaHelper.create([
+  const [plantilla1, plantilla2, plantilla3] = await plantillaHelper.create([
     {
       user_id: user1.id,
       nombre: 'Plantilla 1',
@@ -149,114 +205,99 @@ export const seedTestData = async () => {
       nombre: 'Plantilla 3',
     },
   ]);
-
-  const checkPlantillas = await db.select().from(plantilla);
-  console.log('Plantillas en la base de datos:', checkPlantillas);
   
-  const updateData = { plantilla_activa_id: plantillas[0].id };
-  console.log("Actualizando usuario con datos:", updateData);
-  
-  await userHelper.update(user1.id, { plantilla_activa_id: plantillas[0].id });
-  await userHelper.update(user2.id, { plantilla_activa_id: plantillas[1].id });
-  await userHelper.update(user3.id, { plantilla_activa_id: plantillas[2].id });
-
-  console.log('Plantillas creadas:', plantillas);
-  console.log('Creando partida con:', {
-    user1: user1.id,
-    user2: user2.id,
-    plantilla1: plantillas[0].id,
-    plantilla2: plantillas[1].id,
+  await userHelper.update(eq(user.id, user1.id), {
+    plantilla_activa_id: plantilla1.id,
   });
-  
-  console.log("Insertando partidas:", [
-  {
-    turno: 1,
-    user1_id: user1.id,
-    user2_id: user2.id,
-    ganador_id: user1.id,
-    plantilla1_id: plantillas[0]?.id,
-    plantilla2_id: plantillas[1]?.id,
-  },
-  {
-    turno: 2,
-    user1_id: user2.id,
-    user2_id: user3.id,
-    ganador_id: user2.id,
-    plantilla1_id: plantillas[1]?.id,
-    plantilla2_id: plantillas[2]?.id,
-  },
-  {
-    turno: 3,
-    user1_id: user1.id,
-    user2_id: user3.id,
-    ganador_id: user1.id,
-    plantilla1_id: plantillas[0]?.id,
-    plantilla2_id: plantillas[2]?.id,
-  },
-]);
 
-  // Creamos partidas ficticias para que tengan stats
+  await userHelper.update(eq(user.id, user2.id), {
+    plantilla_activa_id: plantilla2.id,
+  });
+
+  await userHelper.update(eq(user.id, user3.id), {
+    plantilla_activa_id: plantilla3.id,
+  });
+
   await partidaHelper.create([
     {
       turno: 1,
       user1_id: user1.id,
       user2_id: user2.id,
       ganador_id: user1.id,
-      plantilla1_id: plantillas[0].id,
-      plantilla2_id: plantillas[1].id,
+      plantilla1_id: plantilla1.id,
+      plantilla2_id: plantilla2.id,
     },
     {
       turno: 2,
       user1_id: user2.id,
       user2_id: user3.id,
       ganador_id: user2.id,
-      plantilla1_id: plantillas[1].id,
-      plantilla2_id: plantillas[2].id,
+      plantilla1_id: plantilla2.id,
+      plantilla2_id: plantilla3.id,
     },
     {
       turno: 3,
       user1_id: user1.id,
       user2_id: user3.id,
       ganador_id: user1.id,
-      plantilla1_id: plantillas[0].id,
-      plantilla2_id: plantillas[2].id,
+      plantilla1_id: plantilla1.id,
+      plantilla2_id: plantilla3.id,
     },
   ]);
 
+
   await amistadHelper.create([
     {
-      id_usuario: user1.id,
-      id_amigo: user2.id,
-      estado: 'ACEPTADA',
+      user1_id: user1.id,
+      user2_id: user2.id,
+      estado: 'aceptada',
     },
     {
-      id_usuario: user2.id,
-      id_amigo: user1.id,
-      estado: 'ACEPTADA',
+      user1_id: user2.id,
+      user2_id: user1.id,
+      estado: 'aceptada',
     },
   ]);
 
   await cartaHelper.create([
     {
-      usuario_id: user1.id,
+      nombre: 'Robert Lewandowski',
+      alias: 'Robert Lewandowski',
       posicion: 'Delantero',
-      rareza: 'Normal',
       equipo: 'FC Barcelona',
-      atributos: { ataque: 80, control: 60, defensa: 50 },
+      tipo_carta: TIPOS_CARTAS.NORMAL.nombre,
+      escudo: 'https://example.com/escudo.png',
+      pais: 'Polonia',
+      photo: 'https://example.com/photo.png',
+      defensa: 50,
+      control: 80,
+      ataque: 90,
     },
     {
-      usuario_id: user1.id,
-      posicion: 'Defensa',
-      rareza: 'Luxury',
-      equipo: 'Real Madrid',
-      atributos: { ataque: 40, control: 70, defensa: 90 },
-    },
-    {
-      usuario_id: user2.id,
+      nombre: 'Jude Bellingham',
+      alias: 'Jude Bellingham',
       posicion: 'Centrocampista',
-      rareza: 'Megaluxury',
       equipo: 'Real Madrid',
-      atributos: { ataque: 70, control: 85, defensa: 60 },
+      tipo_carta: TIPOS_CARTAS.LUXURYXI.nombre,
+      escudo: 'https://example.com/escudo.png',
+      pais: 'Inglaterra',
+      photo: 'https://example.com/photo.png',
+      defensa: 70,
+      control: 80,
+      ataque: 80,
+    },
+    {
+      nombre: 'Jan Oblak',
+      alias: 'Jan Oblak',
+      posicion: 'Portero',
+      equipo: 'Atlético de Madrid',
+      tipo_carta: TIPOS_CARTAS.NORMAL.nombre,
+      escudo: 'https://example.com/escudo.png',
+      pais: 'Eslovenia',
+      photo: 'https://example.com/photo.png',
+      defensa: 90,
+      control: 30,
+      ataque: 30,
     },
   ]);
 
@@ -265,53 +306,33 @@ export const seedTestData = async () => {
 };
 
 
-export const getAuthToken = async () => {
-  const testUserData = {
-    username: 'testUser',
-    email: 'test@example.com',
-    password: 'TestPassword123!',
-    name: 'Test',
-    lastname: 'User',
-    friend_code: generateDummyFriendCode(),
-  };
+export const getAuthToken = async ({ email, password }) => {
 
-  // Buscar usuario por email
-  const existingUser = await db
-    .select()
-    .from(user)
-    .where(eq(user.email, testUserData.email))
-    .limit(1);
-
-  // Si no existe, lo creamos
-  if (existingUser.length === 0) {
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(testUserData.password, salt);
-
-    await db.insert(user).values({
-      ...testUserData,
-      password: hashedPassword,
-      salt: salt,
-    });
-  }
-
-  const checkUser = await db
-    .select()
-    .from(user)
-    .where(eq(user.email, testUserData.email))
-    .limit(1);
-
-  if (checkUser.length === 0) {
-    throw new Error('No se pudo insertar el usuario de test');
-  }
-
-  // Login para obtener el token
   const response = await request(app)
-    .post('/api/v1/auth/login')
+    .post('/api/v1/auth/sign-in')
     .set('x-api-key', process.env.CURRENT_API_KEY)
-    .send({
-      email: testUserData.email,
-      password: testUserData.password,
-    });
+    .send({ email, password });
 
-  return response.body.token;
+  if (response.status !== 200) {
+    console.error('❌ Error al hacer login');
+    console.error('Detalles:', {
+      email,
+      password,
+      status: response.status,
+      responseBody: response.body
+    });
+    throw new Error(`No se pudo obtener el token. Status: ${response.status}`);
+  }
+
+  if (!response.body?.data?.token) {
+    console.error('❌ Token no encontrado en la respuesta');
+    console.error('Detalles:', {
+      responseBody: response.body
+    });
+    throw new Error('No se encontró el token en la respuesta de login');
+  }
+
+  return response.body.data.token;
 };
+
+
