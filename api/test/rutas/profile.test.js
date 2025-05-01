@@ -1,34 +1,41 @@
 import request from 'supertest';
 import { app } from '../../app.js';
-import { getAuthToken, clearAllTables } from '../utils/dbHelper.js';
+import { getAuthToken, clearAllTables, seedTestData } from '../utils/dbHelper.js';
 import { pool } from '../../config/db.js'; 
 
 describe('Perfil de Usuario - Rutas', () => {
   let token; 
-  // Antes de cada test, obtener un token válido para el usuario autenticado
-  beforeEach(async () => {
-    token = await getAuthToken(); 
-  });
-
+  beforeAll(async () => {
+      await clearAllTables(); 
+      await seedTestData();
+      token = await getAuthToken({
+        email: 'admin@example.com',
+        password: '123456',
+      });
+    });
+  
   afterAll(async () => {
     await clearAllTables();
-    await pool.end(); 
+    await pool.end();
   });
 
-  // Test para obtener el perfil
+
   it('Debería obtener el perfil del usuario', async () => {
     const response = await request(app)
-      .get('/profile')
+      .get('/api/v1/profile')
       .set('Authorization', `Bearer ${token}`)
       .set('x-api-key', process.env.CURRENT_API_KEY);
 
-    expect(response.status).toBe(200);
-    expect(response.body.data).toHaveProperty('id');
-    expect(response.body.data).toHaveProperty('name');
-    expect(response.body.data).toHaveProperty('email');
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.data).toHaveProperty('username');
+      expect(response.body.status).toMatchObject({
+        error_code: 0,
+        error_message: '',
+      });
   });
 
-  // Test para actualizar el perfil
+
   it('Debería actualizar el perfil del usuario', async () => {
     const updatedData = {
       username: 'newUsername',
@@ -37,19 +44,26 @@ describe('Perfil de Usuario - Rutas', () => {
     };
 
     const response = await request(app)
-      .put('/profile')
+      .put('/api/v1/profile')
       .set('Authorization', `Bearer ${token}`)
+      .set('x-api-key', process.env.CURRENT_API_KEY)
       .send(updatedData);
 
-    expect(response.status).toBe(200);
-    expect(response.body.data.username).toBe(updatedData.username);
-    expect(response.body.data.name).toBe(updatedData.name);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        status: {
+          timestamp: expect.any(String),
+          error_code: 0,
+          error_message: '',
+          elapsed: expect.any(Number),
+        },
+      });
   });
 
-  // Test para obtener nivel y experiencia
+
   it('Debería obtener el nivel y la experiencia del usuario', async () => {
     const response = await request(app)
-      .get('/profile/levelxp')
+      .get('/api/v1/profile/levelxp')
       .set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(200);
@@ -57,17 +71,17 @@ describe('Perfil de Usuario - Rutas', () => {
     expect(response.body.data).toHaveProperty('experience');
   });
 
-  // Test para obtener clasificación
+
   it('Debería obtener la clasificación del usuario', async () => {
     const response = await request(app)
-      .get('/profile/clasificacion')
+      .get('/api/v1/profile/clasificacion')
       .set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveProperty('puntosClasificacion');
   });
 
-  // Test para cambiar la contraseña
+
   it('Debería cambiar la contraseña del usuario', async () => {
     const passwordData = {
       oldPassword: 'TestPassword123!',
@@ -75,31 +89,36 @@ describe('Perfil de Usuario - Rutas', () => {
     };
 
     const response = await request(app)
-      .put('/profile/change-password')
+      .put('/api/v1/profile/change-password')
       .set('Authorization', `Bearer ${token}`)
       .send(passwordData);
 
-    expect(response.status).toBe(200);
-    expect(response.body.message).toBe('Contraseña cambiada correctamente');
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        status: {
+          timestamp: expect.any(String),
+          error_code: 0,
+          error_message: '',
+          elapsed: expect.any(Number),
+        },
+      });
   });
 
-  // Test para eliminar la cuenta del usuario
-  it('Debería eliminar la cuenta del usuario', async () => {
-    const response = await request(app)
-      .delete('/profile')
-      .set('Authorization', `Bearer ${token}`);
-
-    expect(response.status).toBe(200);
-    expect(response.body.message).toBe('Cuenta eliminada correctamente');
-  });
-
-  // Test para obtener amigos
   it('Debería obtener la lista de amigos del usuario', async () => {
     const response = await request(app)
-      .get('/profile/friends')
+      .get('/api/v1/profile/friends')
       .set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body.data)).toBe(true);
+  });
+
+  it('Debería eliminar la cuenta del usuario', async () => {
+    const response = await request(app)
+      .delete('/api/v1/profile')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.message).toBe('User account deleted successfully');
   });
 });

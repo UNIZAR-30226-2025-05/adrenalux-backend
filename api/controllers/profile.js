@@ -262,7 +262,7 @@ export async function deleteUser(req, res, next) {
     const userId = token.id;
 
     // Delete user account from the database
-     await db.delete().from(users).where(eq(users.id, userId));
+    await db.delete(user).where(eq(user.id, userId));
    
     return sendResponse(req, res, { message: 'User account deleted successfully' });
   } catch (err) {

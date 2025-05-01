@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { app } from '../../app.js';
-import { getAuthToken, clearAllTables } from '../../../api/test/utils/dbHelper.js';
+import { getAuthToken, clearAllTables, seedTestData } from '../../../api/test/utils/dbHelper.js';
 import { TIPOS_CARTAS } from '../../config/cartas.config.js';
 import { pool } from '../../config/db.js'; 
 

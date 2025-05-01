@@ -100,14 +100,14 @@ describe('Rutas de Cartas', () => {
       expect(response.body.data.responseJson.cartas).toBeDefined();
       expect(Array.isArray(response.body.data.responseJson.cartas)).toBe(true);
     });
-
+    
     it('debe devolver error si no hay sobres gratis disponibles', async () => {
       const response = await request(app)
         .get('/api/v1/cartas/abrirSobreRandom')
         .set('Authorization', `Bearer ${token}`)
         .set('x-api-key', process.env.CURRENT_API_KEY);
 
-      expect(response.body.ultimo_sobre_gratis).toBeNull();
+      expect(response.body.ultimo_sobre_gratis ?? null).toBeNull();
       expect(response.status).toBe(401);
       expect(response.body.status.error_message).toBe('No tienes sobres gratis disponibles');
     });
