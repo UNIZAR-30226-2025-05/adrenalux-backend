@@ -119,6 +119,7 @@ describe('Perfil de Usuario - Rutas', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(200);
-    expect(response.body.message).toBe('User account deleted successfully');
+    expect(response.body.status.error_code).toBe(0);
+    expect(response.body.status.error_message).toBe('');
   });
 });

@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm';
 import { coleccion } from '../../../db/schemas/coleccion.js';
 import { pbkdf2Sync } from 'crypto';
 import { getDecodedToken, verifyToken } from '../../../lib/jwt.js';
+import { pool } from '../../../config/db.js'; 
 
 const HASH_CONFIG = {
   iterations: 10000,
@@ -107,6 +108,7 @@ describe('GET /coleccion', () => {
     await db.delete(coleccion).where(eq(coleccion.user_id, testUserId));
     await db.delete(carta).where(eq(carta.id, testCartaId));
     await db.delete(user).where(eq(user.id, testUserId));
+    await pool.end();
   });
   
   it('debería devolver un 401 si no se envía token', async () => {

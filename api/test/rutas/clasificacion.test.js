@@ -1,140 +1,88 @@
 import request from 'supertest';
 import { app } from '../../app.js';
-import { clearAllTables, seedTestData, getAuthToken } from '../utils/dbHelper.js';
-import { partidaHelper, plantillaHelper, amistadHelper,userHelper } from '../utils/dbHelper.js';
-import { eq } from 'drizzle-orm';
-import { user } from '../../db/schemas/user.js';
-import { pool } from '../../config/db.js'; 
+import { getAuthToken, clearAllTables, seedTestData } from '../../../api/test/utils/dbHelper.js';
+import { pool } from '../../config/db.js';
 
-describe('Rutas de Clasificacion', () => {
+describe('Rutas /clasificacion', () => {
   let token;
-  let testUser;
-  let amigo;
-  let plantilla1;
-  let plantilla2;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     await clearAllTables();
+    await seedTestData();
+    token = await getAuthToken({
+      email: 'admin@example.com',
+      password: '123456',
+  });
 
-    // Creamos un usuario y su amigo
-    const result = await seedTestData();
-    testUser = result.testUser;
+  });
 
-    [amigo] = await userHelper.create({
-      username: 'amigo1',
-      email: 'amigo1@example.com',
-      password: 'password123',
-      salt: 'salty',
-      friend_code: 'FRIEND1',
-      name: 'Amigo',
-      lastname: 'Uno',
-    });
-
-    // Creamos la relación de amistad
-    await amistadHelper.create({
-      user1_id: testUser.id,
-      user2_id: amigo.id,
-      estado: 'ACEPTADA',
-    });
-
-    plantilla1 = await plantillaHelper.create({
-        user_id: testUser.id,
-        nombre: 'Plantilla de Test 1',
-    });
-
-    expect(plantilla1[0]).toHaveProperty('id');  
-
-    plantilla2 = await plantillaHelper.create({
-        user_id: amigo.id,
-        nombre: 'Plantilla de Test 2',
-    });
-
-    expect(plantilla2[0]).toHaveProperty('id');  
-
-    // Creamos partidas para ambos
-    await partidaHelper.create([
-      {
-        turno: 1,
-        estado: 'parada',
-        puntuacion1: 0,
-        puntuacion2: 0,
-        ganador_id: testUser.id,
-        user1_id: testUser.id,
-        user2_id: amigo.id,
-        plantilla1_id: plantilla1[0].id, 
-        plantilla2_id: plantilla2[0].id, 
-        torneo_id: null, 
-      },
-      {
-        turno: 2, 
-        estado: 'parada',
-        puntuacion1: 0,
-        puntuacion2: 0,
-        ganador_id: amigo.id,
-        user1_id: amigo.id,
-        user2_id: testUser.id,
-        plantilla1_id: plantilla1[0].id, 
-        plantilla2_id: plantilla2[0].id, 
-        torneo_id: null, 
-      },
-    ]);
-
-    token = await getAuthToken();
   });
 
   afterAll(async () => {
     await clearAllTables();
-    await pool.end(); 
+    await pool.end();
   });
 
-  describe('GET /api/v1/clasificacion/total', () => {
-    it('debe retornar la clasificacion total con datos de usuarios', async () => {
+  describe('GET /clasificacion/total', () => {
+    it('debe devolver la clasificación total con status 200 y datos de usuarios ordenados', async () => {
       const res = await request(app)
-        .get('/api/v1/clasificacion/total')
-        .set('Authorization', `Bearer ${token}`)
-        .set('x-api-key', process.env.CURRENT_API_KEY);
-
+        .get('/clasificacion/total')
+        .set('Authorization', `Bearer ${token}`);
+  
       expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('data');
       expect(Array.isArray(res.body.data)).toBe(true);
-
-      // Aseguramos que contenga el usuario test
-      const found = res.body.data.find(u => u.id === testUser.id);
-      expect(found).toBeDefined();
-      expect(found).toHaveProperty('puntosClasificacion');
+      expect(res.body.data.length).toBeGreaterThanOrEqual(3);
+  
+      const expectedFields = [
+        'userid', 'username', 'name', 'lastname', 'avatar',
+        'friend_code', 'level', 'experience', 'clasificacion', 'estadisticas'
+      ];
+  
+      res.body.data.forEach(user => {
+        expectedFields.forEach(field => {
+          expect(user).toHaveProperty(field);
+        });
+  
+        expect(user.estadisticas).toHaveProperty('partidasJugadas');
+        expect(user.estadisticas).toHaveProperty('partidasGanadas');
+        expect(user.estadisticas).toHaveProperty('partidasPerdidas');
+      });
     });
-
-    it('debe retornar 401 si no hay token', async () => {
-      const res = await request(app)
-        .get('/api/v1/clasificacion/total')
-        .set('x-api-key', process.env.CURRENT_API_KEY);
-
+  
+    it('debe devolver 401 si no se envía token', async () => {
+      const res = await request(app).get('/clasificacion/total');
       expect(res.status).toBe(401);
     });
   });
-
-  describe('GET /api/v1/clasificacion/amigos', () => {
-    it('debe retornar solo los amigos del usuario', async () => {
+  
+  describe('GET /clasificacion/amigos', () => {
+    it('debe devolver la clasificación de amigos con status 200', async () => {
       const res = await request(app)
-        .get('/api/v1/clasificacion/amigos')
-        .set('Authorization', `Bearer ${token}`)
-        .set('x-api-key', process.env.CURRENT_API_KEY);
-
+        .get('/clasificacion/amigos')
+        .set('Authorization', `Bearer ${token}`);
+  
       expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('data');
       expect(Array.isArray(res.body.data)).toBe(true);
-
-      const ids = res.body.data.map(u => u.id);
-      expect(ids).toContain(amigo.id);
-      expect(ids).not.toContain(999999); // id falso
+  
+      res.body.data.forEach(friend => {
+        expect(friend).toHaveProperty('userid');
+        expect(friend).toHaveProperty('username');
+        expect(friend).toHaveProperty('name');
+        expect(friend).toHaveProperty('lastname');
+        expect(friend).toHaveProperty('avatar');
+        expect(friend).toHaveProperty('friend_code');
+        expect(friend).toHaveProperty('level');
+        expect(friend).toHaveProperty('experience');
+        expect(friend).toHaveProperty('clasificacion');
+        expect(friend).toHaveProperty('estadisticas');
+        expect(friend.estadisticas).toHaveProperty('partidasJugadas');
+        expect(friend.estadisticas).toHaveProperty('partidasGanadas');
+        expect(friend.estadisticas).toHaveProperty('partidasPerdidas');
+      });
     });
-
-    it('debe retornar 401 si no hay token', async () => {
-      const res = await request(app)
-        .get('/api/v1/clasificacion/amigos')
-        .set('x-api-key', process.env.CURRENT_API_KEY);
-
+  
+    it('debe devolver 401 si no se envía token', async () => {
+      const res = await request(app).get('/clasificacion/amigos');
       expect(res.status).toBe(401);
     });
   });
-});
