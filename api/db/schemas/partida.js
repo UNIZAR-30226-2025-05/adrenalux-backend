@@ -17,10 +17,10 @@ export const partida = pgTable('partida', {
   fecha: timestamp('fecha').notNull().defaultNow(),
   user1_id: integer('usuario1')
     .notNull()
-    .references(() => user.id),
+    .references(() => user.id, { onDelete: 'CASCADE' }),
   user2_id: integer('usuario2')
     .notNull()
-    .references(() => user.id),
+    .references(() => user.id, { onDelete: 'CASCADE' }),
   plantilla1_id: integer('plantilla1')
     .notNull()
     .references(() => plantilla.id),

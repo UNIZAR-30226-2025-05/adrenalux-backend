@@ -6,14 +6,18 @@ import { pool } from '../../config/db.js';
 
 
 let token; 
-
 beforeAll(async () => {
-  token = await getAuthToken();
-});
-
+    await clearAllTables(); 
+    await seedTestData();
+    token = await getAuthToken({
+      email: 'admin@example.com',
+      password: '123456',
+    });
+  });
+  
 afterAll(async () => {
   await clearAllTables();
-  await pool.end(); 
+  await pool.end();
 });
 
 describe('Rutas de Jugadores', () => {
