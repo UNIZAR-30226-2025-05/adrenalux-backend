@@ -4,7 +4,7 @@ import { user } from './user.js';
 import { logro } from './logro.js';
 
 export const logrosUsuario = pgTable('logrosUsuario', {
-  user_id: integer('user_id').notNull().references(() => user.id),
+  user_id: integer('user_id').notNull().references(() => user.id, { onDelete: 'CASCADE' }),
   logro_id: integer('logro_id').notNull().references(() => logro.id),
   created_at: timestamp('created_at').notNull().defaultNow(),
   achieved: boolean('achieved').notNull().default(false),

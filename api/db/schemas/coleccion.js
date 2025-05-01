@@ -10,7 +10,7 @@ export const coleccion = pgTable('coleccion',
     .references(() => carta.id) 
     .notNull(),
   user_id: integer('user_id')
-    .references(() => user.id) 
+    .references(() => user.id, { onDelete: 'CASCADE' }) 
     .notNull(),
   cantidad: integer('cantidad').notNull().default(0),
 });

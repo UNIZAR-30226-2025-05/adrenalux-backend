@@ -4,7 +4,7 @@ import { user } from './user.js';
 
 export const plantilla = pgTable('plantilla', {
   id: serial('id').primaryKey(), 
-  user_id: integer('user_id').notNull().references(() => user.id),
+  user_id: integer('user_id').notNull().references(() => user.id, { onDelete: 'CASCADE' }),
   nombre: varchar('nombre', { length: 100 }).notNull(), 
 });
 
