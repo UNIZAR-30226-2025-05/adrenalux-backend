@@ -227,6 +227,9 @@ export const seedTestData = async () => {
       ganador_id: user1.id,
       plantilla1_id: plantilla1.id,
       plantilla2_id: plantilla2.id,
+      estado:  'finalizada',
+      puntuacion1: 1,
+      puntuacion2: 0,
     },
     {
       turno: 2,
@@ -235,6 +238,9 @@ export const seedTestData = async () => {
       ganador_id: user2.id,
       plantilla1_id: plantilla2.id,
       plantilla2_id: plantilla3.id,
+      estado:  'finalizada',
+      puntuacion1: 0,
+      puntuacion2: 1,
     },
     {
       turno: 3,
@@ -243,6 +249,9 @@ export const seedTestData = async () => {
       ganador_id: user1.id,
       plantilla1_id: plantilla1.id,
       plantilla2_id: plantilla3.id,
+      estado:  'finalizada',
+      puntuacion1: 2,
+      puntuacion2: 1,
     },
   ]);
 
