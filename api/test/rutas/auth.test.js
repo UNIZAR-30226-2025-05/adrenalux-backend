@@ -42,7 +42,7 @@ describe('Rutas de Autenticación', () => {
           lastname: ''
         });
       
-      expect(response.status).toBe(400); // Error por datos inválidos
+      expect(response.status).toBe(400); 
       expect(response.body).toHaveProperty('status.error_message');
       expect(response.body.status.error_message).toBe('email with invalid format'); 
 
@@ -148,7 +148,7 @@ describe('Rutas de Autenticación', () => {
     it('Debería validar un token correctamente', async () => {
       const response = await request(app)
         .post('/api/v1/auth/validate-token')
-        .set('Authorization', `Bearer ${token}`); // Agregar el token
+        .set('Authorization', `Bearer ${token}`);
 
       console.log(response.body);
       expect(response.status).toBe(200);

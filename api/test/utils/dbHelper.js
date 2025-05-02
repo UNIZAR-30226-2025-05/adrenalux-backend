@@ -149,6 +149,7 @@ const HASH_CONFIG = {
   keyLength: 64,
   digest: 'sha512'
 };
+
 export const seedTestData = async () => {
   const passwordPlano = '123456';
   const salt = randomBytes(16).toString('hex');

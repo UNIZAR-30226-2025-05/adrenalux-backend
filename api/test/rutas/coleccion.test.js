@@ -2,21 +2,23 @@ import request from 'supertest';
 import { app } from '../../app.js';
 import { getAuthToken, clearAllTables, seedTestData } from '../utils/dbHelper.js';
 import { pool } from '../../config/db.js'; 
-import { TIPOS_CARTAS, TIPOS_FILTROS } from '../../config/cartas.config.js';
+import { TIPOS_FILTROS } from '../../config/cartas.config.js';
 
 describe('Colección de Cartas', () => {
   let token;
-  let user1;
 
   beforeAll(async () => {
-    const data = await seedTestData();
-    user1 = data.user1;
-    token = await getAuthToken();
+    await clearAllTables(); 
+    await seedTestData();
+    token = await getAuthToken({
+      email: 'admin@example.com',
+      password: '123456',
+    });
   });
 
   afterAll(async () => {
     await clearAllTables();
-    await pool.end(); 
+    await pool.end();
   });
 
   describe('GET /getColeccion', () => {
@@ -39,7 +41,7 @@ describe('Colección de Cartas', () => {
         .set('x-api-key', process.env.CURRENT_API_KEY);
 
       expect(response.status).toBe(401);
-      expect(response.body.message).toBe('No autorizado');
+      expect(response.body.status?.error_message).toBe('Invalid or missing token');
     });
 
     it('debe retornar 401 si no hay token', async () => {
@@ -48,7 +50,7 @@ describe('Colección de Cartas', () => {
         .set('x-api-key', process.env.CURRENT_API_KEY);
 
       expect(response.status).toBe(401);
-      expect(response.body.message).toBe('No autorizado');
+      expect(response.body.status?.error_message).toBe('Invalid or missing token');
     });
   });
 
@@ -56,12 +58,17 @@ describe('Colección de Cartas', () => {
     it('debe filtrar cartas por posición, rareza y equipo', async () => {
       const response = await request(app)
         .get('/api/v1/coleccion/filtrarCartas')
-        .query({ posicion: TIPOS_FILTROS.POSICION, rareza: TIPOS_FILTROS.RAREZA, equipo: TIPOS_FILTROS.EQUIPO })
+        .query({
+          posicion: 'Delantero',
+          rareza: 'Normal',
+          equipo: 'FC Barcelona',
+        })
         .set('Authorization', `Bearer ${token}`)
         .set('x-api-key', process.env.CURRENT_API_KEY);
-
+    
       expect(response.status).toBe(200);
-      expect(response.body.data).toBeDefined();
+      expect(response.body.status.error_code).toBe(0);
+      expect(response.body).toHaveProperty('data');
       expect(Array.isArray(response.body.data)).toBe(true);
     });
 
@@ -73,7 +80,7 @@ describe('Colección de Cartas', () => {
         .set('x-api-key', process.env.CURRENT_API_KEY);
 
       expect(response.status).toBe(401);
-      expect(response.body.message).toBe('No autorizado');
+      expect(response.body.status?.error_message).toBe('Invalid or missing token');
     });
 
     it('debe retornar 401 si no hay token', async () => {
@@ -83,7 +90,7 @@ describe('Colección de Cartas', () => {
         .set('x-api-key', process.env.CURRENT_API_KEY);
 
       expect(response.status).toBe(401);
-      expect(response.body.message).toBe('No autorizado');
+      expect(response.body.status?.error_message).toBe('Invalid or missing token');
     });
   });
 
@@ -105,9 +112,10 @@ describe('Colección de Cartas', () => {
         .get('/api/v1/coleccion/filtrarPorEquipo/EquipoInexistente')
         .set('Authorization', `Bearer ${token}`)
         .set('x-api-key', process.env.CURRENT_API_KEY);
-
+    
       expect(response.status).toBe(400);
-      expect(response.body.message).toBe('No se encontraron cartas para el equipo');
+      expect(response.body.status.error_code).toBe(1000);
+      expect(response.body.status.error_message).toBe('No se encontraron cartas para el equipo especificado');
     });
 
     it('debe retornar 401 si el token no es válido', async () => {
@@ -115,10 +123,12 @@ describe('Colección de Cartas', () => {
         .get('/api/v1/coleccion/filtrarPorEquipo/FC Barcelona')
         .set('Authorization', 'Bearer invalidToken')
         .set('x-api-key', process.env.CURRENT_API_KEY);
-
+    
       expect(response.status).toBe(401);
-      expect(response.body.message).toBe('No autorizado');
+      expect(response.body.status.error_code).toBe(1000);
+      expect(response.body.status.error_message).toBe('Invalid or missing token');
     });
+    
 
     it('debe retornar 401 si no hay token', async () => {
       const response = await request(app)
@@ -126,7 +136,8 @@ describe('Colección de Cartas', () => {
         .set('x-api-key', process.env.CURRENT_API_KEY);
 
       expect(response.status).toBe(401);
-      expect(response.body.message).toBe('No autorizado');
+      expect(response.body.status.error_code).toBe(1000);
+      expect(response.body.status.error_message).toBe('Invalid or missing token');
     });
   });
 });
