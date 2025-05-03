@@ -192,32 +192,24 @@ export const seedTestData = async () => {
     },
   ]);
 
-  const [plantilla1, plantilla2, plantilla3] = await plantillaHelper.create([
-    {
-      user_id: user1.id,
-      nombre: 'Plantilla 1',
-    },
-    {
-      user_id: user2.id,
-      nombre: 'Plantilla 2',
-    },
-    {
-      user_id: user3.id,
-      nombre: 'Plantilla 3',
-    },
+  await amistadHelper.create([
+    { user1_id: user1.id, user2_id: user2.id, estado: 'aceptada' },
+    { user1_id: user2.id, user2_id: user1.id, estado: 'aceptada' },
+    { user1_id: user1.id, user2_id: user3.id, estado: 'aceptada' },
+    { user1_id: user3.id, user2_id: user1.id, estado: 'aceptada' },
+    { user1_id: user2.id, user2_id: user3.id, estado: 'aceptada' },
+    { user1_id: user3.id, user2_id: user2.id, estado: 'aceptada' },
   ]);
-  
-  await userHelper.update(eq(user.id, user1.id), {
-    plantilla_activa_id: plantilla1.id,
-  });
 
-  await userHelper.update(eq(user.id, user2.id), {
-    plantilla_activa_id: plantilla2.id,
-  });
+  const [plantilla1, plantilla2, plantilla3] = await plantillaHelper.create([
+    { user_id: user1.id, nombre: 'Plantilla 1' },
+    { user_id: user2.id, nombre: 'Plantilla 2' },
+    { user_id: user3.id, nombre: 'Plantilla 3' },
+  ]);
 
-  await userHelper.update(eq(user.id, user3.id), {
-    plantilla_activa_id: plantilla3.id,
-  });
+  await userHelper.update(eq(user.id, user1.id), { plantilla_activa_id: plantilla1.id });
+  await userHelper.update(eq(user.id, user2.id), { plantilla_activa_id: plantilla2.id });
+  await userHelper.update(eq(user.id, user3.id), { plantilla_activa_id: plantilla3.id });
 
   await partidaHelper.create([
     {
@@ -227,7 +219,7 @@ export const seedTestData = async () => {
       ganador_id: user1.id,
       plantilla1_id: plantilla1.id,
       plantilla2_id: plantilla2.id,
-      estado:  'finalizada',
+      estado: 'finalizada',
       puntuacion1: 1,
       puntuacion2: 0,
     },
@@ -238,7 +230,7 @@ export const seedTestData = async () => {
       ganador_id: user2.id,
       plantilla1_id: plantilla2.id,
       plantilla2_id: plantilla3.id,
-      estado:  'finalizada',
+      estado: 'finalizada',
       puntuacion1: 0,
       puntuacion2: 1,
     },
@@ -249,24 +241,51 @@ export const seedTestData = async () => {
       ganador_id: user1.id,
       plantilla1_id: plantilla1.id,
       plantilla2_id: plantilla3.id,
-      estado:  'finalizada',
+      estado: 'finalizada',
       puntuacion1: 2,
       puntuacion2: 1,
     },
   ]);
 
+  const [torneo1, torneo2, torneo3] = await torneoHelper.create([
+    {
+      nombre: 'Torneo Admin vs Test1',
+      contrasena: null,
+      ganador_id: null,
+      premio: 1000,
+      descripcion: 'Competencia entre Admin y Test1',
+      fecha_inicio: new Date().toISOString(),
+      torneo_en_curso: true,
+      creador_id: user1.id,
+    },
+    {
+      nombre: 'Torneo Test1 vs Test2',
+      contrasena: null,
+      ganador_id: null,
+      premio: 1000,
+      descripcion: 'Competencia entre Test1 y Test2',
+      fecha_inicio: new Date().toISOString(),
+      torneo_en_curso: true,
+      creador_id: user2.id,
+    },
+    {
+      nombre: 'Torneo Admin vs Test2',
+      contrasena: null,
+      ganador_id: null,
+      premio: 1000,
+      descripcion: 'Competencia entre Admin y Test2',
+      fecha_inicio: new Date().toISOString(),
+      torneo_en_curso: true,
+      creador_id: user3.id,
+    },
+  ]);
 
-  await amistadHelper.create([
-    {
-      user1_id: user1.id,
-      user2_id: user2.id,
-      estado: 'aceptada',
-    },
-    {
-      user1_id: user2.id,
-      user2_id: user1.id,
-      estado: 'aceptada',
-    },
+  await participacionTorneoHelper.create([
+    { user_id: user1.id, torneo_id: torneo1.id },
+    { user_id: user2.id, torneo_id: torneo1.id },
+    { user_id: user1.id, torneo_id: torneo2.id },
+    { user_id: user3.id, torneo_id: torneo2.id },
+    { user_id: user3.id, torneo_id: torneo3.id },
   ]);
 
   await cartaHelper.create([
@@ -311,9 +330,9 @@ export const seedTestData = async () => {
     },
   ]);
 
-
   return { user1, user2, user3 };
 };
+
 
 
 export const getAuthToken = async ({ email, password }) => {
