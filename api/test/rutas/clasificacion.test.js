@@ -3,67 +3,68 @@ import { app } from '../../app.js';
 import { getAuthToken, clearAllTables, seedTestData } from '../../../api/test/utils/dbHelper.js';
 import { pool } from '../../config/db.js';
 
+let token;
+beforeAll(async () => {
+  await clearAllTables();
+  await seedTestData();
+  token = await getAuthToken({
+    email: 'admin@example.com',
+    password: '123456',
+  });
+});
+
+afterAll(async () => {
+  await clearAllTables();
+  await pool.end();
+});
+
 describe('Rutas /clasificacion', () => {
-  let token;
-
-  beforeAll(async () => {
-    await clearAllTables();
-    await seedTestData();
-    token = await getAuthToken({
-      email: 'admin@example.com',
-      password: '123456',
-  });
-
-  });
-
-  });
-
-  afterAll(async () => {
-    await clearAllTables();
-    await pool.end();
-  });
-
   describe('GET /clasificacion/total', () => {
     it('debe devolver la clasificación total con status 200 y datos de usuarios ordenados', async () => {
       const res = await request(app)
-        .get('/clasificacion/total')
+        .get('/api/v1/clasificacion/total')
         .set('Authorization', `Bearer ${token}`);
-  
+
+      console.log('GET /clasificacion/total response:', res.body);
+
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body.data)).toBe(true);
       expect(res.body.data.length).toBeGreaterThanOrEqual(3);
-  
+
       const expectedFields = [
         'userid', 'username', 'name', 'lastname', 'avatar',
         'friend_code', 'level', 'experience', 'clasificacion', 'estadisticas'
       ];
-  
+
       res.body.data.forEach(user => {
         expectedFields.forEach(field => {
           expect(user).toHaveProperty(field);
         });
-  
+
         expect(user.estadisticas).toHaveProperty('partidasJugadas');
         expect(user.estadisticas).toHaveProperty('partidasGanadas');
         expect(user.estadisticas).toHaveProperty('partidasPerdidas');
       });
     });
-  
+
     it('debe devolver 401 si no se envía token', async () => {
-      const res = await request(app).get('/clasificacion/total');
+      const res = await request(app).get('/api/v1/clasificacion/total');
+      console.log('GET /clasificacion/total sin token response:', res.body);
       expect(res.status).toBe(401);
     });
   });
-  
+
   describe('GET /clasificacion/amigos', () => {
     it('debe devolver la clasificación de amigos con status 200', async () => {
       const res = await request(app)
-        .get('/clasificacion/amigos')
+        .get('/api/v1/clasificacion/amigos')
         .set('Authorization', `Bearer ${token}`);
-  
+
+      console.log('GET /clasificacion/amigos response:', res.body);
+
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body.data)).toBe(true);
-  
+
       res.body.data.forEach(friend => {
         expect(friend).toHaveProperty('userid');
         expect(friend).toHaveProperty('username');
@@ -80,9 +81,12 @@ describe('Rutas /clasificacion', () => {
         expect(friend.estadisticas).toHaveProperty('partidasPerdidas');
       });
     });
-  
+
     it('debe devolver 401 si no se envía token', async () => {
-      const res = await request(app).get('/clasificacion/amigos');
+      const res = await request(app).get('/api/v1/clasificacion/amigos');
+      console.log('GET /clasificacion/amigos sin token response:', res.body);
       expect(res.status).toBe(401);
     });
   });
+});
+
