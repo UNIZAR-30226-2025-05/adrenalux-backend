@@ -1,13 +1,19 @@
 import request from 'supertest';
 import { app } from '../../app.js';
-import { getAuthToken, clearAllTables, seedTestData } from '../../../api/test/utils/dbHelper.js';
+import { getAuthToken, clearAllTables, seedTestData, cartaHelper, coleccionHelper } from '../../../api/test/utils/dbHelper.js';
+import { TIPOS_CARTAS } from '../../config/cartas.config.js';
 import { pool } from '../../config/db.js';
+import { carta } from '../../db/schemas/carta.js';
 
 describe('Rutas de Partidas', () => {
-  let token; 
+  let token;
+  let plantillaId;  
+  let cartas;
+  let user;
   beforeAll(async () => {
       await clearAllTables(); 
-      await seedTestData();
+      const { user1, cartas: cartasCreadas } = await seedTestData();
+      cartas = cartasCreadas;
       token = await getAuthToken({
         email: 'admin@example.com',
         password: '123456',
@@ -27,8 +33,8 @@ describe('Rutas de Partidas', () => {
       .send({ nombre: 'Mi Plantilla' });
 
     expect(response.status).toBe(201);
-    expect(response.body.data).toHaveProperty('id');
-    plantillaId = response.body.data.id;
+    expect(response.body.plantilla).toHaveProperty('id');
+    plantillaId = response.body.plantilla.id;
   });
 
   it('GET /plantillas - debe obtener todas las plantillas del usuario', async () => {
@@ -58,8 +64,8 @@ describe('Rutas de Partidas', () => {
       .set('x-api-key', process.env.CURRENT_API_KEY)
       .send({
         plantillaId,
-        cartasid: [1, 2, 3],
-        posiciones: ['DEL', 'MED', 'DEF']
+        cartasid: cartas.map(carta => carta.id),
+        posiciones: ['Delantero', 'Centrocampista', 'Portero']
       });
 
     expect(response.status).toBe(200);
@@ -86,16 +92,42 @@ describe('Rutas de Partidas', () => {
   });
 
   it('PUT /actualizarCarta - debe actualizar una carta en la plantilla', async () => {
+    const nuevasCartas = await cartaHelper.create([
+      {
+        nombre: 'Marcos Llorente',
+        alias: 'Llorente',
+        posicion: 'Centrocampista',
+        equipo: 'Atlético de Madrid',
+        tipo_carta: TIPOS_CARTAS.NORMAL.nombre,
+        escudo: 'https://example.com/escudo-llorente.png',
+        pais: 'España',
+        photo: 'https://example.com/photo-llorente.png',
+        defensa: 60,
+        control: 80,
+        ataque: 70,
+      }
+    ]);
+  
+    const cartaidActual = cartas[0].id;
+    const cartaidNueva = nuevasCartas[0].id;
+  
     const response = await request(app)
       .put('/api/v1/plantillas/actualizarCarta')
       .set('Authorization', `Bearer ${token}`)
       .set('x-api-key', process.env.CURRENT_API_KEY)
       .send({
         plantillaId,
-        cartaidActual: 1,
-        cartaidNueva: 4
+        cartaidActual,
+        cartaidNueva
       });
-
+  
+    console.log({
+      plantillaId,
+      cartaidActual,
+      cartaidNueva
+    });
+  
+    console.log(response.body);
     expect(response.status).toBe(200);
   });
 
@@ -104,7 +136,7 @@ describe('Rutas de Partidas', () => {
       .delete('/api/v1/plantillas')
       .set('Authorization', `Bearer ${token}`)
       .set('x-api-key', process.env.CURRENT_API_KEY)
-      .send({ plantillaId });
+      .send({ plantillaIdNum: plantillaId });
 
     expect(response.status).toBe(200);
   });
