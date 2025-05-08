@@ -248,7 +248,7 @@ export async function sobresDisponibles(req, res, next) {
 async function tieneSobreGratis(usuario) {
 
   if (!usuario) return false;
-  if (!usuario.ultimoSobre) return true;
+  if (!usuario.ultimo_sobre_gratis) return true;
   
   const ultimoSobreTime = new Date(usuario.ultimo_sobre_gratis).getTime();
   const horas = INTERVALO_SOBRE_GRATIS * 60 * 60 * 1000; 
