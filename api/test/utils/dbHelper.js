@@ -288,7 +288,7 @@ export const seedTestData = async () => {
     { user_id: user3.id, torneo_id: torneo3.id },
   ]);
 
-  await cartaHelper.create([
+  const cartas = await cartaHelper.create([
     {
       nombre: 'Robert Lewandowski',
       alias: 'Robert Lewandowski',
@@ -330,7 +330,19 @@ export const seedTestData = async () => {
     },
   ]);
 
-  return { user1, user2, user3 };
+  await coleccionHelper.create([
+    { user_id: user1.id, carta_id: cartas[0].id },
+    { user_id: user1.id, carta_id: cartas[1].id },
+    { user_id: user1.id, carta_id: cartas[2].id },
+    { user_id: user2.id, carta_id: cartas[0].id },
+    { user_id: user2.id, carta_id: cartas[1].id },
+    { user_id: user2.id, carta_id: cartas[2].id },
+    { user_id: user3.id, carta_id: cartas[0].id },
+    { user_id: user3.id, carta_id: cartas[1].id },
+    { user_id: user3.id, carta_id: cartas[2].id },
+  ]);
+
+  return { user1, user2, user3, cartas };
 };
 
 
