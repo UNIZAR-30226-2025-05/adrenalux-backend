@@ -1,4 +1,4 @@
-import { pgTable, integer, varchar, text, serial, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, integer, varchar, serial, timestamp } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { user } from './user.js';
 import { torneo } from './torneo.js';

@@ -5,7 +5,7 @@ import {user} from '../db/schemas/user.js';
 import {carta} from '../db/schemas/carta.js';
 import {coleccion} from '../db/schemas/coleccion.js';
 import{restarMonedas} from '../lib/monedas.js';
-import{agregarExp, calcularXpNecesaria} from '../lib/exp.js';
+import{agregarExp} from '../lib/exp.js';
 import { db } from '../config/db.js'; 
 import { objectToJson } from '../lib/toJson.js';
 import { eq, and } from 'drizzle-orm'

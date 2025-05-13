@@ -1,4 +1,4 @@
-import { Conflict, InternalServer, NotFound, sendResponse, Unauthorized, BadRequest } from '../lib/http.js'
+import { InternalServer, NotFound, sendResponse, Unauthorized, BadRequest } from '../lib/http.js'
 import { createToken } from '../lib/jwt.js'
 import { user } from '../db/schemas/user.js';
 import { db } from '../config/db.js'; 

@@ -9,7 +9,6 @@ import { amistad } from '../db/schemas/amistad.js';
 import { logro } from '../db/schemas/logro.js';
 import { logrosUsuario } from '../db/schemas/logrosUsuario.js';
 import{calcularXpNecesaria} from '../lib/exp.js';
-import { json } from 'stream/consumers';
 
 
 export async function getProfile(req, res, next) {

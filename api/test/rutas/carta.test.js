@@ -2,7 +2,7 @@ import request from 'supertest';
 import { app } from '../../app.js';
 import { getAuthToken, clearAllTables, seedTestData } from '../../../api/test/utils/dbHelper.js';
 import { pool } from '../../config/db.js';
-import { TIPOS_CARTAS, TIPOS_SOBRES } from '../../config/cartas.config.js'; // Importa los tipos de cartas
+import { TIPOS_SOBRES } from '../../config/cartas.config.js'; // Importa los tipos de cartas
 
 describe('Rutas de Cartas', () => {
   let token;
