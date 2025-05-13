@@ -208,7 +208,8 @@ export const publicarCarta = async (req, res) => {
       precio,
       estado: 'En venta',
       fechaPublicacion: new Date(),
-    });
+    })
+    .returning();
     
 
     res.status(201).json({ success: true, message: 'Carta puesta en venta', data: nuevaPublicacion });
