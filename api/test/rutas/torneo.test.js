@@ -2,6 +2,10 @@ import request from 'supertest';
 import { app } from '../../app.js';
 import { getAuthToken, clearAllTables, seedTestData } from '../../../api/test/utils/dbHelper.js';
 import { pool } from '../../config/db.js';
+import { torneo } from '../../db/schemas/torneo.js';
+import { user } from '../../db/schemas/user.js';
+import { db } from '../../config/db.js';
+import { eq } from 'drizzle-orm';
 
 describe('Rutas de Partidas', () => {
   let token;
@@ -19,7 +23,8 @@ describe('Rutas de Partidas', () => {
         email: 'test1@example.com',
         password: '123456',
       });
-      jugadorId = token.username;
+      const [adminUser] = await db.select().from(user).where(eq(user.email, 'admin@example.com'));
+      jugadorId = adminUser.id;
   });  
   afterAll(async () => {
     await clearAllTables();
@@ -140,17 +145,13 @@ describe('Rutas de Partidas', () => {
       expect(Array.isArray(res.body.data)).toBe(true);
     });
 
-    it('POST /torneos/abandonarTorneo - deberia abandonar el torneo', async () => {
-      await request(app)
-        .post('/torneos/unirse')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ torneo_id: torneoId });
-  
+    it('POST /torneos/abandonarTorneo - deberia abandonar el torneo', async () => {  
       const res = await request(app)
         .post('/api/v1/torneos/abandonarTorneo')
-        .set('Authorization', `Bearer ${token}`)
+        .set('Authorization', `Bearer ${token2}`)
         .send({ torneo_id: torneoId });
   
+      console.log(res.body);
       expect(res.status).toBe(200);
     });
 
