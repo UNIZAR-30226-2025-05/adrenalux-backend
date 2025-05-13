@@ -328,6 +328,48 @@ export const seedTestData = async () => {
       control: 30,
       ataque: 30,
     },
+
+    {
+      nombre: 'Antoine Griezmann',
+      alias: 'Antoine Griezmann',
+      posicion: 'Delantero',
+      equipo: 'Atlético de Madrid',
+      tipo_carta: TIPOS_CARTAS.LUXURYXI.nombre,
+      escudo: 'https://example.com/escudo.png',
+      pais: 'Francia',
+      photo: 'https://example.com/photo.png',
+      defensa: 30,
+      control: 75,
+      ataque: 90,
+    },
+
+    {
+      nombre: 'Pedri',
+      alias: 'Pedri',
+      posicion: 'Centrocampista',
+      equipo: 'FC Barcelona',
+      tipo_carta: TIPOS_CARTAS.LUXURYXI.nombre,
+      escudo: 'https://example.com/escudo.png',
+      pais: 'España',
+      photo: 'https://example.com/photo.png',
+      defensa: 60,
+      control: 90,
+      ataque: 75,
+    },
+
+    {
+      nombre: 'Kylian Mbappe',
+      alias: 'Kylian Mbappe',
+      posicion: 'Delantero',
+      equipo: 'Real Madrid',
+      tipo_carta: TIPOS_CARTAS.LUXURYXI.nombre,
+      escudo: 'https://example.com/escudo.png',
+      pais: 'Francia',
+      photo: 'https://example.com/photo.png',
+      defensa: 30,
+      control: 75,
+      ataque: 90,
+    },
   ]);
 
   await coleccionHelper.create([
@@ -340,6 +382,15 @@ export const seedTestData = async () => {
     { user_id: user3.id, carta_id: cartas[0].id },
     { user_id: user3.id, carta_id: cartas[1].id },
     { user_id: user3.id, carta_id: cartas[2].id },
+    { user_id: user1.id, carta_id: cartas[3].id },
+    { user_id: user1.id, carta_id: cartas[4].id },
+    { user_id: user1.id, carta_id: cartas[5].id },
+    { user_id: user2.id, carta_id: cartas[3].id },
+    { user_id: user2.id, carta_id: cartas[4].id },
+    { user_id: user2.id, carta_id: cartas[5].id },
+    { user_id: user3.id, carta_id: cartas[3].id },
+    { user_id: user3.id, carta_id: cartas[4].id },
+    { user_id: user3.id, carta_id: cartas[5].id },
   ]);
 
   return { user1, user2, user3, cartas };
