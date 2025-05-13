@@ -1,9 +1,8 @@
 import request from 'supertest';
 import { app } from '../../app.js';
-import { getAuthToken, clearAllTables, seedTestData, cartaHelper, coleccionHelper } from '../../../api/test/utils/dbHelper.js';
+import { getAuthToken, clearAllTables, seedTestData, cartaHelper } from '../../../api/test/utils/dbHelper.js';
 import { TIPOS_CARTAS } from '../../config/cartas.config.js';
 import { pool } from '../../config/db.js';
-import { carta } from '../../db/schemas/carta.js';
 
 describe('Rutas de Partidas', () => {
   let token;

@@ -1,4 +1,4 @@
-import { pgTable, integer, serial, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, integer, serial } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { user } from './user.js';
 import { carta } from './carta.js';

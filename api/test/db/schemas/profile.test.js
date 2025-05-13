@@ -6,7 +6,7 @@ import { carta } from '../../../db/schemas/carta.js';
 import { eq } from 'drizzle-orm';
 import { coleccion } from '../../../db/schemas/coleccion.js';
 import { pbkdf2Sync } from 'crypto';
-import { getDecodedToken, verifyToken } from '../../../lib/jwt.js';
+import { verifyToken } from '../../../lib/jwt.js';
 import { pool } from '../../../config/db.js'; 
 
 const HASH_CONFIG = {

@@ -9,7 +9,7 @@ import{agregarExp} from '../lib/exp.js';
 import {agregarMonedas} from '../lib/monedas.js';
 import{} from '../lib/monedas.js';
 
-import {DESCRIPCION_LOGROS, TIPOS_DE_LOGROS} from '../config/logros.config.js';
+import { TIPOS_DE_LOGROS} from '../config/logros.config.js';
 
 async function obtenerDatosUsuario(userId) {
   const [usuario] = await db.select()

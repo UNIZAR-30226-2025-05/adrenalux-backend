@@ -7,7 +7,6 @@ import { carta } from '../db/schemas/carta.js';
 import { coleccion } from '../db/schemas/coleccion.js';
 import { user } from '../db/schemas/user.js';
 import { carta_plantilla } from '../db/schemas/carta_plantilla.js';
-import { plantilla } from '../db/schemas/plantilla.js';
 import { partida } from '../db/schemas/partida.js';
 import { ronda } from '../db/schemas/ronda.js';
 import { torneo } from '../db/schemas/torneo.js';

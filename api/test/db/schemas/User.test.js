@@ -2,7 +2,7 @@ import { db } from '../config/db.js';
 import { user } from '../db/schemas/user.js';
 import { amistad } from '../db/schemas/amistad.js';
 import { eq } from 'drizzle-orm';
-import { agregarExp, calcularXpNecesaria } from '../lib/exp.js';
+import { agregarExp } from '../lib/exp.js';
 import { agregarMonedas, restarMonedas } from '../lib/monedas.js';
 import { agregarPuntosClasificacion, restarPuntosClasificacion } from '../lib/puntosClasificacion.js';
 

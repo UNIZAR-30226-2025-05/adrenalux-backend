@@ -2,7 +2,6 @@ import request from 'supertest';
 import { app } from '../../app.js';
 import { getAuthToken, clearAllTables, seedTestData } from '../../../api/test/utils/dbHelper.js';
 import { pool } from '../../config/db.js';
-import { torneo } from '../../db/schemas/torneo.js';
 
 describe('Rutas de Partidas', () => {
   let token;

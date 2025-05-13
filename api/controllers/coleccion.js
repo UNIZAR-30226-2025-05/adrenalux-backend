@@ -1,12 +1,9 @@
-import { Conflict, sendResponse } from '../lib/http.js';
+import { sendResponse } from '../lib/http.js';
 import { Unauthorized, BadRequest } from '../lib/http.js';
 import { getDecodedToken } from '../lib/jwt.js';
-import fs from 'fs';
-import path from 'path';
 import { db } from '../config/db.js';
 import { coleccion } from '../db/schemas/coleccion.js';
 import { carta } from '../db/schemas/carta.js';
-import { user } from '../db/schemas/user.js';
 import { eq, and, ilike } from 'drizzle-orm';
 import {TIPOS_FILTROS,} from '../config/cartas.config.js';
 import { cartaState, mercadoCartas } from '../db/schemas/mercado.js';

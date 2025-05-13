@@ -1,6 +1,6 @@
 import {sendNotification} from './socket.js'
 import { db } from '../config/db.js';
-import { eq, and, or, not } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 import { user } from '../db/schemas/user.js';
 import { amistad } from '../db/schemas/amistad.js';
 import { sendResponse } from '../lib/http.js';

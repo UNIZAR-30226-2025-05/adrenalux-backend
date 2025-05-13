@@ -14,7 +14,6 @@ import { carta_plantilla } from '../../db/schemas/carta_plantilla.js';
 import { mercadoCartas } from '../../db/schemas/mercado.js';
 import { mercadoDiario } from '../../db/schemas/mercado.js';
 import { plantilla } from '../../db/schemas/plantilla.js';
-import bcrypt from 'bcrypt';
 import { TIPOS_CARTAS } from '../../config/cartas.config.js';
 import { pbkdf2Sync, randomBytes } from 'crypto';
 
