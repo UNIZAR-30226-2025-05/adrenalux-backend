@@ -46,7 +46,7 @@ export async function insertarCartaEnBD(jugador) {
       posicion: jugador.position,
       equipo: jugador.team,
       tipo_carta: TIPOS_CARTAS.NORMAL.nombre,
-      escudo: jugador.escudo,
+      escudo: jugador.team_shield,
       pais: jugador.country,
       photo: jugador.photo,
       defensa: jugador.ratings.defensa,
